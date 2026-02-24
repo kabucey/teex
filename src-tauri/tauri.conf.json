@@ -1,0 +1,119 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Teex",
+  "version": "0.1.0",
+  "identifier": "com.aparche.teex",
+  "build": {
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "Teex",
+        "width": 800,
+        "height": 600,
+        "theme": "Dark"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": [
+          "md",
+          "markdown",
+          "mdown",
+          "mkd",
+          "mkdn"
+        ],
+        "name": "Markdown document",
+        "description": "Markdown document",
+        "mimeType": "text/markdown",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "txt",
+          "text",
+          "log"
+        ],
+        "name": "Text document",
+        "description": "Plain text document",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "json",
+          "jsonc",
+          "jsonl"
+        ],
+        "name": "JSON document",
+        "description": "JSON document",
+        "mimeType": "application/json",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "yaml",
+          "yml"
+        ],
+        "name": "YAML document",
+        "description": "YAML document",
+        "mimeType": "application/yaml",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "toml",
+          "ini",
+          "cfg",
+          "conf"
+        ],
+        "name": "Configuration file",
+        "description": "Text configuration file",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "csv",
+          "tsv"
+        ],
+        "name": "Delimited text",
+        "description": "Delimited text data",
+        "mimeType": "text/csv",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "xml"
+        ],
+        "name": "XML document",
+        "description": "XML document",
+        "mimeType": "application/xml",
+        "role": "Viewer",
+        "rank": "Alternate"
+      }
+    ]
+  }
+}

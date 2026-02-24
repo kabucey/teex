@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>teex</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="/main.js" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <main id="workspace" class="workspace workspace-empty">
+        <aside id="sidebar" class="sidebar hidden" aria-label="Folder files">
+          <h2>Folder</h2>
+          <div id="project-root" class="project-root"></div>
+          <div id="project-list" class="project-list"></div>
+        </aside>
+        <div id="sidebar-resizer" class="sidebar-resizer hidden" aria-hidden="true"></div>
+
+        <section id="main-pane" class="main-pane">
+          <div id="tab-bar" class="tab-bar hidden"></div>
+          <div id="empty-state" class="empty-state">
+            <h2>Simple text workspace</h2>
+            <p>Use the File menu or drag files into the window.</p>
+            <p>Markdown opens in preview mode. Press <kbd>Cmd</kbd> + <kbd>E</kbd> to edit.</p>
+          </div>
+
+          <div id="editor-state" class="editor-state hidden">
+            <textarea id="editor" class="editor" spellcheck="false"></textarea>
+            <article id="preview" class="preview hidden"></article>
+          </div>
+        </section>
+      </main>
+      <div id="drop-overlay" class="drop-overlay hidden" aria-hidden="true">
+        <div class="drop-overlay-card">
+          <h3>Drop files to open</h3>
+          <p>Drop a folder to open it in the sidebar.</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
