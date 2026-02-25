@@ -4,6 +4,9 @@
 This repository is a Tauri 2 desktop app.
 
 - `src/`: frontend assets and UI logic (`index.html`, `main.js`, `styles.css`)
+- `src/ui/`: UI-focused modules (for example: renderer, markdown renderer, UI behavior helpers, HTML escaping helpers)
+- `src/sidebar/`: sidebar-specific modules (for example: controller, tree building/rendering helpers)
+- `src/app-utils.js`: shared frontend utility helpers (`baseName`, `clamp`)
 - `src/assets/`: static images/icons used by the frontend
 - `src-tauri/src/`: Rust backend (`main.rs`, `lib.rs`) and Tauri commands
 - `src-tauri/tauri.conf.json`: Tauri app configuration (window, bundle, frontend path)
@@ -37,6 +40,7 @@ Prerequisites: Rust toolchain, Tauri CLI, and platform-specific Tauri/WebView bu
 - `cargo fmt`: format Rust code with `rustfmt`
 - `cargo clippy --all-targets --all-features -D warnings`: lint Rust code (use a non-`-D warnings` variant if the repo is mid-refactor)
 - `cargo test`: run Rust tests (currently minimal/no tests, but use this before PRs)
+- `./test.sh` (repo root): run all automated tests (Rust + Node helper tests)
 - `cargo tauri dev` (repo root or `src-tauri/`): launch the desktop app in development mode (requires Tauri CLI installed)
 - `cargo tauri build`: produce a distributable desktop build
 - `./test-open.sh` (repo root): project-specific manual test helper for opening files (if present/useful for current changes)
@@ -48,12 +52,19 @@ Prerequisites: Rust toolchain, Tauri CLI, and platform-specific Tauri/WebView bu
 - Use `SCREAMING_SNAKE_CASE` for JS/Rust constants (for event/menu IDs).
 - Keep frontend DOM IDs and state keys descriptive (`tab-bar`, `activeTabIndex`).
 - Keep files small: target roughly 200 lines per file when practical. If a file grows beyond that, consider refactoring into smaller modules/components/functions.
+- Hard cap for new/refactored code: keep files within 200-300 lines. If a file exceeds ~300 lines, split it before adding more logic (exceptions only for generated files or third-party vendored code).
+- Prefer feature folders under `src/` when splitting large files (`src/sidebar/...`, `src/ui/...`, etc.) instead of accumulating many peer files at `src/` root.
+- Mirror the `src/` folder structure under `tests/` when adding Node tests (for example `src/ui/...` -> `tests/ui/...`, `src/sidebar/...` -> `tests/sidebar/...`).
 
 ## Testing Guidelines
 - Use TDD for behavior changes and bug fixes when practical: write or update tests first (or in the same change before implementation code), then implement to make them pass.
 - For any regression fix, add a regression test that would fail without the fix when the behavior can be covered by automated tests.
 - No dedicated frontend test framework is configured yet; verify UI changes manually in `cargo tauri dev`.
 - Frontend logic that can be isolated into pure helper functions should be extracted and covered with lightweight Node tests (for example `node --test`) before wiring into UI event handlers.
+- Prefer `./test.sh` as the default pre-PR/local verification command so both Rust and frontend helper tests run together.
+- When refactoring `src/main.js`, prefer low-risk extractions into `src/` modules first (pure renderers/helpers/path normalization/state-free logic), then add/expand Node tests for the extracted module in `tests/*.test.mjs`.
+- Continue the folder pattern during `src/main.js` refactors: place sidebar logic in `src/sidebar/`, UI rendering/formatting logic in `src/ui/`, and keep each module under the 200-300 line cap.
+- For large refactors, preserve behavior by splitting into small phases and running `./test.sh` after each phase.
 - Add Rust unit tests near backend logic in `src-tauri/src/` when changing file IO, path handling, or command behavior.
 - Prefer small, focused tests and cover error paths (missing file, invalid folder, read/write failures).
 - When changing file-open flows or app registration behavior, manually test representative file types configured in `src-tauri/tauri.conf.json` (for example: Markdown, text, JSON, YAML, TOML, CSV, XML).

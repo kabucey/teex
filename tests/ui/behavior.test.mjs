@@ -9,7 +9,7 @@ import {
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
   shouldSuppressDropOverlayForSelfHover,
-} from "../src/ui-behavior.js";
+} from "../../src/ui/behavior.js";
 
 test("single-file UI opens in folder mode use folder tab flow", () => {
   assert.equal(getSingleFileUiOpenMode("folder"), "folderTabs");

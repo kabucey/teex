@@ -12,7 +12,8 @@ echo "Running Rust tests (src-tauri)..."
 echo "Running frontend helper tests..."
 (
   cd "$repo_root"
-  node --test tests/ui-behavior.test.mjs
+  mapfile -t node_tests < <(find tests -type f -name "*.test.mjs" | sort)
+  node --test "${node_tests[@]}"
 )
 
 echo "All tests passed."
