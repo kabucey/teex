@@ -6,6 +6,8 @@ export function createAppEventsController({
   openSingleFileFromUi,
   openFolder,
   handleOsOpenFiles,
+  handleProjectFolderChanged,
+  handleProjectFileChanged,
   toggleSidebarVisibility,
   toggleMarkdownMode,
   closeActiveFileOrWindow,
@@ -26,6 +28,12 @@ export function createAppEventsController({
       }),
       listen(`${events.osOpenPaths}/${label}`, async (event) => {
         await handleOsOpenFiles(event.payload);
+      }),
+      listen(`${events.projectFolderChanged}/${label}`, async () => {
+        await handleProjectFolderChanged();
+      }),
+      listen(`${events.projectFileChanged}/${label}`, async (event) => {
+        await handleProjectFileChanged(event.payload);
       }),
       listen(`${events.toggleSidebar}/${label}`, () => {
         toggleSidebarVisibility();

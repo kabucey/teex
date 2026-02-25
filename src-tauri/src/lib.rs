@@ -1,3 +1,7 @@
+use notify::{
+    event::ModifyKind, Config as NotifyConfig, Event, EventKind, RecommendedWatcher, RecursiveMode,
+    Watcher,
+};
 use serde::{Deserialize, Serialize};
 #[cfg(target_os = "macos")]
 use std::ffi::{c_char, c_void, CString};
@@ -8,8 +12,8 @@ use std::{
     env, fs,
     path::{Path, PathBuf},
     sync::atomic::{AtomicUsize, Ordering},
-    sync::Mutex,
-    time::Instant,
+    sync::{Arc, Mutex},
+    time::{Duration, Instant},
 };
 #[cfg(target_os = "ios")]
 use tauri::RunEvent;
@@ -198,6 +202,8 @@ mod apple_events {
 const EVENT_OPEN_FILE_SELECTED: &str = "teex://open-file-selected";
 const EVENT_OPEN_FOLDER_SELECTED: &str = "teex://open-folder-selected";
 const EVENT_OS_OPEN_PATHS: &str = "teex://os-open-paths";
+const EVENT_PROJECT_FOLDER_CHANGED: &str = "teex://project-folder-changed";
+const EVENT_PROJECT_FILE_CHANGED: &str = "teex://project-file-changed";
 const EVENT_TOGGLE_SIDEBAR: &str = "teex://toggle-sidebar";
 const EVENT_TOGGLE_MARKDOWN_MODE: &str = "teex://toggle-markdown-mode";
 const EVENT_CLOSE_ACTIVE_FILE: &str = "teex://close-active-file";
@@ -216,6 +222,8 @@ const MENU_TOGGLE_SIDEBAR: &str = "toggle_sidebar";
 const MENU_TOGGLE_MARKDOWN_MODE: &str = "toggle_markdown_mode";
 static NEXT_WINDOW_ID: AtomicUsize = AtomicUsize::new(1);
 static NEXT_TRANSFER_REQUEST_ID: AtomicUsize = AtomicUsize::new(1);
+const FOLDER_WATCH_DEBOUNCE: Duration = Duration::from_millis(250);
+const FILE_WATCH_DEBOUNCE: Duration = Duration::from_millis(250);
 
 struct FocusTracker {
     label: Mutex<Option<String>>,
@@ -225,6 +233,24 @@ struct FocusTracker {
 struct PendingOpenPaths {
     global_paths: Mutex<Vec<String>>,
     by_window: Mutex<HashMap<String, Vec<String>>>,
+}
+
+struct FolderWatchRegistry {
+    by_window: Mutex<HashMap<String, WindowFolderWatch>>,
+}
+
+struct WindowFolderWatch {
+    root: PathBuf,
+    _watcher: RecommendedWatcher,
+}
+
+struct FileWatchRegistry {
+    by_window: Mutex<HashMap<String, WindowFileWatch>>,
+}
+
+struct WindowFileWatch {
+    paths: Vec<PathBuf>,
+    _watcher: RecommendedWatcher,
 }
 
 fn set_tracked_window_label(app: &tauri::AppHandle, label: String) {
@@ -263,6 +289,221 @@ fn clear_pending_open_paths_for_window(app: &tauri::AppHandle, label: &str) {
     if let Ok(mut queued) = pending.by_window.lock() {
         queued.remove(label);
     };
+}
+
+fn should_emit_folder_watch_event(event: &Event) -> bool {
+    matches!(
+        event.kind,
+        EventKind::Create(_)
+            | EventKind::Modify(ModifyKind::Name(_))
+            | EventKind::Remove(_)
+            | EventKind::Any
+            | EventKind::Other
+    )
+}
+
+fn clear_project_folder_watch_for_label(app: &tauri::AppHandle, label: &str) {
+    let registry = app.state::<FolderWatchRegistry>();
+    if let Ok(mut watches) = registry.by_window.lock() {
+        watches.remove(label);
+    };
+}
+
+fn should_emit_file_watch_event(event: &Event) -> bool {
+    matches!(
+        event.kind,
+        EventKind::Create(_)
+            | EventKind::Modify(_)
+            | EventKind::Remove(_)
+            | EventKind::Any
+            | EventKind::Other
+    )
+}
+
+fn clear_project_file_watch_for_label(app: &tauri::AppHandle, label: &str) {
+    let registry = app.state::<FileWatchRegistry>();
+    if let Ok(mut watches) = registry.by_window.lock() {
+        watches.remove(label);
+    };
+}
+
+fn install_project_folder_watch(
+    app: &tauri::AppHandle,
+    label: &str,
+    root: PathBuf,
+) -> Result<(), String> {
+    let canonical_root = fs::canonicalize(&root).unwrap_or(root);
+    if !canonical_root.is_dir() {
+        return Err("Selected path is not a folder".to_string());
+    }
+
+    {
+        let registry = app.state::<FolderWatchRegistry>();
+        if let Ok(watches) = registry.by_window.lock() {
+            if let Some(existing) = watches.get(label) {
+                if existing.root == canonical_root {
+                    return Ok(());
+                }
+            }
+        };
+    }
+
+    let app_handle = app.clone();
+    let label_string = label.to_string();
+    let last_emitted = Arc::new(Mutex::new(Instant::now() - FOLDER_WATCH_DEBOUNCE));
+    let throttle = Arc::clone(&last_emitted);
+
+    let mut watcher = RecommendedWatcher::new(
+        move |result: notify::Result<Event>| {
+            let Ok(event) = result else {
+                return;
+            };
+
+            if !should_emit_folder_watch_event(&event) {
+                return;
+            }
+
+            let now = Instant::now();
+            let Ok(mut last) = throttle.lock() else {
+                return;
+            };
+            if now.duration_since(*last) < FOLDER_WATCH_DEBOUNCE {
+                return;
+            }
+            *last = now;
+
+            emit_to_window(&app_handle, &label_string, EVENT_PROJECT_FOLDER_CHANGED, ());
+        },
+        NotifyConfig::default(),
+    )
+    .map_err(|e| format!("Unable to start folder watcher: {e}"))?;
+
+    watcher
+        .watch(&canonical_root, RecursiveMode::Recursive)
+        .map_err(|e| format!("Unable to watch folder: {e}"))?;
+
+    let registry = app.state::<FolderWatchRegistry>();
+    let mut watches = registry
+        .by_window
+        .lock()
+        .map_err(|_| "Unable to update folder watcher registry".to_string())?;
+    watches.insert(
+        label.to_string(),
+        WindowFolderWatch {
+            root: canonical_root,
+            _watcher: watcher,
+        },
+    );
+    Ok(())
+}
+
+fn normalize_watched_file_paths(paths: Vec<String>) -> Vec<PathBuf> {
+    let mut normalized = Vec::new();
+    let mut seen = std::collections::HashSet::new();
+
+    for raw in paths {
+        if raw.trim().is_empty() {
+            continue;
+        }
+
+        let path = PathBuf::from(raw);
+        let canonical = fs::canonicalize(&path).unwrap_or(path);
+        if !canonical.exists() || !canonical.is_file() {
+            continue;
+        }
+        if seen.insert(canonical.clone()) {
+            normalized.push(canonical);
+        }
+    }
+
+    normalized.sort();
+    normalized
+}
+
+fn install_project_file_watch(
+    app: &tauri::AppHandle,
+    label: &str,
+    paths: Vec<String>,
+) -> Result<(), String> {
+    let normalized_paths = normalize_watched_file_paths(paths);
+    if normalized_paths.is_empty() {
+        clear_project_file_watch_for_label(app, label);
+        return Ok(());
+    }
+
+    {
+        let registry = app.state::<FileWatchRegistry>();
+        if let Ok(watches) = registry.by_window.lock() {
+            if let Some(existing) = watches.get(label) {
+                if existing.paths == normalized_paths {
+                    return Ok(());
+                }
+            }
+        };
+    }
+
+    let app_handle = app.clone();
+    let label_string = label.to_string();
+    let last_emitted_by_path: Arc<Mutex<HashMap<String, Instant>>> =
+        Arc::new(Mutex::new(HashMap::new()));
+    let throttle = Arc::clone(&last_emitted_by_path);
+
+    let mut watcher = RecommendedWatcher::new(
+        move |result: notify::Result<Event>| {
+            let Ok(event) = result else {
+                return;
+            };
+
+            if !should_emit_file_watch_event(&event) {
+                return;
+            }
+
+            let now = Instant::now();
+            let Ok(mut emitted) = throttle.lock() else {
+                return;
+            };
+
+            for path in &event.paths {
+                let path_string = path_to_string(path);
+                let should_emit = emitted
+                    .get(&path_string)
+                    .map(|last| now.duration_since(*last) >= FILE_WATCH_DEBOUNCE)
+                    .unwrap_or(true);
+                if !should_emit {
+                    continue;
+                }
+                emitted.insert(path_string.clone(), now);
+                emit_to_window(
+                    &app_handle,
+                    &label_string,
+                    EVENT_PROJECT_FILE_CHANGED,
+                    path_string,
+                );
+            }
+        },
+        NotifyConfig::default(),
+    )
+    .map_err(|e| format!("Unable to start file watcher: {e}"))?;
+
+    for path in &normalized_paths {
+        watcher
+            .watch(path, RecursiveMode::NonRecursive)
+            .map_err(|e| format!("Unable to watch file: {e}"))?;
+    }
+
+    let registry = app.state::<FileWatchRegistry>();
+    let mut watches = registry
+        .by_window
+        .lock()
+        .map_err(|_| "Unable to update file watcher registry".to_string())?;
+    watches.insert(
+        label.to_string(),
+        WindowFileWatch {
+            paths: normalized_paths,
+            _watcher: watcher,
+        },
+    );
+    Ok(())
 }
 
 fn next_window_label() -> String {
@@ -681,6 +922,21 @@ fn take_pending_open_paths(window: tauri::Window) -> Vec<String> {
     }
 
     drained
+}
+
+#[tauri::command]
+fn watch_project_folder(window: tauri::Window, root: String) -> Result<(), String> {
+    install_project_folder_watch(window.app_handle(), window.label(), PathBuf::from(root))
+}
+
+#[tauri::command]
+fn clear_project_folder_watch(window: tauri::Window) {
+    clear_project_folder_watch_for_label(window.app_handle(), window.label());
+}
+
+#[tauri::command]
+fn watch_project_files(window: tauri::Window, paths: Vec<String>) -> Result<(), String> {
+    install_project_file_watch(window.app_handle(), window.label(), paths)
 }
 
 #[tauri::command]
@@ -1319,7 +1575,10 @@ mod tests {
         let result = categorize_paths(vec![
             "".to_string(),
             "   ".to_string(),
-            temp.path().join("missing.txt").to_string_lossy().to_string(),
+            temp.path()
+                .join("missing.txt")
+                .to_string_lossy()
+                .to_string(),
             folder.to_string_lossy().to_string(),
         ]);
 
@@ -1389,16 +1648,24 @@ mod tests {
 
         entries.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
 
-        let rel_nested_b = Path::new("nested").join("b.txt").to_string_lossy().to_string();
+        let rel_nested_b = Path::new("nested")
+            .join("b.txt")
+            .to_string_lossy()
+            .to_string();
         let rel_nested_c = Path::new("nested")
             .join("c.JSON")
             .to_string_lossy()
             .to_string();
 
         let rel_paths: Vec<String> = entries.iter().map(|e| e.rel_path.clone()).collect();
-        assert_eq!(rel_paths, vec!["a.md".to_string(), rel_nested_b, rel_nested_c]);
+        assert_eq!(
+            rel_paths,
+            vec!["a.md".to_string(), rel_nested_b, rel_nested_c]
+        );
 
-        assert!(entries.iter().all(|e| e.path.starts_with(root.to_string_lossy().as_ref())));
+        assert!(entries
+            .iter()
+            .all(|e| e.path.starts_with(root.to_string_lossy().as_ref())));
     }
 
     #[test]
@@ -1455,8 +1722,14 @@ mod tests {
 
     #[test]
     fn utility_helpers_build_expected_strings_and_ids() {
-        assert_eq!(window_event("teex://open", "teex-window-2"), "teex://open/teex-window-2");
-        assert_eq!(path_to_string(Path::new("/tmp/example.txt")), "/tmp/example.txt");
+        assert_eq!(
+            window_event("teex://open", "teex-window-2"),
+            "teex://open/teex-window-2"
+        );
+        assert_eq!(
+            path_to_string(Path::new("/tmp/example.txt")),
+            "/tmp/example.txt"
+        );
 
         let a = next_transfer_request_id();
         let b = next_transfer_request_id();
@@ -1496,13 +1769,13 @@ mod tests {
         fs::create_dir_all(&local_bin).expect("create ~/.local/bin");
 
         let original_path = env::var_os("PATH");
-        let path_with_home_bin = env::join_paths([home_bin.clone(), PathBuf::from("/usr/bin")])
-            .expect("join PATH");
+        let path_with_home_bin =
+            env::join_paths([home_bin.clone(), PathBuf::from("/usr/bin")]).expect("join PATH");
         env::set_var("PATH", path_with_home_bin);
         assert_eq!(preferred_cli_install_dir(&home), home_bin);
 
-        let path_with_local_bin = env::join_paths([local_bin.clone(), PathBuf::from("/usr/bin")])
-            .expect("join PATH");
+        let path_with_local_bin =
+            env::join_paths([local_bin.clone(), PathBuf::from("/usr/bin")]).expect("join PATH");
         env::set_var("PATH", path_with_local_bin);
         assert_eq!(preferred_cli_install_dir(&home), local_bin.clone());
 
@@ -1693,6 +1966,12 @@ pub fn run() {
                 global_paths: Mutex::new(Vec::new()),
                 by_window: Mutex::new(HashMap::new()),
             });
+            app.manage(FolderWatchRegistry {
+                by_window: Mutex::new(HashMap::new()),
+            });
+            app.manage(FileWatchRegistry {
+                by_window: Mutex::new(HashMap::new()),
+            });
             #[cfg(target_os = "macos")]
             {
                 let paths = apple_events::take_paths();
@@ -1705,6 +1984,10 @@ pub fn run() {
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::Focused(true) = event {
                 set_tracked_window_label(window.app_handle(), window.label().to_string());
+            }
+            if let tauri::WindowEvent::Destroyed = event {
+                clear_project_folder_watch_for_label(window.app_handle(), window.label());
+                clear_project_file_watch_for_label(window.app_handle(), window.label());
             }
         })
         .on_menu_event(|app, event| {
@@ -1724,6 +2007,9 @@ pub fn run() {
             route_tab_transfer_result,
             notify_window_focused,
             take_pending_open_paths,
+            watch_project_folder,
+            clear_project_folder_watch,
+            watch_project_files,
             open_paths_in_new_window
         ])
         .build(tauri::generate_context!())

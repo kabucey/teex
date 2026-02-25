@@ -1,6 +1,26 @@
 import { getSingleFileUiOpenMode } from "../ui/behavior.js";
 import { collectFolderPaths } from "../sidebar/tree.js";
 
+export function didProjectEntriesChange(previousEntries, nextEntries) {
+  if (!Array.isArray(previousEntries) || !Array.isArray(nextEntries)) {
+    return true;
+  }
+
+  if (previousEntries.length !== nextEntries.length) {
+    return true;
+  }
+
+  for (let i = 0; i < previousEntries.length; i += 1) {
+    const prev = previousEntries[i];
+    const next = nextEntries[i];
+    if (prev?.path !== next?.path || prev?.relPath !== next?.relPath) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function createFileController({
   state,
   invoke,
@@ -16,12 +36,80 @@ export function createFileController({
   openFileAsTab,
   openFileInTabs,
 }) {
+  let refreshInFlight = null;
+  let pendingRefresh = false;
+
+  async function clearProjectFolderWatch() {
+    try {
+      await invoke("clear_project_folder_watch");
+    } catch {
+      // Watch setup is best-effort; keep file operations working.
+    }
+  }
+
+  async function watchProjectFolder(root) {
+    if (!root) {
+      await clearProjectFolderWatch();
+      return;
+    }
+
+    try {
+      await invoke("watch_project_folder", { root });
+    } catch {
+      // Watch setup is best-effort; keep file operations working.
+    }
+  }
+
+  async function refreshOpenFolderEntries() {
+    if (state.mode !== "folder" || !state.rootPath) {
+      return;
+    }
+
+    if (refreshInFlight) {
+      pendingRefresh = true;
+      await refreshInFlight;
+      return;
+    }
+
+    refreshInFlight = (async () => {
+      try {
+        const entries = await invoke("list_project_entries", { root: state.rootPath });
+        if (!didProjectEntriesChange(state.entries, entries)) {
+          return;
+        }
+
+        state.entries = entries;
+
+        const validFolderPaths = collectFolderPaths(entries);
+        state.collapsedFolders = new Set(
+          [...state.collapsedFolders].filter((folderPath) => validFolderPaths.has(folderPath)),
+        );
+
+        markSidebarTreeDirty();
+        render();
+      } catch (error) {
+        setStatus(String(error), true);
+      }
+    })();
+
+    try {
+      await refreshInFlight;
+    } finally {
+      refreshInFlight = null;
+      if (pendingRefresh) {
+        pendingRefresh = false;
+        await refreshOpenFolderEntries();
+      }
+    }
+  }
+
   async function openFile(path) {
     if (!path) {
       return;
     }
 
     await saveNow();
+    await clearProjectFolderWatch();
 
     try {
       const payload = await invoke("read_text_file", { path });
@@ -68,6 +156,7 @@ export function createFileController({
     }
 
     await saveNow();
+    await clearProjectFolderWatch();
 
     try {
       const entries = await invoke("list_project_entries", { root: path });
@@ -79,6 +168,7 @@ export function createFileController({
       state.sidebarVisible = true;
       state.openFiles = [];
       state.activeTabIndex = 0;
+      await watchProjectFolder(path);
 
       if (entries.length > 0) {
         const previous = state.activePath;
@@ -148,5 +238,7 @@ export function createFileController({
     openFolder,
     openEntry,
     openFolderEntryInTabs,
+    refreshOpenFolderEntries,
+    clearProjectFolderWatch,
   };
 }

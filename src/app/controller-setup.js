@@ -40,6 +40,7 @@ export function setupControllers({
     setStatus: callbacks.setStatus,
     render: callbacks.render,
     hasTabSession: callbacks.hasTabSession,
+    onFileSaved: callbacks.onFileSaved,
   });
 
   sidebarController = createSidebarController({
@@ -139,6 +140,8 @@ export function setupControllers({
     openSingleFileFromUi: callbacks.openSingleFileFromUi,
     openFolder: callbacks.openFolder,
     handleOsOpenFiles: callbacks.handleOsOpenFiles,
+    handleProjectFolderChanged: callbacks.handleProjectFolderChanged,
+    handleProjectFileChanged: callbacks.handleProjectFileChanged,
     toggleSidebarVisibility: callbacks.toggleSidebarVisibility,
     toggleMarkdownMode: callbacks.toggleMarkdownMode,
     closeActiveFileOrWindow: callbacks.closeActiveFileOrWindow,

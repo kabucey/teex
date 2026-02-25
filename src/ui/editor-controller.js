@@ -23,6 +23,7 @@ export function createEditorController({
   setStatus,
   render,
   hasTabSession,
+  onFileSaved = null,
 }) {
   function updateMenuState() {
     invoke("set_menu_state", {
@@ -78,6 +79,9 @@ export function createEditorController({
       if (hasTabSession() && state.openFiles[state.activeTabIndex]) {
         state.openFiles[state.activeTabIndex].isDirty = false;
         state.openFiles[state.activeTabIndex].content = state.content;
+      }
+      if (typeof onFileSaved === "function") {
+        onFileSaved(state.activePath);
       }
       setStatus("Saved");
     } catch (error) {

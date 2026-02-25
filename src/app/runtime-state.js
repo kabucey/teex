@@ -2,6 +2,8 @@ export const EVENTS = {
   openFileSelected: "teex://open-file-selected",
   openFolderSelected: "teex://open-folder-selected",
   osOpenPaths: "teex://os-open-paths",
+  projectFolderChanged: "teex://project-folder-changed",
+  projectFileChanged: "teex://project-file-changed",
   toggleSidebar: "teex://toggle-sidebar",
   toggleMarkdownMode: "teex://toggle-markdown-mode",
   closeActiveFile: "teex://close-active-file",

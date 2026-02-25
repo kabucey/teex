@@ -37,6 +37,13 @@ let editorController;
 let openPathsController;
 let dragDropController;
 let appEventsController;
+const externalFileWatchState = {
+  signature: "",
+  syncPromise: null,
+  pendingSync: false,
+  recentlySavedAtByPath: new Map(),
+  handlingChangedPaths: new Set(),
+};
 
 ({
   sidebarController,
@@ -85,12 +92,15 @@ let appEventsController;
     openSingleFileFromUi,
     openFolder,
     handleOsOpenFiles,
+    handleProjectFolderChanged,
+    handleProjectFileChanged,
     toggleSidebarVisibility,
     toggleMarkdownMode,
     closeActiveFileOrWindow,
     handleRequestExportAllTabs,
     handleReceiveTransferredTabs,
     handleTabTransferResult,
+    onFileSaved,
   },
 }));
 
@@ -143,6 +153,32 @@ async function drainPendingOpenPaths() {
 
 async function handleOsOpenFiles(paths) {
   await openPathsController.handleOsOpenFiles(paths);
+}
+
+async function handleProjectFolderChanged() {
+  await fileController.refreshOpenFolderEntries();
+}
+
+async function handleProjectFileChanged(path) {
+  if (typeof path !== "string" || !path) {
+    return;
+  }
+
+  const savedAt = externalFileWatchState.recentlySavedAtByPath.get(path);
+  if (savedAt && Date.now() - savedAt < 1200) {
+    return;
+  }
+
+  if (externalFileWatchState.handlingChangedPaths.has(path)) {
+    return;
+  }
+
+  externalFileWatchState.handlingChangedPaths.add(path);
+  try {
+    await reloadExternallyChangedFile(path);
+  } finally {
+    externalFileWatchState.handlingChangedPaths.delete(path);
+  }
 }
 
 async function handleDroppedPaths(paths) {
@@ -280,10 +316,148 @@ function updateMenuState() {
 
 function render() {
   uiRenderer.render();
+  syncWatchedProjectFiles();
 }
 
 function setStatus(message, isError = false) {
   if (isError) {
     console.error(message);
+  }
+}
+
+function onFileSaved(path) {
+  if (typeof path !== "string" || !path) {
+    return;
+  }
+  externalFileWatchState.recentlySavedAtByPath.set(path, Date.now());
+  setTimeout(() => {
+    const savedAt = externalFileWatchState.recentlySavedAtByPath.get(path);
+    if (savedAt && Date.now() - savedAt >= 1200) {
+      externalFileWatchState.recentlySavedAtByPath.delete(path);
+    }
+  }, 1500);
+}
+
+function collectWatchedProjectFilePaths() {
+  const paths = new Set();
+
+  if (Array.isArray(state.openFiles) && state.openFiles.length > 0) {
+    for (const tab of state.openFiles) {
+      if (tab && typeof tab.path === "string" && tab.path) {
+        paths.add(tab.path);
+      }
+    }
+  } else if (typeof state.activePath === "string" && state.activePath) {
+    paths.add(state.activePath);
+  }
+
+  return [...paths].sort();
+}
+
+function buildWatchedProjectFileSignature(paths) {
+  return paths.join("\n");
+}
+
+function syncWatchedProjectFiles() {
+  const paths = collectWatchedProjectFilePaths();
+  const signature = buildWatchedProjectFileSignature(paths);
+
+  if (externalFileWatchState.signature === signature && !externalFileWatchState.pendingSync) {
+    return;
+  }
+
+  externalFileWatchState.signature = signature;
+
+  if (externalFileWatchState.syncPromise) {
+    externalFileWatchState.pendingSync = true;
+    return;
+  }
+
+  externalFileWatchState.syncPromise = (async () => {
+    try {
+      await invoke("watch_project_files", { paths });
+    } catch (error) {
+      setStatus(String(error), true);
+    }
+  })().finally(() => {
+    externalFileWatchState.syncPromise = null;
+    if (externalFileWatchState.pendingSync) {
+      externalFileWatchState.pendingSync = false;
+      syncWatchedProjectFiles();
+    }
+  });
+}
+
+function findOpenTabIndexByPath(path) {
+  return state.openFiles.findIndex((tab) => tab?.path === path);
+}
+
+function isActiveFileDirtyForPath(path) {
+  return state.activePath === path && state.isDirty;
+}
+
+function isOpenTabDirtyForPath(path) {
+  const index = findOpenTabIndexByPath(path);
+  if (index === -1) {
+    return false;
+  }
+  return Boolean(state.openFiles[index]?.isDirty);
+}
+
+async function reloadExternallyChangedFile(path) {
+  const hasTabs = hasTabSession();
+  const activePath = state.activePath;
+  const isActive = activePath === path;
+  const isDirty = hasTabs ? isOpenTabDirtyForPath(path) : isActiveFileDirtyForPath(path);
+
+  if (isDirty) {
+    if (isActive) {
+      const confirmed = window.confirm(
+        `\"${baseName(path)}\" changed outside Teex. Reload and discard unsaved changes?`,
+      );
+      if (!confirmed) {
+        setStatus(`External change detected for ${baseName(path)} (kept local edits)`, true);
+        return;
+      }
+    } else {
+      setStatus(`External change detected for dirty tab ${baseName(path)}`, true);
+      return;
+    }
+  }
+
+  try {
+    const payload = await invoke("read_text_file", { path });
+
+    if (hasTabs) {
+      const tabIndex = findOpenTabIndexByPath(path);
+      if (tabIndex === -1) {
+        return;
+      }
+      const tab = state.openFiles[tabIndex];
+      if (!tab) {
+        return;
+      }
+      tab.content = payload.content;
+      tab.kind = payload.kind;
+      tab.writable = payload.writable;
+      tab.isDirty = false;
+      if (payload.kind !== "markdown") {
+        tab.markdownViewMode = "edit";
+      }
+
+      if (state.activeTabIndex === tabIndex) {
+        applyFilePayload(payload, { defaultMarkdownMode: "preview" });
+      }
+    } else if (isActive) {
+      applyFilePayload(payload, { defaultMarkdownMode: "preview" });
+    } else {
+      return;
+    }
+
+    setStatus(`Reloaded ${baseName(path)} (changed outside Teex)`);
+    render();
+    updateMenuState();
+  } catch (error) {
+    setStatus(String(error), true);
   }
 }

@@ -9,6 +9,14 @@ export function buildTabFromPayload(payload) {
   };
 }
 
+async function clearProjectFolderWatch(invoke) {
+  try {
+    await invoke("clear_project_folder_watch");
+  } catch {
+    // Best-effort cleanup only.
+  }
+}
+
 export function createTabController({
   state,
   invoke,
@@ -45,6 +53,7 @@ export function createTabController({
     }
 
     if (loaded.length === 1) {
+      await clearProjectFolderWatch(invoke);
       const tab = loaded[0];
       state.mode = "file";
       state.sidebarVisible = false;
@@ -59,6 +68,7 @@ export function createTabController({
       return;
     }
 
+    await clearProjectFolderWatch(invoke);
     state.mode = "files";
     state.sidebarVisible = false;
     state.rootPath = null;
@@ -135,6 +145,7 @@ export function createTabController({
       };
       const nextTab = buildTabFromPayload(payload);
 
+      await clearProjectFolderWatch(invoke);
       state.mode = "files";
       state.sidebarVisible = false;
       state.rootPath = null;
