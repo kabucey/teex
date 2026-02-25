@@ -103,7 +103,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 });
 
 function bindElements() {
-  return bindElementsImported();
+  return bindElementsImported(el);
 }
 
 function bindUiEvents() {
