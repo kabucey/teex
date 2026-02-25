@@ -1245,6 +1245,301 @@ fn path_contains_dir(dir: &Path) -> bool {
         .unwrap_or(false)
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEST_COUNTER: AtomicUsize = AtomicUsize::new(1);
+    #[cfg(target_os = "macos")]
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    struct TempTestDir {
+        path: PathBuf,
+    }
+
+    impl TempTestDir {
+        fn new() -> Self {
+            let nanos = SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap_or_default()
+                .as_nanos();
+            let id = TEST_COUNTER.fetch_add(1, Ordering::Relaxed);
+            let path = env::temp_dir().join(format!(
+                "teex-tests-{}-{}-{}",
+                std::process::id(),
+                nanos,
+                id
+            ));
+            fs::create_dir_all(&path).expect("create temp test dir");
+            Self { path }
+        }
+
+        fn path(&self) -> &Path {
+            &self.path
+        }
+
+        fn write_text(&self, relative: &str, content: &str) -> PathBuf {
+            let path = self.path.join(relative);
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent).expect("create parent dirs");
+            }
+            fs::write(&path, content).expect("write text fixture");
+            path
+        }
+
+        fn write_bytes(&self, relative: &str, content: &[u8]) -> PathBuf {
+            let path = self.path.join(relative);
+            if let Some(parent) = path.parent() {
+                fs::create_dir_all(parent).expect("create parent dirs");
+            }
+            fs::write(&path, content).expect("write binary fixture");
+            path
+        }
+
+        fn mkdir(&self, relative: &str) -> PathBuf {
+            let path = self.path.join(relative);
+            fs::create_dir_all(&path).expect("create fixture directory");
+            path
+        }
+    }
+
+    impl Drop for TempTestDir {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.path);
+        }
+    }
+
+    #[test]
+    fn categorize_paths_prefers_single_folder_when_no_files() {
+        let temp = TempTestDir::new();
+        let folder = temp.mkdir("project");
+
+        let result = categorize_paths(vec![
+            "".to_string(),
+            "   ".to_string(),
+            temp.path().join("missing.txt").to_string_lossy().to_string(),
+            folder.to_string_lossy().to_string(),
+        ]);
+
+        assert_eq!(result.mode, "folder");
+        assert_eq!(result.path, Some(folder.to_string_lossy().to_string()));
+        assert!(result.paths.is_empty());
+    }
+
+    #[test]
+    fn categorize_paths_prefers_multiple_files_over_folders() {
+        let temp = TempTestDir::new();
+        let file_a = temp.write_text("a.md", "# A");
+        let file_b = temp.write_text("b.txt", "B");
+        let folder = temp.mkdir("folder");
+
+        let result = categorize_paths(vec![
+            folder.to_string_lossy().to_string(),
+            file_a.to_string_lossy().to_string(),
+            file_b.to_string_lossy().to_string(),
+        ]);
+
+        assert_eq!(result.mode, "files");
+        assert_eq!(result.path, None);
+        assert_eq!(
+            result.paths,
+            vec![
+                file_a.to_string_lossy().to_string(),
+                file_b.to_string_lossy().to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn categorize_paths_returns_single_file_mode_for_one_valid_file() {
+        let temp = TempTestDir::new();
+        let file = temp.write_text("note.md", "hello");
+
+        let result = categorize_paths(vec![
+            temp.path().join("missing.md").to_string_lossy().to_string(),
+            file.to_string_lossy().to_string(),
+        ]);
+
+        assert_eq!(result.mode, "file");
+        assert_eq!(result.path, Some(file.to_string_lossy().to_string()));
+        assert!(result.paths.is_empty());
+    }
+
+    #[test]
+    fn list_project_entries_filters_hidden_binary_and_build_artifacts() {
+        let temp = TempTestDir::new();
+        let root = temp.path().to_path_buf();
+
+        temp.write_text("a.md", "# root");
+        temp.write_text("nested/b.txt", "text");
+        temp.write_text("nested/c.JSON", "{}");
+        temp.write_text(".hidden.md", "skip");
+        temp.write_text(".git/ignored.md", "skip");
+        temp.write_text("node_modules/ignored.js", "skip");
+        temp.write_text("target/ignored.rs", "skip");
+        temp.write_text("dist/ignored.txt", "skip");
+        temp.write_text("build/ignored.txt", "skip");
+        temp.write_text(".config/ignored.yaml", "skip");
+        temp.write_bytes("image.png", &[0x89, b'P', b'N', b'G']);
+
+        let mut entries = list_project_entries(root.to_string_lossy().to_string())
+            .expect("list project entries should succeed");
+
+        entries.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
+
+        let rel_nested_b = Path::new("nested").join("b.txt").to_string_lossy().to_string();
+        let rel_nested_c = Path::new("nested")
+            .join("c.JSON")
+            .to_string_lossy()
+            .to_string();
+
+        let rel_paths: Vec<String> = entries.iter().map(|e| e.rel_path.clone()).collect();
+        assert_eq!(rel_paths, vec!["a.md".to_string(), rel_nested_b, rel_nested_c]);
+
+        assert!(entries.iter().all(|e| e.path.starts_with(root.to_string_lossy().as_ref())));
+    }
+
+    #[test]
+    fn list_project_entries_errors_when_root_is_not_directory() {
+        let temp = TempTestDir::new();
+        let file = temp.write_text("just-a-file.txt", "hi");
+
+        let error = list_project_entries(file.to_string_lossy().to_string()).unwrap_err();
+        assert!(error.contains("not a folder"));
+    }
+
+    #[test]
+    fn read_and_write_text_file_round_trip_preserves_content_and_kind() {
+        let temp = TempTestDir::new();
+        let file = temp.path().join("draft.md");
+        let file_string = file.to_string_lossy().to_string();
+
+        write_text_file(file_string.clone(), "# Title\n\nBody".to_string())
+            .expect("write text file should succeed");
+
+        let payload = read_text_file(file_string.clone()).expect("read text file should succeed");
+        assert_eq!(payload.path, file_string);
+        assert_eq!(payload.content, "# Title\n\nBody");
+        assert_eq!(payload.kind, "markdown");
+        assert!(payload.writable);
+    }
+
+    #[test]
+    fn read_text_file_returns_error_for_missing_or_non_utf8_files() {
+        let temp = TempTestDir::new();
+        let missing = temp.path().join("missing.txt");
+        let missing_error = read_text_file(missing.to_string_lossy().to_string()).unwrap_err();
+        assert!(missing_error.contains("not found"));
+
+        let binary = temp.write_bytes("bad.txt", &[0xFF, 0xFE, 0x00]);
+        let utf8_error = read_text_file(binary.to_string_lossy().to_string()).unwrap_err();
+        assert!(utf8_error.contains("UTF-8"));
+    }
+
+    #[test]
+    fn file_type_helpers_are_case_insensitive_for_supported_extensions() {
+        assert!(is_markdown(Path::new("README.MD")));
+        assert!(is_markdown(Path::new("notes.Markdown")));
+        assert!(!is_markdown(Path::new("notes.txt")));
+
+        assert!(is_text_like(Path::new("data.JSON")));
+        assert!(is_text_like(Path::new("script.TSX")));
+        assert!(!is_text_like(Path::new("archive.zip")));
+        assert!(!is_text_like(Path::new("no_extension")));
+
+        assert_eq!(file_kind(Path::new("post.md")), "markdown");
+        assert_eq!(file_kind(Path::new("post.txt")), "text");
+    }
+
+    #[test]
+    fn utility_helpers_build_expected_strings_and_ids() {
+        assert_eq!(window_event("teex://open", "teex-window-2"), "teex://open/teex-window-2");
+        assert_eq!(path_to_string(Path::new("/tmp/example.txt")), "/tmp/example.txt");
+
+        let a = next_transfer_request_id();
+        let b = next_transfer_request_id();
+        assert!(a.starts_with("tab-transfer-"));
+        assert!(b.starts_with("tab-transfer-"));
+        assert_ne!(a, b);
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn ensure_cli_source_path_is_stable_rejects_transient_locations() {
+        let volumes_error =
+            ensure_cli_source_path_is_stable(Path::new("/Volumes/Teex/Teex.app")).unwrap_err();
+        assert!(volumes_error.contains("mounted installer image"));
+
+        let translocation_error = ensure_cli_source_path_is_stable(Path::new(
+            "/private/var/folders/.../AppTranslocation/Teex.app/Contents/MacOS/teex",
+        ))
+        .unwrap_err();
+        assert!(translocation_error.contains("App Translocation"));
+
+        assert!(ensure_cli_source_path_is_stable(Path::new(
+            "/Applications/Teex.app/Contents/MacOS/teex"
+        ))
+        .is_ok());
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn preferred_cli_install_dir_respects_existing_path_entries() {
+        let _guard = ENV_LOCK.lock().expect("lock env");
+        let temp = TempTestDir::new();
+        let home = temp.mkdir("home");
+        let home_bin = home.join("bin");
+        let local_bin = home.join(".local").join("bin");
+        fs::create_dir_all(&home_bin).expect("create ~/bin");
+        fs::create_dir_all(&local_bin).expect("create ~/.local/bin");
+
+        let original_path = env::var_os("PATH");
+        let path_with_home_bin = env::join_paths([home_bin.clone(), PathBuf::from("/usr/bin")])
+            .expect("join PATH");
+        env::set_var("PATH", path_with_home_bin);
+        assert_eq!(preferred_cli_install_dir(&home), home_bin);
+
+        let path_with_local_bin = env::join_paths([local_bin.clone(), PathBuf::from("/usr/bin")])
+            .expect("join PATH");
+        env::set_var("PATH", path_with_local_bin);
+        assert_eq!(preferred_cli_install_dir(&home), local_bin.clone());
+
+        env::set_var("PATH", "/usr/bin");
+        assert_eq!(preferred_cli_install_dir(&home), local_bin);
+
+        match original_path {
+            Some(value) => env::set_var("PATH", value),
+            None => env::remove_var("PATH"),
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn path_contains_dir_requires_exact_path_match() {
+        let _guard = ENV_LOCK.lock().expect("lock env");
+        let temp = TempTestDir::new();
+        let home = temp.mkdir("home");
+        let home_bin = home.join("bin");
+        let sibling = home.join("bin-tools");
+        fs::create_dir_all(&home_bin).expect("create dir");
+        fs::create_dir_all(&sibling).expect("create dir");
+
+        let original_path = env::var_os("PATH");
+        let joined = env::join_paths([home_bin.clone(), PathBuf::from("/usr/bin")]).expect("PATH");
+        env::set_var("PATH", joined);
+
+        assert!(path_contains_dir(&home_bin));
+        assert!(!path_contains_dir(&sibling));
+
+        match original_path {
+            Some(value) => env::set_var("PATH", value),
+            None => env::remove_var("PATH"),
+        }
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     #[cfg(target_os = "macos")]
@@ -1341,13 +1636,15 @@ pub fn run() {
                     &PredefinedMenuItem::copy(app, None)?,
                     &PredefinedMenuItem::paste(app, None)?,
                     &PredefinedMenuItem::select_all(app, None)?,
-                    &PredefinedMenuItem::separator(app)?,
-                    &toggle_markdown_mode_item,
                 ])
                 .build()?;
 
             let view_submenu = SubmenuBuilder::new(app, "View")
-                .items(&[&toggle_sidebar_item])
+                .items(&[
+                    &toggle_sidebar_item,
+                    &PredefinedMenuItem::separator(app)?,
+                    &toggle_markdown_mode_item,
+                ])
                 .build()?;
 
             let window_submenu = SubmenuBuilder::new(app, "Window")
