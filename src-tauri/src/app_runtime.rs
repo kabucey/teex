@@ -26,6 +26,7 @@ pub(crate) fn run_app() {
             set_window_title,
             set_menu_state,
             close_current_window,
+            open_in_file_manager,
             route_tab_transfer,
             route_tab_transfer_result,
             notify_window_focused,

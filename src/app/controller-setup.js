@@ -48,6 +48,7 @@ export function setupControllers({
   sidebarController = createSidebarController({
     state,
     el,
+    baseName,
     sidebarRenderState,
     sidebarClickState,
     normalizeTransferTab: callbacks.normalizeTransferTab,

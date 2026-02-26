@@ -10,6 +10,7 @@ import { buildEntryTree, renderTreeHtml } from "./tree.js";
 export function createSidebarController({
   state,
   el,
+  baseName,
   sidebarRenderState,
   sidebarClickState,
   normalizeTransferTab,
@@ -200,14 +201,21 @@ export function createSidebarController({
 
   function renderSidebar() {
     if (state.mode !== "folder") {
-      el.projectRoot.textContent = "";
+      el.projectRootLabel.textContent = "Folder";
+      el.projectRootLabel.removeAttribute("title");
       el.projectList.innerHTML = "";
       sidebarRenderState.activePath = null;
       sidebarRenderState.treeDirty = true;
       return;
     }
 
-    el.projectRoot.textContent = state.rootPath || "";
+    const rootPath = state.rootPath || "";
+    el.projectRootLabel.textContent = rootPath ? baseName(rootPath) : "Folder";
+    if (rootPath) {
+      el.projectRootLabel.title = rootPath;
+    } else {
+      el.projectRootLabel.removeAttribute("title");
+    }
 
     if (sidebarRenderState.treeDirty) {
       const tree = buildEntryTree(state.entries);

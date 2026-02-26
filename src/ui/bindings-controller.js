@@ -6,7 +6,7 @@ export function bindElements(el) {
   el.sidebar = document.querySelector("#sidebar");
   el.sidebarResizer = document.querySelector("#sidebar-resizer");
   el.dropOverlay = document.querySelector("#drop-overlay");
-  el.projectRoot = document.querySelector("#project-root");
+  el.projectRootLabel = document.querySelector("#project-root-label");
   el.projectList = document.querySelector("#project-list");
   el.tabBar = document.querySelector("#tab-bar");
   el.emptyState = document.querySelector("#empty-state");
@@ -92,6 +92,17 @@ export function bindUiEvents({
     }
     link.setAttribute("target", "_blank");
     link.setAttribute("rel", "noreferrer noopener");
+  });
+
+  el.projectRootLabel.addEventListener("dblclick", async (event) => {
+    if (state.mode !== "folder" || !state.rootPath) {
+      return;
+    }
+
+    event.preventDefault();
+    await invoke("open_in_file_manager", { path: state.rootPath }).catch((error) => {
+      setStatus(String(error), true);
+    });
   });
 
   window.addEventListener("focus", () => {
