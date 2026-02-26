@@ -8,7 +8,7 @@ This repository is a Tauri 2 desktop app.
 - `src/sidebar/`: sidebar-specific modules (for example: controller, tree building/rendering helpers)
 - `src/app-utils.js`: shared frontend utility helpers (`baseName`, `clamp`)
 - `src/assets/`: static images/icons used by the frontend
-- `src-tauri/src/`: Rust backend (`main.rs`, `lib.rs`) and Tauri commands
+- `src-tauri/src/`: Rust backend (`main.rs`, `lib.rs`) and internal modules for Tauri commands/runtime wiring
 - `src-tauri/tauri.conf.json`: Tauri app configuration (window, bundle, frontend path)
 - `src-tauri/icons/`: bundled application icons
 - `examples/`: sample files/content for local manual testing
@@ -27,8 +27,15 @@ This repository is a Tauri 2 desktop app.
   - `src/main.js`: primary frontend app logic (UI state, tab management, drag/drop, Tauri event listeners/invokes)
   - `src/styles.css`: app styling/layout
   - `src/index.html`: app shell/DOM structure
-  - `src-tauri/src/lib.rs`: primary Rust backend logic (Tauri commands, menu/event wiring, file/folder open handling)
+  - `src-tauri/src/lib.rs`: backend entrypoint/shared state/constants and module wiring (keep small)
   - `src-tauri/src/main.rs`: Rust entrypoint/bootstrapping
+  - `src-tauri/src/app_runtime.rs`: Tauri app builder/menu/setup/run wiring
+  - `src-tauri/src/menu_events.rs`: menu event routing + window event emission helpers
+  - `src-tauri/src/launch.rs`: launch/open-path categorization and pending-open queue handling
+  - `src-tauri/src/files.rs`: project listing + text file IO commands
+  - `src-tauri/src/watchers.rs`: folder/file watcher install/clear logic
+  - `src-tauri/src/window_title.rs`: window title + macOS represented-path proxy icon handling
+  - `src-tauri/src/tests/`: Rust unit tests split by feature area (`mod.rs` + per-area files)
   - `src-tauri/tauri.conf.json`: window settings, bundle metadata, file associations
 
 ## Build, Test, and Development Commands
@@ -66,6 +73,8 @@ Prerequisites: Rust toolchain, Tauri CLI, and platform-specific Tauri/WebView bu
 - Continue the folder pattern during `src/main.js` refactors: place sidebar logic in `src/sidebar/`, UI rendering/formatting logic in `src/ui/`, and keep each module under the 200-300 line cap.
 - For large refactors, preserve behavior by splitting into small phases and running `./test.sh` after each phase.
 - Add Rust unit tests near backend logic in `src-tauri/src/` when changing file IO, path handling, or command behavior.
+- For larger Rust backends, prefer a `src-tauri/src/tests/` folder with `mod.rs` + focused test modules (`launch.rs`, `files.rs`, etc.) over a single `tests.rs`.
+- In `src-tauri/src/tests/`, do not add redundant `_tests` suffixes to filenames (use `launch.rs`, not `launch_tests.rs`).
 - Prefer small, focused tests and cover error paths (missing file, invalid folder, read/write failures).
 - When changing file-open flows or app registration behavior, manually test representative file types configured in `src-tauri/tauri.conf.json` (for example: Markdown, text, JSON, YAML, TOML, CSV, XML).
 - If the feature touches file opening/launch behavior, test multiple entry paths when supported:
