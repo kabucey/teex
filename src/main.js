@@ -71,6 +71,7 @@ const externalFileWatchState = {
   dropOverlayDragState,
   callbacks: {
     switchTab,
+    moveTab,
     closeTab,
     setStatus,
     render,
@@ -284,6 +285,10 @@ async function openFileInTabs(path) {
 
 function switchTab(index) {
   tabController.switchTab(index);
+}
+
+function moveTab(fromIndex, toIndex) {
+  tabController.moveTab(fromIndex, toIndex);
 }
 
 async function closeTab(index) {

@@ -22,11 +22,14 @@ export function createDragDropController({
           }
 
           if (dragEvent.type === "enter") {
-            dropOverlayDragState.suppressOverlay = shouldSuppressDropOverlayForSelfHover({
-              paths: extractDragDropPaths(dragEvent),
-              activePath: state.activePath,
-              rootPath: state.rootPath,
-            });
+            const paths = extractDragDropPaths(dragEvent);
+            dropOverlayDragState.suppressOverlay =
+              paths.length === 0 ||
+              shouldSuppressDropOverlayForSelfHover({
+                paths,
+                activePath: state.activePath,
+                rootPath: state.rootPath,
+              });
             if (!dropOverlayDragState.suppressOverlay) {
               setDropOverlayVisible(true);
             }
@@ -66,12 +69,14 @@ export function createDragDropController({
     const unlisteners = await Promise.all([
       listen("tauri://drag-enter", (event) => {
         const paths = extractDragDropPaths(event.payload);
-        dropOverlayDragState.suppressOverlay = shouldSuppressDropOverlayForSelfHover({
-          paths,
-          activePath: state.activePath,
-          rootPath: state.rootPath,
-        });
-        if (paths.length > 0 && !dropOverlayDragState.suppressOverlay) {
+        dropOverlayDragState.suppressOverlay =
+          paths.length === 0 ||
+          shouldSuppressDropOverlayForSelfHover({
+            paths,
+            activePath: state.activePath,
+            rootPath: state.rootPath,
+          });
+        if (!dropOverlayDragState.suppressOverlay) {
           setDropOverlayVisible(true);
         }
       }),

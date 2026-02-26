@@ -181,6 +181,27 @@ export function createTabController({
     updateMenuState();
   }
 
+  function moveTab(fromIndex, toIndex) {
+    if (fromIndex === toIndex) {
+      return;
+    }
+    const [tab] = state.openFiles.splice(fromIndex, 1);
+    state.openFiles.splice(toIndex, 0, tab);
+
+    // Keep activeTabIndex pointing at the same tab.
+    const active = state.activeTabIndex;
+    if (active === fromIndex) {
+      state.activeTabIndex = toIndex;
+    } else if (fromIndex < active && toIndex >= active) {
+      state.activeTabIndex = active - 1;
+    } else if (fromIndex > active && toIndex <= active) {
+      state.activeTabIndex = active + 1;
+    }
+
+    render();
+    updateMenuState();
+  }
+
   async function closeTab(index) {
     const tab = state.openFiles[index];
     if (!tab) {
@@ -262,6 +283,7 @@ export function createTabController({
     openFileAsTab,
     openFileInTabs,
     switchTab,
+    moveTab,
     closeTab,
     closeSingleActiveFile,
     closeActiveFileOrWindow,

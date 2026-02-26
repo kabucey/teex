@@ -317,6 +317,33 @@ body {
   color: var(--ink);
 }
 
+.tab-reordering,
+.tab-reordering * {
+  cursor: grabbing !important;
+  user-select: none !important;
+}
+
+.tab-dragging {
+  opacity: 0.4;
+}
+
+.tab-ghost {
+  position: fixed;
+  height: 36px;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.85;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.tab-drag-over-left {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.tab-drag-over-right {
+  box-shadow: inset -2px 0 0 var(--accent);
+}
+
 .empty-state {
   flex: 1;
   min-height: 0;

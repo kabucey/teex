@@ -31,6 +31,7 @@ export function setupControllers({
     invoke,
     renderSidebar: () => sidebarController.renderSidebar(),
     switchTab: callbacks.switchTab,
+    moveTab: callbacks.moveTab,
     closeTab: callbacks.closeTab,
   });
 
