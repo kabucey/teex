@@ -165,19 +165,19 @@ pub(crate) fn open_paths_in_new_window(
     app: tauri::AppHandle,
     paths: Vec<String>,
 ) -> Result<(), String> {
-    let file_paths: Vec<PathBuf> = paths
+    let open_paths: Vec<PathBuf> = paths
         .into_iter()
         .filter(|raw| !raw.trim().is_empty())
         .map(PathBuf::from)
-        .filter(|path| path.is_file())
+        .filter(|path| path.exists() && (path.is_file() || path.is_dir()))
         .collect();
 
-    if file_paths.is_empty() {
+    if open_paths.is_empty() {
         return Ok(());
     }
 
     let label = next_window_label();
-    queue_open_paths_for_window(&app, &label, &file_paths);
+    queue_open_paths_for_window(&app, &label, &open_paths);
 
     if let Err(err) = build_new_window(&app, label.clone()) {
         clear_pending_open_paths_for_window(&app, &label);

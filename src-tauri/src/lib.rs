@@ -27,6 +27,8 @@ mod app_runtime;
 mod apple_events;
 #[cfg(target_os = "macos")]
 mod cli_install;
+#[cfg(target_os = "macos")]
+mod mac_services;
 mod files;
 mod launch;
 mod menu_events;

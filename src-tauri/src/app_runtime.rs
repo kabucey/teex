@@ -42,6 +42,9 @@ pub(crate) fn run_app() {
     #[allow(unused_variables)]
     app.run(|app_handle, event| {
         #[cfg(target_os = "macos")]
+        drain_mac_service_requests(app_handle);
+
+        #[cfg(target_os = "macos")]
         {
             let paths = apple_events::take_paths();
             if !paths.is_empty() {
@@ -220,6 +223,9 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     #[cfg(target_os = "macos")]
     {
+        mac_services::install();
+        drain_mac_service_requests(app.handle());
+
         let paths = apple_events::take_paths();
         if !paths.is_empty() {
             queue_open_paths(app.handle(), &paths);
@@ -227,6 +233,32 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     Ok(())
+}
+
+#[cfg(target_os = "macos")]
+fn drain_mac_service_requests(app: &tauri::AppHandle) {
+    for request in mac_services::take_requests() {
+        handle_mac_service_request(app, request);
+    }
+}
+
+#[cfg(target_os = "macos")]
+fn handle_mac_service_request(app: &tauri::AppHandle, request: mac_services::ServiceRequest) {
+    let path = request.path;
+
+    match request.action {
+        mac_services::ServiceAction::NewFileTabHere => {
+            if let Some(window) = target_window(app) {
+                emit_to_window(app, window.label(), EVENT_OPEN_FILE_SELECTED, path_to_string(&path));
+                return;
+            }
+
+            queue_open_paths(app, &[path]);
+        }
+        mac_services::ServiceAction::NewWindowHere => {
+            let _ = open_paths_in_new_window(app.clone(), vec![path_to_string(&path)]);
+        }
+    }
 }
 
 fn handle_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
