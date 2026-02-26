@@ -117,6 +117,10 @@ export function snapshotActiveFileAsTransferTab(state) {
     writable: true,
     isDirty: state.isDirty,
     markdownViewMode: state.markdownViewMode,
+    scrollState: {
+      editorScrollTop: Number.isFinite(state.activeEditorScrollTop) ? state.activeEditorScrollTop : 0,
+      previewScrollTop: Number.isFinite(state.activePreviewScrollTop) ? state.activePreviewScrollTop : 0,
+    },
   });
 }
 

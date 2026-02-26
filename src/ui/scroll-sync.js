@@ -18,19 +18,6 @@ import {
   normalizeSearchText,
   sourceIndexToLineNumber,
 } from "./scroll-text-anchor.js";
-import { createScrollDebugReporter } from "./scroll-debug.js";
-
-export {
-  computeEditorScrollTopFromSourceLine,
-  computePreviewScrollTopFromSourceLine,
-  findPreviewBlockBySnippet,
-  findSourceIndexBySnippet,
-  findSourceLineBySnippet,
-  getScrollRatio,
-  normalizeSearchText,
-  scrollTopFromRatio,
-  sourceIndexToLineNumber,
-};
 
 function isNonTabFileMemoryMode(state) {
   return !Array.isArray(state.openFiles) || state.openFiles.length === 0;
@@ -40,7 +27,26 @@ export function createScrollSyncController({ state, el }) {
   let pendingToggleAnchor = null;
   let restoreFrame = 0;
   let suppressNextNonTabRemember = false;
-  const debug = createScrollDebugReporter({ state });
+  const scrollCaptureGate = {
+    blocked: false,
+    reason: null,
+  };
+
+  function blockScrollCapture(reason) {
+    scrollCaptureGate.blocked = true;
+    scrollCaptureGate.reason = reason;
+  }
+
+  function unblockScrollCapture(reason = null) {
+    if (!scrollCaptureGate.blocked) {
+      return;
+    }
+    if (reason && scrollCaptureGate.reason && scrollCaptureGate.reason !== reason) {
+      return;
+    }
+    scrollCaptureGate.blocked = false;
+    scrollCaptureGate.reason = null;
+  }
 
   function setEditorScrollTop(value) {
     state.activeEditorScrollTop = Math.max(0, Number.isFinite(value) ? value : 0);
@@ -73,10 +79,12 @@ export function createScrollSyncController({ state, el }) {
 
   function beforeContextReplace() {
     suppressNextNonTabRemember = true;
+    blockScrollCapture("context-switch");
     clearFileScrollMemory();
   }
 
   function beforeApplyFilePayload() {
+    blockScrollCapture("file-payload-switch");
     if (!hasTabSessionLike() && !suppressNextNonTabRemember) {
       rememberActiveFileScroll();
     }
@@ -91,6 +99,7 @@ export function createScrollSyncController({ state, el }) {
 
   function afterContextCleared() {
     suppressNextNonTabRemember = false;
+    unblockScrollCapture();
     clearFileScrollMemory();
   }
 
@@ -102,12 +111,18 @@ export function createScrollSyncController({ state, el }) {
     if (!el.editor) {
       return;
     }
+    if (scrollCaptureGate.blocked) {
+      return;
+    }
     setEditorScrollTop(el.editor.scrollTop);
     rememberActiveFileScroll();
   }
 
   function onPreviewScroll() {
     if (!el.preview) {
+      return;
+    }
+    if (scrollCaptureGate.blocked) {
       return;
     }
     setPreviewScrollTop(el.preview.scrollTop);
@@ -127,15 +142,6 @@ export function createScrollSyncController({ state, el }) {
         textSnippet: getPreviewTopTextSnippet(el.preview),
         sourceScrollTop: el.preview?.scrollTop || 0,
       };
-      debug.recordToggleDebug({
-        phase: "capture",
-        fromMode: "preview",
-        textSnippet: pendingToggleAnchor.textSnippet,
-        sourceLine: pendingToggleAnchor.sourceLine,
-        lineFraction: pendingToggleAnchor.lineFraction,
-        ratio: pendingToggleAnchor.ratio,
-        sourceScrollTop: pendingToggleAnchor.sourceScrollTop,
-      });
       return;
     }
 
@@ -155,65 +161,50 @@ export function createScrollSyncController({ state, el }) {
       }),
       sourceScrollTop: editorScrollTop,
     };
-    debug.recordToggleDebug({
-      phase: "capture",
-      fromMode: "edit",
-      textSnippet: pendingToggleAnchor.textSnippet,
-      sourceLine: pendingToggleAnchor.sourceLine,
-      lineFraction: pendingToggleAnchor.lineFraction,
-      ratio: pendingToggleAnchor.ratio,
-      sourceScrollTop: pendingToggleAnchor.sourceScrollTop,
-    });
   }
 
-  function applyPendingToggleAlignment() {
-    if (!pendingToggleAnchor || state.activeKind !== "markdown") {
-      return null;
-    }
-
-    const anchor = pendingToggleAnchor;
-    pendingToggleAnchor = null;
-
-    if (state.markdownViewMode === "preview") {
-      const blocks = getPreviewBlocks(el.preview);
-      const maxScrollTop = getMaxScrollTop(el.preview);
-      const textMatchedBlock = findPreviewBlockBySnippet(blocks, anchor.textSnippet);
-      if (textMatchedBlock) {
-        const target = clamp(textMatchedBlock.top, 0, maxScrollTop);
-        setPreviewScrollTop(target);
-        return {
-          phase: "apply",
-          toMode: "preview",
-          method: "snippet-preview-block",
-          textSnippet: anchor.textSnippet,
-          found: true,
-          matchedText: textMatchedBlock.text || textMatchedBlock.node?.textContent || "",
-          matchedTop: textMatchedBlock.top,
-          targetScrollTop: target,
-          fallbackRatio: anchor.ratio,
-        };
-      }
-      const target = computePreviewScrollTopFromSourceLine({
-        blocks,
-        sourceLine: anchor.sourceLine,
-        lineFraction: anchor.lineFraction,
-        fallbackRatio: anchor.ratio,
-        maxScrollTop,
-      });
+  function alignPreviewToEditAnchor(anchor) {
+    const blocks = getPreviewBlocks(el.preview);
+    const maxScrollTop = getMaxScrollTop(el.preview);
+    const textMatchedBlock = findPreviewBlockBySnippet(blocks, anchor.textSnippet);
+    if (textMatchedBlock) {
+      const target = clamp(textMatchedBlock.top, 0, maxScrollTop);
       setPreviewScrollTop(target);
       return {
         phase: "apply",
         toMode: "preview",
-        method: "source-line-fallback",
+        method: "snippet-preview-block",
         textSnippet: anchor.textSnippet,
-        found: false,
-        sourceLine: anchor.sourceLine,
-        lineFraction: anchor.lineFraction,
+        found: true,
+        matchedText: textMatchedBlock.text || textMatchedBlock.node?.textContent || "",
+        matchedTop: textMatchedBlock.top,
         targetScrollTop: target,
         fallbackRatio: anchor.ratio,
       };
     }
 
+    const target = computePreviewScrollTopFromSourceLine({
+      blocks,
+      sourceLine: anchor.sourceLine,
+      lineFraction: anchor.lineFraction,
+      fallbackRatio: anchor.ratio,
+      maxScrollTop,
+    });
+    setPreviewScrollTop(target);
+    return {
+      phase: "apply",
+      toMode: "preview",
+      method: "source-line-fallback",
+      textSnippet: anchor.textSnippet,
+      found: false,
+      sourceLine: anchor.sourceLine,
+      lineFraction: anchor.lineFraction,
+      targetScrollTop: target,
+      fallbackRatio: anchor.ratio,
+    };
+  }
+
+  function alignEditToPreviewAnchor(anchor) {
     const maxScrollTop = getMaxScrollTop(el.editor);
     const lineHeight = getEditorLineHeight(el.editor);
     const rawMatchedIndex = findSourceIndexBySnippet(state.content, anchor.textSnippet);
@@ -289,10 +280,25 @@ export function createScrollSyncController({ state, el }) {
     };
   }
 
-  function restoreVisiblePaneScroll() {
+  function applyPendingToggleAlignment() {
+    if (!pendingToggleAnchor || state.activeKind !== "markdown") {
+      return null;
+    }
+
+    const anchor = pendingToggleAnchor;
+    pendingToggleAnchor = null;
+
+    if (state.markdownViewMode === "preview") {
+      return alignPreviewToEditAnchor(anchor);
+    }
+    return alignEditToPreviewAnchor(anchor);
+  }
+
+  function scheduleRestoreAfterRender() {
     if (!state.activePath) {
       return;
     }
+    blockScrollCapture("render-restore");
 
     const apply = () => {
       if (state.activeKind === "markdown" && state.markdownViewMode === "preview" && el.preview) {
@@ -310,22 +316,11 @@ export function createScrollSyncController({ state, el }) {
     }
     restoreFrame = requestAnimationFrame(() => {
       restoreFrame = 0;
-      const decision = applyPendingToggleAlignment();
+      applyPendingToggleAlignment();
       apply();
-      if (decision) {
-        const actualScrollTop = state.activeKind === "markdown" && state.markdownViewMode === "preview"
-          ? (el.preview?.scrollTop || 0)
-          : (el.editor?.scrollTop || 0);
-        debug.recordToggleDebug({
-          ...decision,
-          actualScrollTop,
-          scrollDelta: Math.round(actualScrollTop - (decision.targetScrollTop || 0)),
-        });
-      }
+      unblockScrollCapture("render-restore");
     });
   }
-
-  debug.installApi();
 
   return {
     onEditorScroll,
@@ -338,7 +333,9 @@ export function createScrollSyncController({ state, el }) {
     afterApplyFilePayload,
     afterContextCleared,
     captureMarkdownToggleAnchor,
-    restoreVisiblePaneScroll,
-    afterRender: restoreVisiblePaneScroll,
+    beforeRenderRestore: () => blockScrollCapture("render-restore"),
+    scheduleRestoreAfterRender,
+    restoreVisiblePaneScroll: scheduleRestoreAfterRender,
+    afterRender: scheduleRestoreAfterRender,
   };
 }

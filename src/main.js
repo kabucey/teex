@@ -340,7 +340,7 @@ function updateMenuState() {
 
 function render() {
   uiRenderer.render();
-  scrollSyncController?.afterRender();
+  scrollSyncController?.scheduleRestoreAfterRender();
   syncWatchedProjectFiles();
 }
 

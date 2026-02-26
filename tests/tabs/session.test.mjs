@@ -164,6 +164,8 @@ test("snapshot helpers return none/single/tabs payloads", () => {
     content: "# One",
     isDirty: true,
     markdownViewMode: "edit",
+    activeEditorScrollTop: 222,
+    activePreviewScrollTop: 444,
   });
   assert.equal(hasTabSession(single), false);
   assert.deepEqual(snapshotActiveFileAsTransferTab(single), {
@@ -174,8 +176,8 @@ test("snapshot helpers return none/single/tabs payloads", () => {
     isDirty: true,
     markdownViewMode: "edit",
     scrollState: {
-      editorScrollTop: 0,
-      previewScrollTop: 0,
+      editorScrollTop: 222,
+      previewScrollTop: 444,
     },
   });
   assert.deepEqual(snapshotAllOpenTabsForTransfer(single), {
