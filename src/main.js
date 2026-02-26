@@ -15,6 +15,7 @@ import {
 } from "./tabs/session.js";
 import { setupControllers } from "./app/controller-setup.js";
 import { createRuntimeState, EVENTS } from "./app/runtime-state.js";
+import { createScrollSyncController } from "./ui/scroll-sync.js";
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -37,6 +38,7 @@ let editorController;
 let openPathsController;
 let dragDropController;
 let appEventsController;
+let scrollSyncController;
 const externalFileWatchState = {
   signature: "",
   syncPromise: null,
@@ -101,11 +103,14 @@ const externalFileWatchState = {
     handleReceiveTransferredTabs,
     handleTabTransferResult,
     onFileSaved,
+    onBeforeToggleMarkdownMode,
+    onAfterToggleMarkdownMode,
   },
 }));
 
 window.addEventListener("DOMContentLoaded", async () => {
   bindElements();
+  scrollSyncController = createScrollSyncController({ state, el });
   bindUiEvents();
   await bindAppEvents();
   await bootstrap();
@@ -128,6 +133,8 @@ function bindUiEvents() {
     saveNow,
     hasTabSession,
     switchTab,
+    onEditorScroll: () => scrollSyncController?.onEditorScroll(),
+    onPreviewScroll: () => scrollSyncController?.onPreviewScroll(),
   });
 }
 
@@ -199,6 +206,7 @@ function startPendingOpenPathPoller() {
 }
 
 async function openFile(path) {
+  scrollSyncController?.beforeContextReplace();
   await fileController.openFile(path);
 }
 
@@ -207,6 +215,7 @@ async function openSingleFileFromUi(path) {
 }
 
 async function openFolder(path) {
+  scrollSyncController?.beforeContextReplace();
   await fileController.openFolder(path);
 }
 
@@ -219,7 +228,9 @@ async function openFolderEntryInTabs(path) {
 }
 
 function applyFilePayload(payload, options) {
+  scrollSyncController?.beforeApplyFilePayload();
   applyFilePayloadToState(state, payload, options);
+  scrollSyncController?.afterApplyFilePayload(payload.path);
 }
 
 function clearActiveFile() {
@@ -259,6 +270,7 @@ async function handleTabTransferResult(payload) {
 }
 
 async function openMultipleFiles(paths) {
+  scrollSyncController?.beforeContextReplace();
   await tabController.openMultipleFiles(paths);
 }
 
@@ -276,10 +288,14 @@ function switchTab(index) {
 
 async function closeTab(index) {
   await tabController.closeTab(index);
+  if (!state.activePath) {
+    scrollSyncController?.afterContextCleared();
+  }
 }
 
 async function closeSingleActiveFile() {
   await tabController.closeSingleActiveFile();
+  scrollSyncController?.afterContextCleared();
 }
 
 async function closeActiveFileOrWindow() {
@@ -288,6 +304,14 @@ async function closeActiveFileOrWindow() {
 
 function toggleMarkdownMode() {
   editorController.toggleMarkdownMode();
+}
+
+function onBeforeToggleMarkdownMode() {
+  scrollSyncController?.captureMarkdownToggleAnchor();
+}
+
+function onAfterToggleMarkdownMode() {
+  // post-render scroll restoration is centralized in render()
 }
 
 function toggleSidebarVisibility() {
@@ -316,6 +340,7 @@ function updateMenuState() {
 
 function render() {
   uiRenderer.render();
+  scrollSyncController?.afterRender();
   syncWatchedProjectFiles();
 }
 

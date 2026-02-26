@@ -18,6 +18,10 @@ test("buildTabFromPayload initializes clean tab state and markdown mode", () => 
       writable: true,
       isDirty: false,
       markdownViewMode: "preview",
+      scrollState: {
+        editorScrollTop: 0,
+        previewScrollTop: 0,
+      },
     },
   );
 
@@ -35,6 +39,10 @@ test("buildTabFromPayload initializes clean tab state and markdown mode", () => 
       writable: false,
       isDirty: false,
       markdownViewMode: "edit",
+      scrollState: {
+        editorScrollTop: 0,
+        previewScrollTop: 0,
+      },
     },
   );
 });

@@ -21,6 +21,9 @@ function makeState(overrides = {}) {
     content: "",
     isDirty: false,
     markdownViewMode: "preview",
+    activeEditorScrollTop: 0,
+    activePreviewScrollTop: 0,
+    activeMarkdownScrollAnchor: null,
     saveTimer: null,
     ...overrides,
   };
@@ -46,6 +49,10 @@ test("normalizeTransferTab sanitizes invalid and partial tab records", () => {
       writable: false,
       isDirty: true,
       markdownViewMode: "edit",
+      scrollState: {
+        editorScrollTop: 0,
+        previewScrollTop: 0,
+      },
     },
   );
 
@@ -58,6 +65,10 @@ test("normalizeTransferTab sanitizes invalid and partial tab records", () => {
       writable: true,
       isDirty: false,
       markdownViewMode: "edit",
+      scrollState: {
+        editorScrollTop: 0,
+        previewScrollTop: 0,
+      },
     },
   );
 });
@@ -77,6 +88,8 @@ test("apply/clear file payload updates active state and markdown mode", () => {
   assert.equal(state.activePath, "/a.md");
   assert.equal(state.markdownViewMode, "edit");
   assert.equal(state.isDirty, false);
+  assert.equal(state.activeEditorScrollTop, 0);
+  assert.equal(state.activePreviewScrollTop, 0);
   assert.equal(state.saveTimer, null);
 
   applyFilePayloadToState(state, {
@@ -92,23 +105,36 @@ test("apply/clear file payload updates active state and markdown mode", () => {
   assert.equal(state.activeKind, null);
   assert.equal(state.content, "");
   assert.equal(state.markdownViewMode, "preview");
+  assert.equal(state.activeEditorScrollTop, 0);
+  assert.equal(state.activePreviewScrollTop, 0);
   assert.equal(state.saveTimer, null);
 });
 
 test("flush/sync active tab mirror state and tabs", () => {
   const state = makeState({
-    openFiles: [{ path: "/a.md", kind: "markdown", content: "old", isDirty: false, markdownViewMode: "preview" }],
+    openFiles: [{
+      path: "/a.md",
+      kind: "markdown",
+      content: "old",
+      isDirty: false,
+      markdownViewMode: "preview",
+      scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+    }],
     activePath: "/a.md",
     activeKind: "markdown",
     content: "new",
     isDirty: true,
     markdownViewMode: "edit",
+    activeEditorScrollTop: 120,
+    activePreviewScrollTop: 340,
   });
 
   flushStateToActiveTabInState(state);
   assert.equal(state.openFiles[0].content, "new");
   assert.equal(state.openFiles[0].isDirty, true);
   assert.equal(state.openFiles[0].markdownViewMode, "edit");
+  assert.equal(state.openFiles[0].scrollState.editorScrollTop, 120);
+  assert.equal(state.openFiles[0].scrollState.previewScrollTop, 340);
 
   state.content = "";
   state.isDirty = false;
@@ -118,6 +144,8 @@ test("flush/sync active tab mirror state and tabs", () => {
   assert.equal(state.content, "new");
   assert.equal(state.isDirty, true);
   assert.equal(state.markdownViewMode, "edit");
+  assert.equal(state.activeEditorScrollTop, 120);
+  assert.equal(state.activePreviewScrollTop, 340);
   assert.equal(state.saveTimer, null);
 });
 
@@ -145,6 +173,10 @@ test("snapshot helpers return none/single/tabs payloads", () => {
     writable: true,
     isDirty: true,
     markdownViewMode: "edit",
+    scrollState: {
+      editorScrollTop: 0,
+      previewScrollTop: 0,
+    },
   });
   assert.deepEqual(snapshotAllOpenTabsForTransfer(single), {
     kind: "single",
@@ -155,7 +187,14 @@ test("snapshot helpers return none/single/tabs payloads", () => {
   const tabs = makeState({
     openFiles: [
       { path: "/a.md", kind: "markdown", content: "A", isDirty: false, markdownViewMode: "preview" },
-      { path: "/b.txt", kind: "text", content: "B", isDirty: false, markdownViewMode: "edit" },
+      {
+        path: "/b.txt",
+        kind: "text",
+        content: "B",
+        isDirty: false,
+        markdownViewMode: "edit",
+        scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+      },
     ],
     activeTabIndex: 1,
     activePath: "/b.txt",
@@ -168,5 +207,9 @@ test("snapshot helpers return none/single/tabs payloads", () => {
   assert.equal(snapshot.kind, "tabs");
   assert.equal(snapshot.tabs.length, 2);
   assert.equal(snapshot.tabs[1].content, "B2");
+  assert.deepEqual(snapshot.tabs[1].scrollState, {
+    editorScrollTop: 0,
+    previewScrollTop: 0,
+  });
   assert.equal(snapshot.singlePath, null);
 });

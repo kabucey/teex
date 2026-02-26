@@ -6,6 +6,10 @@ export function buildTabFromPayload(payload) {
     writable: payload.writable,
     isDirty: false,
     markdownViewMode: payload.kind === "markdown" ? "preview" : "edit",
+    scrollState: {
+      editorScrollTop: 0,
+      previewScrollTop: 0,
+    },
   };
 }
 
@@ -142,6 +146,10 @@ export function createTabController({
         writable: true,
         isDirty: state.isDirty,
         markdownViewMode: state.markdownViewMode,
+        scrollState: {
+          editorScrollTop: state.activeEditorScrollTop,
+          previewScrollTop: state.activePreviewScrollTop,
+        },
       };
       const nextTab = buildTabFromPayload(payload);
 

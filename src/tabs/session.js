@@ -10,6 +10,9 @@ export function applyFilePayloadToState(state, payload, options) {
   state.activeKind = payload.kind;
   state.content = payload.content;
   state.isDirty = false;
+  state.activeEditorScrollTop = 0;
+  state.activePreviewScrollTop = 0;
+  state.activeMarkdownScrollAnchor = null;
   clearTimeout(state.saveTimer);
   state.saveTimer = null;
 
@@ -27,6 +30,9 @@ export function clearActiveFileInState(state) {
   state.content = "";
   state.isDirty = false;
   state.markdownViewMode = "preview";
+  state.activeEditorScrollTop = 0;
+  state.activePreviewScrollTop = 0;
+  state.activeMarkdownScrollAnchor = null;
   clearTimeout(state.saveTimer);
   state.saveTimer = null;
 }
@@ -42,6 +48,10 @@ export function flushStateToActiveTabInState(state) {
   tab.content = state.content;
   tab.isDirty = state.isDirty;
   tab.markdownViewMode = state.markdownViewMode;
+  tab.scrollState = {
+    editorScrollTop: Number.isFinite(state.activeEditorScrollTop) ? state.activeEditorScrollTop : 0,
+    previewScrollTop: Number.isFinite(state.activePreviewScrollTop) ? state.activePreviewScrollTop : 0,
+  };
 }
 
 export function syncActiveTabToStateFromTabs(state) {
@@ -57,6 +67,13 @@ export function syncActiveTabToStateFromTabs(state) {
   state.content = tab.content;
   state.isDirty = tab.isDirty;
   state.markdownViewMode = tab.markdownViewMode;
+  state.activeEditorScrollTop = Number.isFinite(tab.scrollState?.editorScrollTop)
+    ? tab.scrollState.editorScrollTop
+    : 0;
+  state.activePreviewScrollTop = Number.isFinite(tab.scrollState?.previewScrollTop)
+    ? tab.scrollState.previewScrollTop
+    : 0;
+  state.activeMarkdownScrollAnchor = null;
   clearTimeout(state.saveTimer);
   state.saveTimer = null;
 }
@@ -77,6 +94,14 @@ export function normalizeTransferTab(rawTab) {
       kind === "markdown" && rawTab.markdownViewMode === "edit"
         ? "edit"
         : (kind === "markdown" ? "preview" : "edit"),
+    scrollState: {
+      editorScrollTop: Number.isFinite(rawTab.scrollState?.editorScrollTop)
+        ? rawTab.scrollState.editorScrollTop
+        : 0,
+      previewScrollTop: Number.isFinite(rawTab.scrollState?.previewScrollTop)
+        ? rawTab.scrollState.previewScrollTop
+        : 0,
+    },
   };
 }
 

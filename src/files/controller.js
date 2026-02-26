@@ -226,6 +226,10 @@ export function createFileController({
       writable: true,
       isDirty: state.isDirty,
       markdownViewMode: state.markdownViewMode,
+      scrollState: {
+        editorScrollTop: state.activeEditorScrollTop || 0,
+        previewScrollTop: state.activePreviewScrollTop || 0,
+      },
     }];
     state.activeTabIndex = 0;
 

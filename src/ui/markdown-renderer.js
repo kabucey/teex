@@ -11,6 +11,13 @@ function escapeAttr(value) {
   return escapeHtml(value);
 }
 
+function withSourceRange(html, startLine, endLine) {
+  return html.replace(
+    /^<([a-zA-Z0-9]+)/,
+    `<$1 data-src-line-start="${startLine}" data-src-line-end="${endLine}"`,
+  );
+}
+
 function isTableStart(lines, index) {
   if (index + 1 >= lines.length) {
     return false;
@@ -59,6 +66,7 @@ export function renderMarkdown(markdown) {
 
   while (i < lines.length) {
     const line = lines[i];
+    const blockStartLine = i + 1;
 
     if (!line.trim()) {
       i += 1;
@@ -75,20 +83,28 @@ export function renderMarkdown(markdown) {
         i += 1;
       }
       i += 1;
-      blocks.push(`<pre><code class="language-${escapeAttr(lang)}">${escapeHtml(code.join("\n"))}</code></pre>`);
+      blocks.push(withSourceRange(
+        `<pre><code class="language-${escapeAttr(lang)}">${escapeHtml(code.join("\n"))}</code></pre>`,
+        blockStartLine,
+        i,
+      ));
       continue;
     }
 
     const heading = line.match(/^(#{1,6})\s+(.+)$/);
     if (heading) {
       const level = heading[1].length;
-      blocks.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
+      blocks.push(withSourceRange(
+        `<h${level}>${renderInline(heading[2])}</h${level}>`,
+        blockStartLine,
+        blockStartLine,
+      ));
       i += 1;
       continue;
     }
 
     if (/^\s*([-*_])\1{2,}\s*$/.test(line)) {
-      blocks.push("<hr />");
+      blocks.push(withSourceRange("<hr />", blockStartLine, blockStartLine));
       i += 1;
       continue;
     }
@@ -99,7 +115,11 @@ export function renderMarkdown(markdown) {
         quote.push(lines[i].slice(2));
         i += 1;
       }
-      blocks.push(`<blockquote>${quote.map((q) => `<p>${renderInline(q)}</p>`).join("")}</blockquote>`);
+      blocks.push(withSourceRange(
+        `<blockquote>${quote.map((q) => `<p>${renderInline(q)}</p>`).join("")}</blockquote>`,
+        blockStartLine,
+        i,
+      ));
       continue;
     }
 
@@ -116,7 +136,7 @@ export function renderMarkdown(markdown) {
       const tbody = `<tbody>${body
         .map((row) => `<tr>${row.map((cell) => `<td>${renderInline(cell)}</td>`).join("")}</tr>`)
         .join("")}</tbody>`;
-      blocks.push(`<table>${thead}${tbody}</table>`);
+      blocks.push(withSourceRange(`<table>${thead}${tbody}</table>`, blockStartLine, i));
       continue;
     }
 
@@ -138,7 +158,7 @@ export function renderMarkdown(markdown) {
         i += 1;
       }
 
-      blocks.push(`<${tag}>${items.join("")}</${tag}>`);
+      blocks.push(withSourceRange(`<${tag}>${items.join("")}</${tag}>`, blockStartLine, i));
       continue;
     }
 
@@ -147,7 +167,7 @@ export function renderMarkdown(markdown) {
       paragraph.push(lines[i].trim());
       i += 1;
     }
-    blocks.push(`<p>${renderInline(paragraph.join(" "))}</p>`);
+    blocks.push(withSourceRange(`<p>${renderInline(paragraph.join(" "))}</p>`, blockStartLine, i));
   }
 
   return blocks.join("\n");

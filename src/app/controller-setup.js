@@ -41,6 +41,8 @@ export function setupControllers({
     render: callbacks.render,
     hasTabSession: callbacks.hasTabSession,
     onFileSaved: callbacks.onFileSaved,
+    onBeforeToggleMarkdownMode: callbacks.onBeforeToggleMarkdownMode,
+    onAfterToggleMarkdownMode: callbacks.onAfterToggleMarkdownMode,
   });
 
   sidebarController = createSidebarController({

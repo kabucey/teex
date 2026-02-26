@@ -24,6 +24,8 @@ export function createEditorController({
   render,
   hasTabSession,
   onFileSaved = null,
+  onBeforeToggleMarkdownMode = null,
+  onAfterToggleMarkdownMode = null,
 }) {
   function updateMenuState() {
     invoke("set_menu_state", {
@@ -38,8 +40,14 @@ export function createEditorController({
       return;
     }
 
+    if (typeof onBeforeToggleMarkdownMode === "function") {
+      onBeforeToggleMarkdownMode();
+    }
     state.markdownViewMode = state.markdownViewMode === "preview" ? "edit" : "preview";
     render();
+    if (typeof onAfterToggleMarkdownMode === "function") {
+      onAfterToggleMarkdownMode();
+    }
     updateMenuState();
     setStatus(state.markdownViewMode === "preview" ? "Markdown preview" : "Markdown source edit");
   }

@@ -26,6 +26,8 @@ export function bindUiEvents({
   saveNow,
   hasTabSession,
   switchTab,
+  onEditorScroll,
+  onPreviewScroll,
 }) {
   window.addEventListener("dragover", (event) => {
     if (hasFileDragData(event)) {
@@ -44,6 +46,18 @@ export function bindUiEvents({
     state.isDirty = true;
     setStatus("Saving...");
     scheduleAutosave();
+  });
+
+  el.editor.addEventListener("scroll", () => {
+    if (typeof onEditorScroll === "function") {
+      onEditorScroll();
+    }
+  });
+
+  el.preview.addEventListener("scroll", () => {
+    if (typeof onPreviewScroll === "function") {
+      onPreviewScroll();
+    }
   });
 
   document.addEventListener("keydown", async (event) => {
