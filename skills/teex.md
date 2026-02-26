@@ -15,7 +15,10 @@ Use teex when you want the user to:
 
 - When creating a plan/spec/proposal for user review, save it as Markdown and open it in teex before asking for feedback.
 - When a Markdown file is user-facing (plan, draft, report, notes, docs), use teex for preview/review instead of chat-only rendering.
+- In Codex plan/spec workflows, do **not** move on to implementation after writing the Markdown plan. Open it in teex first and ask the user to review.
 - Use tabs when showing multiple related files in one review pass.
+- If there are multiple files to review, open all of them in one CLI call (for example `teex plan.md notes.md`) so they appear as tabs in one window.
+- Use the default CLI behavior (no `--wait`) when opening files for review so `teex` launches and the command exits immediately.
 - After opening teex, tell the user which file(s) to review and continue the conversation in chat.
 - Only skip teex if higher-priority instructions forbid file creation/opening or the user explicitly asks for inline chat-only output.
 
@@ -41,7 +44,7 @@ teex install-skill
 ## Workflow
 
 1. Create or modify files on disk
-2. Run `teex file1.md file2.md` — a window opens with tabs
+2. Run `teex file1.md file2.md` (without `--wait`) — a window opens with tabs and the command returns immediately
 3. Tell the user to review and edit in teex
 4. Continue the conversation; teex auto-saves changes to disk
 5. Re-read the files from disk to see any edits the user made
@@ -49,9 +52,10 @@ teex install-skill
 For plan/spec review:
 
 1. Generate a plan/spec as Markdown on disk
-2. Run `teex path/to/plan.md` (or multiple files for tabbed review)
-3. Ask the user to review in teex
+2. Run `teex path/to/plan.md` (or `teex plan.md notes.md` for tabbed review) and let the command return immediately
+3. Ask the user to review in teex instead of starting implementation
 4. Re-read the file(s) and incorporate edits/comments
+5. Only implement after the user approves or asks you to proceed
 
 ## Key behaviors
 
@@ -77,6 +81,8 @@ For plan review:
 teex plan.md
 teex proposed_plan.md implementation_notes.md
 ```
+
+Do not use `teex --wait ...` for normal review flows unless the user specifically wants the terminal to block until teex closes.
 
 ## Install the skill
 
