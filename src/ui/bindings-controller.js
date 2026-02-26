@@ -1,5 +1,6 @@
 import { clamp } from "../app-utils.js";
 import { hasFileDragData } from "../path-input.js";
+import { renderMarkdown } from "./markdown-renderer.js";
 
 export function bindElements(el) {
   el.workspace = document.querySelector("#workspace");
@@ -86,6 +87,27 @@ export function bindUiEvents({
   });
 
   el.preview.addEventListener("click", (event) => {
+    const checkbox = event.target.closest('input[type="checkbox"][data-src-line]');
+    if (checkbox) {
+      const srcLine = parseInt(checkbox.dataset.srcLine, 10);
+      const lines = state.content.split("\n");
+      const lineIndex = srcLine - 1;
+      if (lineIndex >= 0 && lineIndex < lines.length) {
+        const line = lines[lineIndex];
+        if (/\[ \]/.test(line)) {
+          lines[lineIndex] = line.replace("[ ]", "[x]");
+        } else if (/\[[xX]\]/.test(line)) {
+          lines[lineIndex] = line.replace(/\[[xX]\]/, "[ ]");
+        }
+        state.content = lines.join("\n");
+        state.isDirty = true;
+        setStatus("Saving...");
+        scheduleAutosave();
+        el.preview.innerHTML = renderMarkdown(state.content);
+      }
+      return;
+    }
+
     const link = event.target.closest("a[href]");
     if (!link) {
       return;

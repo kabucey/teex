@@ -146,11 +146,12 @@ export function renderMarkdown(markdown) {
       const items = [];
 
       while (i < lines.length && /^\s*([-*+]\s+|\d+\.\s+)/.test(lines[i])) {
+        const srcLine = i + 1;
         let itemText = lines[i].replace(/^\s*([-*+]\s+|\d+\.\s+)/, "");
         const task = itemText.match(/^\[( |x|X)\]\s+(.*)$/);
         if (task) {
           const checked = task[1].toLowerCase() === "x";
-          itemText = `<input type="checkbox" disabled ${checked ? "checked" : ""} /> ${renderInline(task[2])}`;
+          itemText = `<input type="checkbox" data-src-line="${srcLine}" ${checked ? "checked" : ""} /> ${renderInline(task[2])}`;
         } else {
           itemText = renderInline(itemText);
         }

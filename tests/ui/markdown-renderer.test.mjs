@@ -20,8 +20,8 @@ test("renders fenced code blocks and task lists", () => {
   const html = renderMarkdown("```js\nconst x = 1;\n```\n\n- [x] done\n- [ ] todo");
   assert.match(html, /<pre[^>]*><code class="language-js">const x = 1;/);
   assert.match(html, /<pre data-src-line-start="1" data-src-line-end="3">/);
-  assert.match(html, /type="checkbox" disabled checked/);
-  assert.match(html, /type="checkbox" disabled  \/>|type="checkbox" disabled \/>/);
+  assert.match(html, /type="checkbox" data-src-line="5" checked/);
+  assert.match(html, /type="checkbox" data-src-line="6"  \/>|type="checkbox" data-src-line="6" \/>/);
 });
 
 test("renders tables and blockquotes", () => {
