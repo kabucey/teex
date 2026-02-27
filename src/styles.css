@@ -497,6 +497,66 @@ body {
   color: var(--subtle);
 }
 
+.close-dirty-dialog {
+  width: min(460px, calc(100vw - 32px));
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.close-dirty-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.close-dirty-dialog-body {
+  padding: 16px 16px 14px;
+}
+
+.close-dirty-dialog-body h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.close-dirty-dialog-body p {
+  margin: 8px 0 0;
+  color: color-mix(in oklab, var(--subtle) 92%, transparent);
+  font-size: 13px;
+}
+
+.close-dirty-dialog-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.close-dirty-btn {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.close-dirty-btn:hover {
+  background: color-mix(in oklab, var(--line) 55%, transparent);
+}
+
+.close-dirty-btn-primary {
+  border-color: color-mix(in oklab, var(--accent) 65%, var(--line));
+  background: color-mix(in oklab, var(--accent) 26%, transparent);
+}
+
+.close-dirty-btn-primary:hover {
+  background: color-mix(in oklab, var(--accent) 34%, transparent);
+}
+
 kbd {
   border: 1px solid var(--line);
   border-bottom-width: 2px;

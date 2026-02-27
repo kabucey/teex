@@ -1,3 +1,5 @@
+import { promptToSaveBeforeClose } from "../ui/close-dirty-dialog.js";
+
 export function buildTabFromPayload(payload) {
   return {
     path: payload.path,
@@ -36,7 +38,79 @@ export function createTabController({
   hasTabSession,
   flushStateToActiveTab,
   syncActiveTabToState,
+  promptCloseDirty = promptToSaveBeforeClose,
 }) {
+  let closeInProgress = false;
+
+  async function canCloseDirtyTab(index) {
+    const tab = state.openFiles[index];
+    if (!tab) {
+      return true;
+    }
+
+    const isActive = index === state.activeTabIndex;
+    const isDirty = isActive ? state.isDirty : tab.isDirty;
+    if (!isDirty) {
+      return true;
+    }
+
+    const label = tab.path ? baseName(tab.path) : "Untitled";
+    const decision = await promptCloseDirty(label);
+    if (decision === "cancel") {
+      return false;
+    }
+    if (decision === "discard") {
+      return true;
+    }
+
+    if (!isActive && tab.path && tab.writable) {
+      try {
+        await invoke("write_text_file", { path: tab.path, content: tab.content });
+        tab.isDirty = false;
+        return true;
+      } catch (error) {
+        setStatus(String(error), true);
+        return false;
+      }
+    }
+
+    let previousActiveIndex = null;
+    if (!isActive) {
+      previousActiveIndex = state.activeTabIndex;
+      flushStateToActiveTab();
+      state.activeTabIndex = index;
+      syncActiveTabToState();
+    }
+
+    await saveNow();
+    const saveSucceeded = !state.isDirty;
+    if (!saveSucceeded && previousActiveIndex !== null) {
+      flushStateToActiveTab();
+      state.activeTabIndex = previousActiveIndex;
+      syncActiveTabToState();
+      render();
+      updateMenuState();
+    }
+    return saveSucceeded;
+  }
+
+  async function canCloseSingleActiveFile() {
+    if (!state.activePath || !state.isDirty) {
+      return true;
+    }
+
+    const decision = await promptCloseDirty(baseName(state.activePath));
+    if (decision === "cancel") {
+      return false;
+    }
+    if (decision === "discard") {
+      return true;
+    }
+
+    await saveNow();
+    return !state.isDirty;
+  }
+
   async function openMultipleFiles(paths) {
     await saveNow();
 
@@ -242,21 +316,18 @@ export function createTabController({
   }
 
   async function closeTab(index) {
+    if (closeInProgress) {
+      return;
+    }
+    closeInProgress = true;
+    try {
     const tab = state.openFiles[index];
     if (!tab) {
       return;
     }
 
-    if (tab.path === null) {
-      // Untitled tab — nothing to save, just discard.
-    } else if (index === state.activeTabIndex) {
-      await saveNow();
-    } else if (tab.isDirty && tab.writable) {
-      try {
-        await invoke("write_text_file", { path: tab.path, content: tab.content });
-      } catch (error) {
-        setStatus(String(error), true);
-      }
+    if (!(await canCloseDirtyTab(index))) {
+      return;
     }
 
     state.openFiles.splice(index, 1);
@@ -280,15 +351,25 @@ export function createTabController({
     syncActiveTabToState();
     render();
     updateMenuState();
+    } finally {
+      closeInProgress = false;
+    }
   }
 
   async function closeSingleActiveFile() {
+    if (closeInProgress) {
+      return;
+    }
+    closeInProgress = true;
+    try {
     if (!state.activePath) {
       return;
     }
 
     const closingLabel = baseName(state.activePath);
-    await saveNow();
+    if (!(await canCloseSingleActiveFile())) {
+      return;
+    }
 
     state.openFiles = [];
     state.activeTabIndex = 0;
@@ -301,6 +382,9 @@ export function createTabController({
     setStatus(`Closed ${closingLabel}`);
     render();
     updateMenuState();
+    } finally {
+      closeInProgress = false;
+    }
   }
 
   async function closeActiveFileOrWindow() {
