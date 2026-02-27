@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { buildMenuStatePayload, isEditableState, shouldAutosaveOnToggle } from "../../src/ui/editor-controller.js";
+import {
+  buildMenuStatePayload,
+  createEditorController,
+  isEditableState,
+  shouldAutosaveOnToggle,
+} from "../../src/ui/editor-controller.js";
 
 test("isEditableState depends on active file and markdown mode", () => {
   assert.equal(isEditableState({ activePath: null }), false);
@@ -35,4 +40,52 @@ test("buildMenuStatePayload reflects folder and markdown toggles", () => {
     buildMenuStatePayload({ mode: "file", activeKind: "text" }),
     { canToggleSidebar: false, canToggleMarkdownMode: false },
   );
+});
+
+test("toggleMarkdownMode does not force editor focus when switching preview to edit", () => {
+  const renderCalls = [];
+  const state = {
+    activePath: "/a.md",
+    activeKind: "markdown",
+    markdownViewMode: "preview",
+    isDirty: false,
+    mode: "file",
+  };
+  const controller = createEditorController({
+    state,
+    invoke: () => Promise.resolve(),
+    setStatus: () => {},
+    render: (options) => renderCalls.push(options),
+    hasTabSession: () => false,
+  });
+
+  controller.toggleMarkdownMode();
+
+  assert.equal(state.markdownViewMode, "edit");
+  assert.equal(renderCalls.length, 1);
+  assert.deepEqual(renderCalls[0], { focusEditor: false });
+});
+
+test("toggleMarkdownMode keeps editor focus behavior when switching edit to preview", () => {
+  const renderCalls = [];
+  const state = {
+    activePath: "/a.md",
+    activeKind: "markdown",
+    markdownViewMode: "edit",
+    isDirty: false,
+    mode: "file",
+  };
+  const controller = createEditorController({
+    state,
+    invoke: () => Promise.resolve(),
+    setStatus: () => {},
+    render: (options) => renderCalls.push(options),
+    hasTabSession: () => false,
+  });
+
+  controller.toggleMarkdownMode();
+
+  assert.equal(state.markdownViewMode, "preview");
+  assert.equal(renderCalls.length, 1);
+  assert.deepEqual(renderCalls[0], { focusEditor: true });
 });

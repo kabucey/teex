@@ -194,7 +194,8 @@ export function createUiRenderer({
     });
   }
 
-  function renderMainPane() {
+  function renderMainPane(options = {}) {
+    const shouldFocusEditor = options.focusEditor !== false;
     if (state.activeKind === "markdown" && state.markdownViewMode === "preview") {
       el.editor.classList.add("hidden");
       el.preview.classList.remove("hidden");
@@ -209,7 +210,9 @@ export function createUiRenderer({
       el.editor.value = state.content;
     }
 
-    el.editor.focus();
+    if (shouldFocusEditor) {
+      el.editor.focus();
+    }
   }
 
   function renderChrome() {
@@ -217,7 +220,7 @@ export function createUiRenderer({
     renderTabBar();
   }
 
-  function render() {
+  function render(options = {}) {
     renderChrome();
 
     const showSidebar = state.mode === "folder" && state.sidebarVisible;
@@ -231,7 +234,7 @@ export function createUiRenderer({
     }
 
     renderSidebar();
-    renderMainPane();
+    renderMainPane(options);
   }
 
   return {

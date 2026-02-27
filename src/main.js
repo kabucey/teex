@@ -345,8 +345,8 @@ function updateMenuState() {
   editorController.updateMenuState();
 }
 
-function render() {
-  uiRenderer.render();
+function render(options = {}) {
+  uiRenderer.render(options);
   scrollSyncController?.scheduleRestoreAfterRender();
   syncWatchedProjectFiles();
 }

@@ -47,6 +47,7 @@ export function createEditorController({
       return;
     }
 
+    const previousMode = state.markdownViewMode;
     if (typeof onBeforeToggleMarkdownMode === "function") {
       onBeforeToggleMarkdownMode();
     }
@@ -54,7 +55,8 @@ export function createEditorController({
     if (shouldAutosaveOnToggle(state)) {
       saveNow();
     }
-    render();
+    const disableEditorFocus = previousMode === "preview" && state.markdownViewMode === "edit";
+    render({ focusEditor: !disableEditorFocus });
     if (typeof onAfterToggleMarkdownMode === "function") {
       onAfterToggleMarkdownMode();
     }
