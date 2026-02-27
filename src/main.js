@@ -482,10 +482,16 @@ async function reloadExternallyChangedFile(path) {
       }
 
       if (state.activeTabIndex === tabIndex) {
-        applyFilePayload(payload, { defaultMarkdownMode: "preview" });
+        applyFilePayload(payload, {
+          defaultMarkdownMode: "preview",
+          preserveMarkdownMode: true,
+        });
       }
     } else if (isActive) {
-      applyFilePayload(payload, { defaultMarkdownMode: "preview" });
+      applyFilePayload(payload, {
+        defaultMarkdownMode: "preview",
+        preserveMarkdownMode: true,
+      });
     } else {
       return;
     }

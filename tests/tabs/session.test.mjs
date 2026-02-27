@@ -75,6 +75,7 @@ test("normalizeTransferTab sanitizes invalid and partial tab records", () => {
 
 test("apply/clear file payload updates active state and markdown mode", () => {
   const state = makeState({
+    activePath: "/prev.md",
     activeKind: "markdown",
     markdownViewMode: "edit",
     saveTimer: setTimeout(() => {}, 1000),
@@ -86,11 +87,22 @@ test("apply/clear file payload updates active state and markdown mode", () => {
     content: "# x",
   }, { defaultMarkdownMode: "preview" });
   assert.equal(state.activePath, "/a.md");
-  assert.equal(state.markdownViewMode, "edit");
+  assert.equal(state.markdownViewMode, "preview");
   assert.equal(state.isDirty, false);
   assert.equal(state.activeEditorScrollTop, 0);
   assert.equal(state.activePreviewScrollTop, 0);
   assert.equal(state.saveTimer, null);
+
+  state.markdownViewMode = "edit";
+  applyFilePayloadToState(state, {
+    path: "/a.md",
+    kind: "markdown",
+    content: "# y",
+  }, {
+    defaultMarkdownMode: "preview",
+    preserveMarkdownMode: true,
+  });
+  assert.equal(state.markdownViewMode, "edit");
 
   applyFilePayloadToState(state, {
     path: "/a.txt",

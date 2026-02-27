@@ -97,3 +97,55 @@ test("createNewTab defaults untitled tabs to markdown edit mode", () => {
   assert.equal(state.activeKind, "markdown");
   assert.equal(state.markdownViewMode, "edit");
 });
+
+test("createNewTab in folder mode preserves selected file as first tab", () => {
+  const state = {
+    mode: "folder",
+    activePath: "/project/notes.md",
+    activeKind: "markdown",
+    content: "# Notes",
+    isDirty: true,
+    markdownViewMode: "preview",
+    activeEditorScrollTop: 12,
+    activePreviewScrollTop: 34,
+    openFiles: [],
+    activeTabIndex: 0,
+  };
+
+  const controller = createTabController({
+    state,
+    invoke: async () => {},
+    baseName: (value) => value,
+    setStatus: () => {},
+    render: () => {},
+    updateMenuState: () => {},
+    markSidebarTreeDirty: () => {},
+    saveNow: async () => {},
+    openFile: async () => {},
+    applyFilePayload: () => {},
+    clearActiveFile: () => {},
+    hasTabSession: () => state.openFiles.length > 0,
+    flushStateToActiveTab: () => {},
+    syncActiveTabToState: () => {
+      const active = state.openFiles[state.activeTabIndex];
+      state.activePath = active?.path ?? null;
+      state.activeKind = active?.kind ?? "text";
+      state.content = active?.content ?? "";
+      state.isDirty = Boolean(active?.isDirty);
+      state.markdownViewMode = active?.markdownViewMode ?? "edit";
+      state.activeEditorScrollTop = active?.scrollState?.editorScrollTop ?? 0;
+      state.activePreviewScrollTop = active?.scrollState?.previewScrollTop ?? 0;
+    },
+  });
+
+  controller.createNewTab();
+
+  assert.equal(state.mode, "folder");
+  assert.equal(state.openFiles.length, 2);
+  assert.equal(state.openFiles[0].path, "/project/notes.md");
+  assert.equal(state.openFiles[0].content, "# Notes");
+  assert.equal(state.openFiles[0].isDirty, true);
+  assert.equal(state.openFiles[1].path, null);
+  assert.equal(state.activeTabIndex, 1);
+  assert.equal(state.activePath, null);
+});

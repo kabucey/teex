@@ -173,7 +173,7 @@ export function createTabController({
   function createNewTab() {
     flushStateToActiveTab();
 
-    if ((state.mode === "file" || state.mode === "empty") && state.activePath && state.openFiles.length === 0) {
+    if (state.activePath && state.openFiles.length === 0) {
       const currentTab = {
         path: state.activePath,
         content: state.content,

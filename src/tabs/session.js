@@ -3,6 +3,9 @@ export function hasTabSession(state) {
 }
 
 export function applyFilePayloadToState(state, payload, options) {
+  const defaultMarkdownMode = options?.defaultMarkdownMode === "edit" ? "edit" : "preview";
+  const preserveMarkdownMode = options?.preserveMarkdownMode === true;
+  const previousPath = state.activePath;
   const previousKind = state.activeKind;
   const previousMarkdownMode = state.markdownViewMode;
 
@@ -17,8 +20,11 @@ export function applyFilePayloadToState(state, payload, options) {
   state.saveTimer = null;
 
   if (state.activeKind === "markdown") {
-    state.markdownViewMode =
-      previousKind === "markdown" ? previousMarkdownMode : options.defaultMarkdownMode;
+    const shouldPreserveMarkdownMode =
+      preserveMarkdownMode
+      && previousKind === "markdown"
+      && previousPath === payload.path;
+    state.markdownViewMode = shouldPreserveMarkdownMode ? previousMarkdownMode : defaultMarkdownMode;
   } else {
     state.markdownViewMode = "edit";
   }
