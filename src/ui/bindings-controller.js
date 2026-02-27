@@ -105,9 +105,10 @@ export function bindUiEvents({
   });
 
   el.preview.addEventListener("click", (event) => {
-    const checkbox = event.target.closest('input[type="checkbox"][data-src-line]');
+    const checkbox = event.target.closest('input[type="checkbox"], .task-list-item-checkbox');
     if (checkbox) {
-      const srcLine = parseInt(checkbox.dataset.srcLine, 10);
+      const listItem = checkbox.closest("li[data-src-line]");
+      const srcLine = parseInt(listItem?.dataset?.srcLine, 10);
       const lines = state.content.split("\n");
       const lineIndex = srcLine - 1;
       if (lineIndex >= 0 && lineIndex < lines.length) {

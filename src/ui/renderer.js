@@ -1,4 +1,4 @@
-import { renderMarkdown } from "./markdown-renderer.js";
+import { renderMarkdown, renderMermaidDiagrams } from "./markdown-renderer.js";
 import { baseName } from "../app-utils.js";
 import { escapeAttr, escapeHtml } from "./html-utils.js";
 import { shouldShowTabBar } from "./behavior.js";
@@ -200,6 +200,9 @@ export function createUiRenderer({
       el.editor.classList.add("hidden");
       el.preview.classList.remove("hidden");
       el.preview.innerHTML = renderMarkdown(state.content);
+      renderMermaidDiagrams(el.preview).catch((error) => {
+        console.error(String(error));
+      });
       return;
     }
 

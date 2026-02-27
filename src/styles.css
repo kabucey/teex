@@ -464,6 +464,16 @@ body {
   color: var(--accent);
 }
 
+.preview .mermaid {
+  margin: 1em 0;
+  overflow-x: auto;
+}
+
+.preview .mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
 .drop-overlay {
   position: absolute;
   inset: 0;
