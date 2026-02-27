@@ -171,6 +171,11 @@ pub(super) fn handle_app_menu_event(app: &tauri::AppHandle, event: tauri::menu::
                 );
             }
         }
+        MENU_NEW_TAB => {
+            if let Some(window) = target_window(app) {
+                emit_to_window(app, window.label(), EVENT_NEW_TAB, ());
+            }
+        }
         MENU_CLOSE_ACTIVE_FILE => {
             if let Some(window) = target_window(app) {
                 emit_to_window(app, window.label(), EVENT_CLOSE_ACTIVE_FILE, ());

@@ -125,6 +125,7 @@ export function setupControllers({
     openSingleFileFromUi: (path) => fileController.openSingleFileFromUi(path),
     openMultipleFiles: (paths) => tabController.openMultipleFiles(paths),
     openFolder: (path) => fileController.openFolder(path),
+    createNewTab: () => tabController.createNewTab(),
     deduper: osOpenDeduper,
   });
 
@@ -149,6 +150,7 @@ export function setupControllers({
     toggleSidebarVisibility: callbacks.toggleSidebarVisibility,
     toggleMarkdownMode: callbacks.toggleMarkdownMode,
     closeActiveFileOrWindow: callbacks.closeActiveFileOrWindow,
+    createNewTab: callbacks.createNewTab,
     handleRequestExportAllTabs: callbacks.handleRequestExportAllTabs,
     handleReceiveTransferredTabs: callbacks.handleReceiveTransferredTabs,
     handleTabTransferResult: callbacks.handleTabTransferResult,

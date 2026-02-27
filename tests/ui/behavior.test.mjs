@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   getSingleFileUiOpenMode,
   getSidebarSelectedPath,
+  shouldShowTabBar,
   shouldSidebarSingleClickOpenAsTab,
   shouldSidebarSingleClickIgnoreSamePath,
   shouldCapturePreviousSingleFolderFile,
@@ -226,6 +227,13 @@ test("sidebar single-click collapses hidden single-tab sessions before openEntry
     shouldCollapseHiddenSingleTabForSidebarOpen({ mode: "file", openFilesCount: 1 }),
     false,
   );
+});
+
+test("tab bar only shows with two or more open files", () => {
+  assert.equal(shouldShowTabBar(0), false);
+  assert.equal(shouldShowTabBar(1), false);
+  assert.equal(shouldShowTabBar(2), true);
+  assert.equal(shouldShowTabBar(3), true);
 });
 
 test("drop overlay suppression heuristic matches single dragged active file", () => {

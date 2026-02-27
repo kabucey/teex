@@ -100,6 +100,7 @@ const externalFileWatchState = {
     toggleSidebarVisibility,
     toggleMarkdownMode,
     closeActiveFileOrWindow,
+    createNewTab,
     handleRequestExportAllTabs,
     handleReceiveTransferredTabs,
     handleTabTransferResult,
@@ -128,7 +129,6 @@ function bindUiEvents() {
     el,
     invoke,
     setStatus,
-    scheduleAutosave,
     toggleMarkdownMode,
     toggleSidebarVisibility,
     saveNow,
@@ -307,6 +307,10 @@ async function closeActiveFileOrWindow() {
   await tabController.closeActiveFileOrWindow();
 }
 
+function createNewTab() {
+  tabController.createNewTab();
+}
+
 function toggleMarkdownMode() {
   editorController.toggleMarkdownMode();
 }
@@ -321,10 +325,6 @@ function onAfterToggleMarkdownMode() {
 
 function toggleSidebarVisibility() {
   editorController.toggleSidebarVisibility();
-}
-
-function scheduleAutosave() {
-  editorController.scheduleAutosave(saveNow);
 }
 
 async function saveNow() {

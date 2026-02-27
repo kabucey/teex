@@ -48,6 +48,10 @@ export function shouldCollapseHiddenSingleTabForSidebarOpen({ mode, openFilesCou
   return mode === "folder" && Number(openFilesCount) === 1;
 }
 
+export function shouldShowTabBar(openFilesCount) {
+  return Number(openFilesCount) >= 2;
+}
+
 export function shouldSuppressDropOverlayForSelfHover({
   paths,
   activePath,

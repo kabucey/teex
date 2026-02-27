@@ -89,6 +89,13 @@ fn build_app_menu<R: tauri::Runtime>(
         true,
         Some("CmdOrCtrl+N"),
     )?;
+    let new_tab_item = MenuItem::with_id(
+        app,
+        MENU_NEW_TAB,
+        "New Tab",
+        true,
+        Some("CmdOrCtrl+T"),
+    )?;
     let merge_all_windows_item = MenuItem::with_id(
         app,
         MENU_MERGE_ALL_WINDOWS_INTO_THIS_WINDOW,
@@ -135,6 +142,7 @@ fn build_app_menu<R: tauri::Runtime>(
 
     let file_submenu = SubmenuBuilder::new(app, "File")
         .items(&[
+            &new_tab_item,
             &new_window_item,
             &open_file_item,
             &open_folder_item,

@@ -52,6 +52,15 @@ Prerequisites: Rust toolchain, Tauri CLI, and platform-specific Tauri/WebView bu
 - `cargo tauri build`: produce a distributable desktop build
 - `./test-open.sh` (repo root): project-specific manual test helper for opening files (if present/useful for current changes)
 
+### Build Troubleshooting
+- If `cargo check` fails with `E0463: can't find crate` even though dependencies resolve (for example `cargo metadata` is fine and rustc receives valid `--extern` paths), treat it as stale/corrupted build artifacts rather than missing `Cargo.toml` dependencies.
+- Fix sequence:
+  - `cd src-tauri`
+  - `cargo clean`
+  - `cargo check`
+- After clearing stale artifacts, rerun `./test.sh` from repo root to verify Rust tests and frontend helper tests.
+- Non-blocking warning to watch: Cargo may print `attempt to write a readonly database` for cache last-use tracking; if this starts causing issues, verify permissions on Cargo home/cache directories.
+
 ## Coding Style & Naming Conventions
 - JavaScript/CSS use 2-space indentation (see `src/main.js`, `src/styles.css`).
 - Rust uses standard `rustfmt` formatting (4-space indentation).

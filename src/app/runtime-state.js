@@ -7,6 +7,7 @@ export const EVENTS = {
   toggleSidebar: "teex://toggle-sidebar",
   toggleMarkdownMode: "teex://toggle-markdown-mode",
   closeActiveFile: "teex://close-active-file",
+  newTab: "teex://new-tab",
   requestExportAllTabs: "teex://request-export-all-tabs",
   receiveTransferredTabs: "teex://receive-transferred-tabs",
   tabTransferResult: "teex://tab-transfer-result",

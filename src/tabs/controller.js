@@ -170,6 +170,45 @@ export function createTabController({
     }
   }
 
+  function createNewTab() {
+    flushStateToActiveTab();
+
+    if ((state.mode === "file" || state.mode === "empty") && state.activePath && state.openFiles.length === 0) {
+      const currentTab = {
+        path: state.activePath,
+        content: state.content,
+        kind: state.activeKind,
+        writable: true,
+        isDirty: state.isDirty,
+        markdownViewMode: state.markdownViewMode,
+        scrollState: {
+          editorScrollTop: state.activeEditorScrollTop,
+          previewScrollTop: state.activePreviewScrollTop,
+        },
+      };
+      state.openFiles = [currentTab];
+    }
+
+    const untitledTab = {
+      path: null,
+      content: "",
+      kind: "text",
+      writable: true,
+      isDirty: false,
+      markdownViewMode: "edit",
+      scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+    };
+
+    state.openFiles.push(untitledTab);
+    state.activeTabIndex = state.openFiles.length - 1;
+    if (state.mode === "file" || state.mode === "empty") {
+      state.mode = "files";
+    }
+    syncActiveTabToState();
+    render();
+    updateMenuState();
+  }
+
   function switchTab(index) {
     if (index === state.activeTabIndex) {
       return;
@@ -208,7 +247,9 @@ export function createTabController({
       return;
     }
 
-    if (index === state.activeTabIndex) {
+    if (tab.path === null) {
+      // Untitled tab — nothing to save, just discard.
+    } else if (index === state.activeTabIndex) {
       await saveNow();
     } else if (tab.isDirty && tab.writable) {
       try {
@@ -279,6 +320,7 @@ export function createTabController({
   }
 
   return {
+    createNewTab,
     openMultipleFiles,
     openFileAsTab,
     openFileInTabs,

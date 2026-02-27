@@ -22,6 +22,7 @@ export function createOpenPathsController({
   openSingleFileFromUi,
   openMultipleFiles,
   openFolder,
+  createNewTab,
   deduper,
 }) {
   function sleep(ms) {
@@ -159,8 +160,7 @@ export function createOpenPathsController({
       setStatus(String(error), true);
     }
 
-    render();
-    updateMenuState();
+    createNewTab();
   }
 
   return {

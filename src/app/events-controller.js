@@ -15,6 +15,7 @@ export function createAppEventsController({
   handleReceiveTransferredTabs,
   handleTabTransferResult,
   bindWindowDragDropEvents,
+  createNewTab,
 }) {
   async function bindAppEvents() {
     const label = await invoke("get_window_label");
@@ -43,6 +44,9 @@ export function createAppEventsController({
       }),
       listen(`${events.closeActiveFile}/${label}`, async () => {
         await closeActiveFileOrWindow();
+      }),
+      listen(`${events.newTab}/${label}`, () => {
+        createNewTab();
       }),
       listen(`${events.requestExportAllTabs}/${label}`, async (event) => {
         await handleRequestExportAllTabs(event.payload);

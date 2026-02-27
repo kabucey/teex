@@ -10,7 +10,6 @@ export function bindElements(el) {
   el.projectRootLabel = document.querySelector("#project-root-label");
   el.projectList = document.querySelector("#project-list");
   el.tabBar = document.querySelector("#tab-bar");
-  el.emptyState = document.querySelector("#empty-state");
   el.editorState = document.querySelector("#editor-state");
   el.editor = document.querySelector("#editor");
   el.preview = document.querySelector("#preview");
@@ -21,7 +20,6 @@ export function bindUiEvents({
   el,
   invoke,
   setStatus,
-  scheduleAutosave,
   toggleMarkdownMode,
   toggleSidebarVisibility,
   saveNow,
@@ -42,11 +40,27 @@ export function bindUiEvents({
     }
   });
 
+  el.editor.addEventListener("paste", (event) => {
+    const text = event.clipboardData?.getData("text/plain");
+    if (!text) {
+      return;
+    }
+    try {
+      const parsed = JSON.parse(text);
+      const formatted = JSON.stringify(parsed, null, 2);
+      if (formatted === text) {
+        return;
+      }
+      event.preventDefault();
+      document.execCommand("insertText", false, formatted);
+    } catch {
+      // Not valid JSON — let default paste proceed.
+    }
+  });
+
   el.editor.addEventListener("input", (event) => {
     state.content = event.target.value;
     state.isDirty = true;
-    setStatus("Saving...");
-    scheduleAutosave();
   });
 
   el.editor.addEventListener("scroll", () => {
@@ -101,8 +115,9 @@ export function bindUiEvents({
         }
         state.content = lines.join("\n");
         state.isDirty = true;
-        setStatus("Saving...");
-        scheduleAutosave();
+        if (state.activePath) {
+          saveNow();
+        }
         el.preview.innerHTML = renderMarkdown(state.content);
       }
       return;

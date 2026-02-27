@@ -1,5 +1,7 @@
 export function isEditableState(state) {
-  if (!state.activePath) {
+  const openFiles = state.openFiles || [];
+  const isUntitled = !state.activePath && openFiles.length > 0 && openFiles[state.activeTabIndex]?.path === null;
+  if (!state.activePath && !isUntitled) {
     return false;
   }
 
@@ -15,6 +17,10 @@ export function buildMenuStatePayload(state) {
     canToggleSidebar: state.mode === "folder",
     canToggleMarkdownMode: state.activeKind === "markdown",
   };
+}
+
+export function shouldAutosaveOnToggle(state) {
+  return Boolean(state.activePath) && state.isDirty;
 }
 
 export function createEditorController({
@@ -44,6 +50,9 @@ export function createEditorController({
       onBeforeToggleMarkdownMode();
     }
     state.markdownViewMode = state.markdownViewMode === "preview" ? "edit" : "preview";
+    if (shouldAutosaveOnToggle(state)) {
+      saveNow();
+    }
     render();
     if (typeof onAfterToggleMarkdownMode === "function") {
       onAfterToggleMarkdownMode();
@@ -61,19 +70,18 @@ export function createEditorController({
     updateMenuState();
   }
 
-  function scheduleAutosave(saveNow) {
-    if (!isEditableState(state)) {
+  async function saveNow() {
+    if (state.isSaving) {
       return;
     }
 
-    clearTimeout(state.saveTimer);
-    state.saveTimer = setTimeout(() => {
-      saveNow();
-    }, 500);
-  }
+    const isUntitled = !state.activePath && hasTabSession() && state.openFiles[state.activeTabIndex]?.path === null;
 
-  async function saveNow() {
-    if (!state.activePath || !state.isDirty || !isEditableState(state) || state.isSaving) {
+    if (isUntitled && state.isDirty) {
+      return saveAsUntitled();
+    }
+
+    if (!state.activePath || !state.isDirty || !isEditableState(state)) {
       return;
     }
 
@@ -96,8 +104,52 @@ export function createEditorController({
       setStatus(String(error), true);
     } finally {
       state.isSaving = false;
-      clearTimeout(state.saveTimer);
-      state.saveTimer = null;
+    }
+  }
+
+  async function saveAsUntitled() {
+    const { save } = window.__TAURI__.dialog;
+    let chosenPath;
+    try {
+      chosenPath = await save({ title: "Save As" });
+    } catch {
+      return;
+    }
+    if (!chosenPath) {
+      return;
+    }
+
+    state.isSaving = true;
+    try {
+      await invoke("write_text_file", { path: chosenPath, content: state.content });
+      state.activePath = chosenPath;
+      state.isDirty = false;
+
+      const ext = chosenPath.split(".").pop()?.toLowerCase();
+      const kind = (ext === "md" || ext === "markdown") ? "markdown" : "text";
+      state.activeKind = kind;
+
+      const tab = state.openFiles[state.activeTabIndex];
+      if (tab) {
+        tab.path = chosenPath;
+        tab.kind = kind;
+        tab.isDirty = false;
+        tab.content = state.content;
+        if (kind === "markdown") {
+          tab.markdownViewMode = "preview";
+          state.markdownViewMode = "preview";
+        }
+      }
+
+      if (typeof onFileSaved === "function") {
+        onFileSaved(chosenPath);
+      }
+      setStatus(`Saved as ${chosenPath.split("/").pop()}`);
+      render();
+    } catch (error) {
+      setStatus(String(error), true);
+    } finally {
+      state.isSaving = false;
     }
   }
 
@@ -105,7 +157,6 @@ export function createEditorController({
     updateMenuState,
     toggleMarkdownMode,
     toggleSidebarVisibility,
-    scheduleAutosave,
     saveNow,
     isEditable: () => isEditableState(state),
   };

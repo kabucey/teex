@@ -1,6 +1,7 @@
 import { renderMarkdown } from "./markdown-renderer.js";
 import { baseName } from "../app-utils.js";
 import { escapeAttr, escapeHtml } from "./html-utils.js";
+import { shouldShowTabBar } from "./behavior.js";
 
 export function createUiRenderer({
   state,
@@ -14,7 +15,8 @@ export function createUiRenderer({
   function syncWindowTitle() {
     const nextRepresentedPath =
       state.mode === "folder" ? (state.rootPath || null) : (state.activePath || null);
-    const nextTitle = nextRepresentedPath ? baseName(nextRepresentedPath) : "Teex";
+    const isUntitled = !state.activePath && state.openFiles.length > 0 && state.openFiles[state.activeTabIndex]?.path === null;
+    const nextTitle = isUntitled ? "Untitled" : (nextRepresentedPath ? baseName(nextRepresentedPath) : "Teex");
 
     if (
       nextTitle === state.windowTitle &&
@@ -35,23 +37,19 @@ export function createUiRenderer({
   }
 
   function renderTabBar() {
-    const show = state.openFiles.length >= 2;
+    const show = shouldShowTabBar(state.openFiles.length);
     el.tabBar.classList.toggle("hidden", !show);
-
-    if (!show) {
-      el.tabBar.innerHTML = "";
-      return;
-    }
 
     let html = "";
     for (let i = 0; i < state.openFiles.length; i += 1) {
       const tab = state.openFiles[i];
       const isActive = i === state.activeTabIndex;
       const isDirty = isActive ? state.isDirty : tab.isDirty;
-      const label = baseName(tab.path);
+      const label = tab.path ? baseName(tab.path) : "Untitled";
+      const tooltip = tab.path || "Untitled";
       html += `<div class="tab${isActive ? " tab-active" : ""}" data-index="${i}">`;
       html += `<button class="tab-close" data-index="${i}" title="Close" aria-label="Close ${escapeAttr(label)}">×</button>`;
-      html += `<span class="tab-label" title="${escapeAttr(tab.path)}">${escapeHtml(label)}</span>`;
+      html += `<span class="tab-label" title="${escapeAttr(tooltip)}">${escapeHtml(label)}</span>`;
       if (isDirty) {
         html += `<span class="tab-dirty">●</span>`;
       }
@@ -200,14 +198,6 @@ export function createUiRenderer({
   }
 
   function renderMainPane() {
-    const hasFile = Boolean(state.activePath);
-    el.emptyState.classList.toggle("hidden", hasFile);
-    el.editorState.classList.toggle("hidden", !hasFile);
-
-    if (!hasFile) {
-      return;
-    }
-
     if (state.activeKind === "markdown" && state.markdownViewMode === "preview") {
       el.editor.classList.add("hidden");
       el.preview.classList.remove("hidden");
@@ -221,6 +211,8 @@ export function createUiRenderer({
     if (el.editor.value !== state.content) {
       el.editor.value = state.content;
     }
+
+    el.editor.focus();
   }
 
   function render() {
