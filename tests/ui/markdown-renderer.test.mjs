@@ -34,3 +34,11 @@ test("renders tables and blockquotes", () => {
   assert.match(html, /<th>a<\/th>/);
   assert.match(html, /<td>2<\/td>/);
 });
+
+test("renders nested list items as nested lists", () => {
+  const html = renderMarkdown("# List\n\n- list 1\n    - sub\n- item 2\n    - sub 2");
+  assert.match(
+    html,
+    /<ul[^>]*><li>list 1<ul><li>sub<\/li><\/ul><\/li><li>item 2<ul><li>sub 2<\/li><\/ul><\/li><\/ul>/,
+  );
+});

@@ -58,6 +58,78 @@ function renderInline(text) {
   return value;
 }
 
+function listItemParts(line) {
+  const match = line.match(/^([ \t]*)([-*+]|\d+\.)\s+(.*)$/);
+  if (!match) {
+    return null;
+  }
+
+  const indent = match[1].replaceAll("\t", "    ").length;
+  const marker = match[2];
+  const rawText = match[3];
+  const isOrdered = /\d+\./.test(marker);
+  return { indent, isOrdered, rawText };
+}
+
+function renderListItemContent(rawText, srcLine) {
+  const task = rawText.match(/^\[( |x|X)\]\s+(.*)$/);
+  if (task) {
+    const checked = task[1].toLowerCase() === "x";
+    return `<input type="checkbox" data-src-line="${srcLine}" ${checked ? "checked" : ""} /> ${renderInline(task[2])}`;
+  }
+  return renderInline(rawText);
+}
+
+function parseList(lines, startIndex, baseIndent) {
+  const first = listItemParts(lines[startIndex]);
+  if (!first || first.indent !== baseIndent) {
+    return null;
+  }
+
+  const tag = first.isOrdered ? "ol" : "ul";
+  const items = [];
+  let i = startIndex;
+
+  while (i < lines.length) {
+    const parts = listItemParts(lines[i]);
+    if (!parts) {
+      break;
+    }
+    if (parts.indent < baseIndent) {
+      break;
+    }
+    if (parts.indent > baseIndent) {
+      if (items.length === 0) {
+        break;
+      }
+      const nested = parseList(lines, i, parts.indent);
+      if (!nested) {
+        break;
+      }
+      items[items.length - 1].nested += nested.html;
+      i = nested.endIndex;
+      continue;
+    }
+    if (parts.isOrdered !== (tag === "ol")) {
+      break;
+    }
+
+    const srcLine = i + 1;
+    items.push({
+      content: renderListItemContent(parts.rawText, srcLine),
+      nested: "",
+    });
+    i += 1;
+  }
+
+  const htmlItems = items.map((item) => `<li>${item.content}${item.nested}</li>`);
+
+  return {
+    html: `<${tag}>${htmlItems.join("")}</${tag}>`,
+    endIndex: i,
+  };
+}
+
 export function renderMarkdown(markdown) {
   const source = markdown.replace(/\r\n/g, "\n");
   const lines = source.split("\n");
@@ -140,26 +212,20 @@ export function renderMarkdown(markdown) {
       continue;
     }
 
-    if (/^\s*([-*+]\s+|\d+\.\s+)/.test(line)) {
-      const isOrdered = /^\s*\d+\.\s+/.test(line);
-      const tag = isOrdered ? "ol" : "ul";
-      const items = [];
-
-      while (i < lines.length && /^\s*([-*+]\s+|\d+\.\s+)/.test(lines[i])) {
-        const srcLine = i + 1;
-        let itemText = lines[i].replace(/^\s*([-*+]\s+|\d+\.\s+)/, "");
-        const task = itemText.match(/^\[( |x|X)\]\s+(.*)$/);
-        if (task) {
-          const checked = task[1].toLowerCase() === "x";
-          itemText = `<input type="checkbox" data-src-line="${srcLine}" ${checked ? "checked" : ""} /> ${renderInline(task[2])}`;
-        } else {
-          itemText = renderInline(itemText);
-        }
-        items.push(`<li>${itemText}</li>`);
-        i += 1;
+    const listStart = listItemParts(line);
+    if (listStart) {
+      const parsedList = parseList(lines, i, listStart.indent);
+      if (parsedList) {
+        i = parsedList.endIndex;
+        blocks.push(withSourceRange(parsedList.html, blockStartLine, i));
+        continue;
       }
+    }
 
-      blocks.push(withSourceRange(`<${tag}>${items.join("")}</${tag}>`, blockStartLine, i));
+    if (/^\s*([-*+]\s+|\d+\.\s+)/.test(line)) {
+      const tag = /^\s*\d+\.\s+/.test(line) ? "ol" : "ul";
+      const item = line.replace(/^\s*([-*+]\s+|\d+\.\s+)/, "");
+      blocks.push(withSourceRange(`<${tag}><li>${renderInline(item)}</li></${tag}>`, blockStartLine, blockStartLine));
       continue;
     }
 
