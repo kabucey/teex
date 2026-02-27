@@ -192,7 +192,7 @@ export function createTabController({
     const untitledTab = {
       path: null,
       content: "",
-      kind: "text",
+      kind: "markdown",
       writable: true,
       isDirty: false,
       markdownViewMode: "edit",

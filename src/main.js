@@ -107,6 +107,7 @@ const externalFileWatchState = {
     onFileSaved,
     onBeforeToggleMarkdownMode,
     onAfterToggleMarkdownMode,
+    onSavedStateChanged: renderChrome,
   },
 }));
 
@@ -136,6 +137,7 @@ function bindUiEvents() {
     switchTab,
     onEditorScroll: () => scrollSyncController?.onEditorScroll(),
     onPreviewScroll: () => scrollSyncController?.onPreviewScroll(),
+    onDirtyStateChanged: () => renderChrome(),
   });
 }
 
@@ -347,6 +349,10 @@ function render() {
   uiRenderer.render();
   scrollSyncController?.scheduleRestoreAfterRender();
   syncWatchedProjectFiles();
+}
+
+function renderChrome() {
+  uiRenderer.renderChrome();
 }
 
 function setStatus(message, isError = false) {

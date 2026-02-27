@@ -13,10 +13,7 @@ export function createUiRenderer({
   closeTab,
 }) {
   function syncWindowTitle() {
-    const nextRepresentedPath =
-      state.mode === "folder" ? (state.rootPath || null) : (state.activePath || null);
-    const isUntitled = !state.activePath && state.openFiles.length > 0 && state.openFiles[state.activeTabIndex]?.path === null;
-    const nextTitle = isUntitled ? "Untitled" : (nextRepresentedPath ? baseName(nextRepresentedPath) : "Teex");
+    const { nextTitle, nextRepresentedPath } = buildWindowTitleState(state);
 
     if (
       nextTitle === state.windowTitle &&
@@ -215,9 +212,13 @@ export function createUiRenderer({
     el.editor.focus();
   }
 
-  function render() {
+  function renderChrome() {
     syncWindowTitle();
     renderTabBar();
+  }
+
+  function render() {
+    renderChrome();
 
     const showSidebar = state.mode === "folder" && state.sidebarVisible;
     el.workspace.className = showSidebar ? "workspace workspace-folder" : "workspace workspace-empty";
@@ -235,5 +236,22 @@ export function createUiRenderer({
 
   return {
     render,
+    renderChrome,
+  };
+}
+
+export function buildWindowTitleState(state) {
+  const nextRepresentedPath =
+    state.mode === "folder" ? (state.rootPath || null) : (state.activePath || null);
+  const isUntitled = !state.activePath
+    && state.openFiles.length > 0
+    && state.openFiles[state.activeTabIndex]?.path === null;
+  const baseTitle = isUntitled ? "Untitled" : (nextRepresentedPath ? baseName(nextRepresentedPath) : "Teex");
+  const hasUnsavedChanges = state.isDirty && (Boolean(state.activePath) || isUntitled);
+  const nextTitle = hasUnsavedChanges ? `${baseTitle}  ●` : baseTitle;
+
+  return {
+    nextTitle,
+    nextRepresentedPath,
   };
 }

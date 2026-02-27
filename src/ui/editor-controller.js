@@ -32,6 +32,7 @@ export function createEditorController({
   onFileSaved = null,
   onBeforeToggleMarkdownMode = null,
   onAfterToggleMarkdownMode = null,
+  onSavedStateChanged = null,
 }) {
   function updateMenuState() {
     invoke("set_menu_state", {
@@ -98,6 +99,9 @@ export function createEditorController({
       }
       if (typeof onFileSaved === "function") {
         onFileSaved(state.activePath);
+      }
+      if (typeof onSavedStateChanged === "function") {
+        onSavedStateChanged();
       }
       setStatus("Saved");
     } catch (error) {

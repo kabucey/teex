@@ -27,6 +27,7 @@ export function bindUiEvents({
   switchTab,
   onEditorScroll,
   onPreviewScroll,
+  onDirtyStateChanged,
 }) {
   window.addEventListener("dragover", (event) => {
     if (hasFileDragData(event)) {
@@ -61,6 +62,9 @@ export function bindUiEvents({
   el.editor.addEventListener("input", (event) => {
     state.content = event.target.value;
     state.isDirty = true;
+    if (typeof onDirtyStateChanged === "function") {
+      onDirtyStateChanged();
+    }
   });
 
   el.editor.addEventListener("scroll", () => {
@@ -115,6 +119,9 @@ export function bindUiEvents({
         }
         state.content = lines.join("\n");
         state.isDirty = true;
+        if (typeof onDirtyStateChanged === "function") {
+          onDirtyStateChanged();
+        }
         if (state.activePath) {
           saveNow();
         }

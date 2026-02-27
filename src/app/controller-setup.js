@@ -44,6 +44,7 @@ export function setupControllers({
     onFileSaved: callbacks.onFileSaved,
     onBeforeToggleMarkdownMode: callbacks.onBeforeToggleMarkdownMode,
     onAfterToggleMarkdownMode: callbacks.onAfterToggleMarkdownMode,
+    onSavedStateChanged: callbacks.onSavedStateChanged,
   });
 
   sidebarController = createSidebarController({
