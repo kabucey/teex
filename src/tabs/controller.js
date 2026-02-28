@@ -390,17 +390,15 @@ export function createTabController({
   async function closeActiveFileOrWindow() {
     if (hasTabSession()) {
       await closeTab(state.activeTabIndex);
-      return;
-    }
-
-    if (state.activePath) {
+    } else if (state.activePath) {
       await closeSingleActiveFile();
-      return;
     }
 
-    await invoke("close_current_window").catch((error) => {
-      setStatus(String(error), true);
-    });
+    if (state.mode === "empty") {
+      await invoke("close_current_window").catch((error) => {
+        setStatus(String(error), true);
+      });
+    }
   }
 
   return {

@@ -295,6 +295,100 @@ test("closeTab saves and closes inactive dirty file when user confirms save", as
   assert.equal(state.openFiles[0].path, "/tmp/a.md");
 });
 
+test("closeActiveFileOrWindow closes window when last tab is removed", async () => {
+  const invokeCalls = [];
+  const { controller } = createControllerHarness({
+    stateOverrides: {
+      mode: "files",
+      openFiles: [
+        {
+          path: null,
+          kind: "markdown",
+          content: "",
+          writable: true,
+          isDirty: false,
+          markdownViewMode: "edit",
+          scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+        },
+      ],
+      activeTabIndex: 0,
+      activePath: null,
+    },
+    invoke: async (cmd) => {
+      invokeCalls.push(cmd);
+    },
+    promptCloseDirty: async () => "discard",
+  });
+  await controller.closeActiveFileOrWindow();
+
+  assert.ok(invokeCalls.includes("close_current_window"));
+});
+
+test("closeActiveFileOrWindow does not close window when tabs remain", async () => {
+  const invokeCalls = [];
+  const { controller } = createControllerHarness({
+    stateOverrides: {
+      mode: "files",
+      openFiles: [
+        {
+          path: "/tmp/a.md",
+          kind: "markdown",
+          content: "# a",
+          writable: true,
+          isDirty: false,
+          markdownViewMode: "preview",
+          scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+        },
+        {
+          path: "/tmp/b.md",
+          kind: "markdown",
+          content: "# b",
+          writable: true,
+          isDirty: false,
+          markdownViewMode: "preview",
+          scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+        },
+      ],
+      activeTabIndex: 0,
+      activePath: "/tmp/a.md",
+    },
+    invoke: async (cmd) => {
+      invokeCalls.push(cmd);
+    },
+  });
+  await controller.closeActiveFileOrWindow();
+
+  assert.ok(!invokeCalls.includes("close_current_window"));
+});
+
+test("closeActiveFileOrWindow does not close window when last tab removed in folder mode", async () => {
+  const invokeCalls = [];
+  const { controller } = createControllerHarness({
+    stateOverrides: {
+      mode: "folder",
+      openFiles: [
+        {
+          path: "/project/notes.md",
+          kind: "markdown",
+          content: "# notes",
+          writable: true,
+          isDirty: false,
+          markdownViewMode: "preview",
+          scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+        },
+      ],
+      activeTabIndex: 0,
+      activePath: "/project/notes.md",
+    },
+    invoke: async (cmd) => {
+      invokeCalls.push(cmd);
+    },
+  });
+  await controller.closeActiveFileOrWindow();
+
+  assert.ok(!invokeCalls.includes("close_current_window"));
+});
+
 test("closeTab restores previous active tab when save is canceled for inactive untitled tab", async () => {
   const { state, controller } = createControllerHarness({
     stateOverrides: {
