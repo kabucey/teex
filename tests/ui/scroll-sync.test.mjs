@@ -99,7 +99,14 @@ test("normalizes lightweight search text and finds source line by snippet", () =
     "# Title\n\nThis is a paragraph.\nAnother line here.",
     "another line here",
   );
-  assert.equal(sourceLine, 2);
+  assert.equal(sourceLine, 1);
+
+  const nearestLine = findSourceLineBySnippet(
+    "# Title\n\nThis is a paragraph.\nAnother line here.",
+    "another line here",
+    { nearLine: 4 },
+  );
+  assert.equal(nearestLine, 4);
 });
 
 test("finds preview block by normalized text snippet", () => {
@@ -111,12 +118,49 @@ test("finds preview block by normalized text snippet", () => {
   assert.equal(block?.top, 120);
 });
 
+test("finds preview block nearest to source line when snippet duplicates", () => {
+  const block = findPreviewBlockBySnippet([
+    { top: 0, startLine: 1, endLine: 3, text: "repeated heading repeated heading" },
+    { top: 320, startLine: 40, endLine: 45, text: "repeated heading repeated heading" },
+  ], "repeated heading", { nearLine: 42 });
+
+  assert.equal(block?.top, 320);
+});
+
 test("finds exact source snippet index and converts to line number", () => {
   const content = "# Title\n\nalpha beta gamma\nnext line";
   const index = findSourceIndexBySnippet(content, "alpha beta");
   assert.equal(index, content.indexOf("alpha beta"));
   assert.equal(sourceIndexToLineNumber(content, index), 3);
   assert.equal(findSourceIndexBySnippet(content, "missing snippet"), null);
+});
+
+test("finds source snippet nearest to source line when exact text duplicates", () => {
+  const content = [
+    "intro line",
+    "duplicate text duplicate text",
+    "between",
+    "duplicate text duplicate text",
+    "tail",
+  ].join("\n");
+
+  const index = findSourceIndexBySnippet(content, "duplicate text duplicate text", { nearLine: 4 });
+  assert.equal(sourceIndexToLineNumber(content, index), 4);
+});
+
+test("finds normalized source snippet nearest to source line when duplicates exist", () => {
+  const content = [
+    "alpha",
+    "repeat block start",
+    "repeat block end",
+    "middle",
+    "repeat block start",
+    "repeat block end",
+    "omega",
+  ].join("\n");
+
+  const line = findSourceLineBySnippet(content, "repeat block start repeat block end", { nearLine: 5 });
+  assert.equal(line, 5);
 });
 
 test("ignores stale editor scroll event during non-tab file switch until restore runs", () => {

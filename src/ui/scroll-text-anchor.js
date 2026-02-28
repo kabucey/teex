@@ -125,7 +125,7 @@ export function getPreviewTopTextSnippet(previewEl) {
     }
     block = item;
   }
-  return (block.text || block.node?.textContent || "").slice(0, 120);
+  return (block.text || block.node?.textContent || "").slice(0, 180);
 }
 
 export function getEditorTopTextSnippet({ content, scrollTop, lineHeight }) {
@@ -135,30 +135,12 @@ export function getEditorTopTextSnippet({ content, scrollTop, lineHeight }) {
   }
   const lines = source.split("\n");
   const lineIndex = Math.max(0, Math.floor((scrollTop || 0) / Math.max(lineHeight || 1, 1)));
-  const snippet = normalizeSearchText(lines.slice(lineIndex, lineIndex + 3).join(" "));
-  return snippet.slice(0, 80);
+  const start = Math.max(0, lineIndex - 1);
+  const snippet = normalizeSearchText(lines.slice(start, start + 5).join(" "));
+  return snippet.slice(0, 180);
 }
 
-export function findSourceIndexBySnippet(content, snippet) {
-  const source = String(content || "");
-  const rawNeedle = String(snippet || "").trim();
-  if (rawNeedle.length < 8) {
-    return null;
-  }
-
-  const rawIndex = source.indexOf(rawNeedle);
-  if (rawIndex !== -1) {
-    return rawIndex;
-  }
-
-  return null;
-}
-
-export function sourceIndexToLineNumber(content, index) {
-  const source = String(content || "");
-  if (!Number.isInteger(index) || index < 0) {
-    return null;
-  }
+function indexToLineNumber(source, index) {
   let line = 1;
   for (let i = 0; i < index && i < source.length; i += 1) {
     if (source[i] === "\n") {
@@ -168,7 +150,54 @@ export function sourceIndexToLineNumber(content, index) {
   return line;
 }
 
-export function findSourceLineBySnippet(content, snippet) {
+function distanceToTargetLine(line, nearLine) {
+  if (!Number.isFinite(nearLine)) {
+    return 0;
+  }
+  return Math.abs(line - nearLine);
+}
+
+export function findSourceIndexBySnippet(content, snippet, options = {}) {
+  const source = String(content || "");
+  const rawNeedle = String(snippet || "").trim();
+  if (rawNeedle.length < 8) {
+    return null;
+  }
+
+  const matches = [];
+  let from = 0;
+  while (from <= source.length) {
+    const index = source.indexOf(rawNeedle, from);
+    if (index === -1) {
+      break;
+    }
+    const line = indexToLineNumber(source, index);
+    matches.push({ index, line, distance: distanceToTargetLine(line, options.nearLine) });
+    from = index + 1;
+  }
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  matches.sort((a, b) => {
+    if (a.distance !== b.distance) {
+      return a.distance - b.distance;
+    }
+    return a.index - b.index;
+  });
+  return matches[0].index;
+}
+
+export function sourceIndexToLineNumber(content, index) {
+  const source = String(content || "");
+  if (!Number.isInteger(index) || index < 0) {
+    return null;
+  }
+  return indexToLineNumber(source, index);
+}
+
+export function findSourceLineBySnippet(content, snippet, options = {}) {
   const source = String(content || "");
   const normalizedNeedle = normalizeSearchText(snippet);
   if (normalizedNeedle.length < 8) {
@@ -176,16 +205,44 @@ export function findSourceLineBySnippet(content, snippet) {
   }
 
   const lines = source.split("\n");
+  const matches = [];
   for (let i = 0; i < lines.length; i += 1) {
-    const windowText = lines.slice(i, i + 3).join(" ");
+    const windowText = lines.slice(i, i + 5).join(" ");
     if (normalizeSearchText(windowText).includes(normalizedNeedle)) {
-      return i + 1;
+      const line = i + 1;
+      matches.push({ line, distance: distanceToTargetLine(line, options.nearLine) });
     }
   }
-  return null;
+
+  if (matches.length === 0) {
+    return null;
+  }
+
+  matches.sort((a, b) => {
+    if (a.distance !== b.distance) {
+      return a.distance - b.distance;
+    }
+    return a.line - b.line;
+  });
+  return matches[0].line;
 }
 
-export function findPreviewBlockBySnippet(blocks, snippet) {
+function lineDistanceToBlock(block, nearLine) {
+  if (!Number.isFinite(nearLine)) {
+    return 0;
+  }
+  const start = Number.isFinite(block.startLine) ? block.startLine : nearLine;
+  const end = Number.isFinite(block.endLine) ? block.endLine : start;
+  if (nearLine < start) {
+    return start - nearLine;
+  }
+  if (nearLine > end) {
+    return nearLine - end;
+  }
+  return 0;
+}
+
+export function findPreviewBlockBySnippet(blocks, snippet, options = {}) {
   const normalizedNeedle = normalizeSearchText(snippet);
   if (!Array.isArray(blocks) || blocks.length === 0 || normalizedNeedle.length < 8) {
     return null;
@@ -198,11 +255,26 @@ export function findPreviewBlockBySnippet(blocks, snippet) {
     if (index === -1) {
       continue;
     }
-    if (!best || index < best.index) {
-      best = { block, index };
-      if (index === 0) {
-        break;
-      }
+    const lineDistance = lineDistanceToBlock(block, options.nearLine);
+    const candidate = { block, index, lineDistance };
+    if (!best) {
+      best = candidate;
+      continue;
+    }
+
+    if (candidate.lineDistance < best.lineDistance) {
+      best = candidate;
+      continue;
+    }
+    if (candidate.lineDistance > best.lineDistance) {
+      continue;
+    }
+    if (candidate.index < best.index) {
+      best = candidate;
+      continue;
+    }
+    if (candidate.index === best.index && (candidate.block.top || 0) < (best.block.top || 0)) {
+      best = candidate;
     }
   }
   return best?.block || null;

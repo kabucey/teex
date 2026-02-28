@@ -166,7 +166,9 @@ export function createScrollSyncController({ state, el }) {
   function alignPreviewToEditAnchor(anchor) {
     const blocks = getPreviewBlocks(el.preview);
     const maxScrollTop = getMaxScrollTop(el.preview);
-    const textMatchedBlock = findPreviewBlockBySnippet(blocks, anchor.textSnippet);
+    const textMatchedBlock = findPreviewBlockBySnippet(blocks, anchor.textSnippet, {
+      nearLine: anchor.sourceLine,
+    });
     if (textMatchedBlock) {
       const target = clamp(textMatchedBlock.top, 0, maxScrollTop);
       setPreviewScrollTop(target);
@@ -207,7 +209,9 @@ export function createScrollSyncController({ state, el }) {
   function alignEditToPreviewAnchor(anchor) {
     const maxScrollTop = getMaxScrollTop(el.editor);
     const lineHeight = getEditorLineHeight(el.editor);
-    const rawMatchedIndex = findSourceIndexBySnippet(state.content, anchor.textSnippet);
+    const rawMatchedIndex = findSourceIndexBySnippet(state.content, anchor.textSnippet, {
+      nearLine: anchor.sourceLine,
+    });
     const rawMatchedLine = sourceIndexToLineNumber(state.content, rawMatchedIndex);
     if (Number.isFinite(rawMatchedLine)) {
       const target = computeEditorScrollTopFromSourceLine({
@@ -232,7 +236,9 @@ export function createScrollSyncController({ state, el }) {
       };
     }
 
-    const matchedSourceLine = findSourceLineBySnippet(state.content, anchor.textSnippet);
+    const matchedSourceLine = findSourceLineBySnippet(state.content, anchor.textSnippet, {
+      nearLine: anchor.sourceLine,
+    });
     if (Number.isFinite(matchedSourceLine)) {
       const target = computeEditorScrollTopFromSourceLine({
         sourceLine: matchedSourceLine,
