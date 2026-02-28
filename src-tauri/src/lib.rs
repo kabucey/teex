@@ -78,6 +78,10 @@ const MENU_CLOSE_WINDOW: &str = "close_window";
 const MENU_TOGGLE_SIDEBAR: &str = "toggle_sidebar";
 const MENU_NEW_TAB: &str = "new_tab";
 const MENU_TOGGLE_MARKDOWN_MODE: &str = "toggle_markdown_mode";
+const MENU_THEME_SYSTEM: &str = "theme_system";
+const MENU_THEME_LIGHT: &str = "theme_light";
+const MENU_THEME_DARK: &str = "theme_dark";
+const EVENT_SET_THEME: &str = "teex://set-theme";
 static NEXT_WINDOW_ID: AtomicUsize = AtomicUsize::new(1);
 static NEXT_TRANSFER_REQUEST_ID: AtomicUsize = AtomicUsize::new(1);
 const FOLDER_WATCH_DEBOUNCE: Duration = Duration::from_millis(250);
@@ -104,6 +108,12 @@ struct WindowFolderWatch {
 
 struct FileWatchRegistry {
     by_window: Mutex<HashMap<String, WindowFileWatch>>,
+}
+
+pub(crate) struct ThemeMenuState {
+    pub system: tauri::menu::CheckMenuItem<tauri::Wry>,
+    pub light: tauri::menu::CheckMenuItem<tauri::Wry>,
+    pub dark: tauri::menu::CheckMenuItem<tauri::Wry>,
 }
 
 struct WindowFileWatch {
@@ -136,7 +146,6 @@ fn build_new_window(app: &tauri::AppHandle, label: String) -> Result<tauri::Webv
     let new_window = tauri::WebviewWindowBuilder::new(app, label, tauri::WebviewUrl::default())
         .title("Teex")
         .inner_size(800.0, 600.0)
-        .theme(Some(tauri::Theme::Dark))
         .build()
         .map_err(|e| format!("Unable to create window: {e}"))?;
 

@@ -111,13 +111,38 @@ const externalFileWatchState = {
   },
 }));
 
+function applySavedTheme() {
+  const saved = localStorage.getItem("teex-theme");
+  if (saved === "light" || saved === "dark") {
+    document.documentElement.setAttribute("data-theme", saved);
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+  }
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
+  applySavedTheme();
   bindElements();
   scrollSyncController = createScrollSyncController({ state, el });
   bindUiEvents();
   await bindAppEvents();
   await bootstrap();
   startPendingOpenPathPoller();
+
+  const savedTheme = localStorage.getItem("teex-theme");
+  if (savedTheme) {
+    invoke("set_theme", { theme: savedTheme }).catch(() => {});
+  }
+
+  listen("teex://set-theme", (event) => {
+    const theme = event.payload;
+    localStorage.setItem("teex-theme", theme);
+    if (theme === "light" || theme === "dark") {
+      document.documentElement.setAttribute("data-theme", theme);
+    } else {
+      document.documentElement.removeAttribute("data-theme");
+    }
+  });
 });
 
 function bindElements() {

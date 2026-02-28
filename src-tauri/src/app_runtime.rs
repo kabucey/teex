@@ -1,5 +1,5 @@
 use super::*;
-use tauri::menu::{MenuBuilder, MenuItem, PredefinedMenuItem, SubmenuBuilder};
+use tauri::menu::{CheckMenuItem, MenuBuilder, MenuItem, PredefinedMenuItem, SubmenuBuilder};
 #[cfg(target_os = "ios")]
 use tauri::RunEvent;
 
@@ -10,7 +10,6 @@ pub(crate) fn run_app() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
-        .menu(build_app_menu)
         .setup(setup_app)
         .on_window_event(handle_window_event)
         .on_menu_event(|app, event| {
@@ -34,7 +33,8 @@ pub(crate) fn run_app() {
             watch_project_folder,
             clear_project_folder_watch,
             watch_project_files,
-            open_paths_in_new_window
+            open_paths_in_new_window,
+            set_theme
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
@@ -65,9 +65,9 @@ pub(crate) fn run_app() {
     });
 }
 
-fn build_app_menu<R: tauri::Runtime>(
-    app: &tauri::AppHandle<R>,
-) -> tauri::Result<tauri::menu::Menu<R>> {
+fn build_app_menu(
+    app: &tauri::AppHandle,
+) -> tauri::Result<(tauri::menu::Menu<tauri::Wry>, ThemeMenuState)> {
     let open_file_item = MenuItem::with_id(
         app,
         MENU_OPEN_FILE,
@@ -140,6 +140,17 @@ fn build_app_menu<R: tauri::Runtime>(
         Some("CmdOrCtrl+E"),
     )?;
 
+    let theme_system_item =
+        CheckMenuItem::with_id(app, MENU_THEME_SYSTEM, "System", true, true, None::<&str>)?;
+    let theme_light_item =
+        CheckMenuItem::with_id(app, MENU_THEME_LIGHT, "Light", true, false, None::<&str>)?;
+    let theme_dark_item =
+        CheckMenuItem::with_id(app, MENU_THEME_DARK, "Dark", true, false, None::<&str>)?;
+
+    let theme_submenu = SubmenuBuilder::new(app, "Theme")
+        .items(&[&theme_system_item, &theme_light_item, &theme_dark_item])
+        .build()?;
+
     let file_submenu = SubmenuBuilder::new(app, "File")
         .items(&[
             &new_tab_item,
@@ -171,6 +182,8 @@ fn build_app_menu<R: tauri::Runtime>(
             &toggle_sidebar_item,
             &PredefinedMenuItem::separator(app)?,
             &toggle_markdown_mode_item,
+            &PredefinedMenuItem::separator(app)?,
+            &theme_submenu,
         ])
         .build()?;
 
@@ -204,14 +217,22 @@ fn build_app_menu<R: tauri::Runtime>(
     top_level_items.push(&view_submenu);
     top_level_items.push(&window_submenu);
 
-    MenuBuilder::new(app).items(&top_level_items).build()
+    let menu = MenuBuilder::new(app).items(&top_level_items).build()?;
+    let theme_state = ThemeMenuState {
+        system: theme_system_item,
+        light: theme_light_item,
+        dark: theme_dark_item,
+    };
+    Ok((menu, theme_state))
 }
 
 fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
-    if let Some(menu) = app.menu() {
-        let _ = set_menu_item_enabled(&menu, MENU_TOGGLE_SIDEBAR, false);
-        let _ = set_menu_item_enabled(&menu, MENU_TOGGLE_MARKDOWN_MODE, false);
-    }
+    let (menu, theme_state) = build_app_menu(app.handle())?;
+    app.set_menu(menu.clone())?;
+    app.manage(theme_state);
+
+    let _ = set_menu_item_enabled(&menu, MENU_TOGGLE_SIDEBAR, false);
+    let _ = set_menu_item_enabled(&menu, MENU_TOGGLE_MARKDOWN_MODE, false);
 
     let initial_label = app.webview_windows().keys().next().cloned();
     app.manage(FocusTracker {
@@ -277,4 +298,28 @@ fn handle_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
         clear_project_folder_watch_for_label(window.app_handle(), window.label());
         clear_project_file_watch_for_label(window.app_handle(), window.label());
     }
+}
+
+fn theme_from_str(value: &str) -> Option<tauri::Theme> {
+    match value {
+        "light" => Some(tauri::Theme::Light),
+        "dark" => Some(tauri::Theme::Dark),
+        _ => None,
+    }
+}
+
+pub(crate) fn apply_theme(app: &tauri::AppHandle, theme: &str) {
+    let native_theme = theme_from_str(theme);
+    for window in app.webview_windows().values() {
+        let _ = window.set_theme(native_theme);
+    }
+    let items = app.state::<ThemeMenuState>();
+    let _ = items.system.set_checked(theme != "light" && theme != "dark");
+    let _ = items.light.set_checked(theme == "light");
+    let _ = items.dark.set_checked(theme == "dark");
+}
+
+#[tauri::command]
+fn set_theme(app: tauri::AppHandle, theme: String) {
+    apply_theme(&app, &theme);
 }
