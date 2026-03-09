@@ -47,10 +47,12 @@ export function getPreviewBlocks(previewEl) {
   }
 
   const blocks = [];
+  const previewRect = previewEl.getBoundingClientRect();
   previewEl.querySelectorAll("[data-src-line-start]").forEach((node) => {
     const startLine = parseLineAttr(node.getAttribute("data-src-line-start"), 1);
     const endLine = Math.max(startLine, parseLineAttr(node.getAttribute("data-src-line-end"), startLine));
-    const top = node.offsetTop;
+    const nodeRect = node.getBoundingClientRect();
+    const top = nodeRect.top - previewRect.top + previewEl.scrollTop;
     const height = Math.max(1, node.offsetHeight);
     blocks.push({ node, startLine, endLine, top, height, text: node.textContent || "" });
   });
