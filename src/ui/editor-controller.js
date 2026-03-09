@@ -51,10 +51,10 @@ export function createEditorController({
     if (typeof onBeforeToggleMarkdownMode === "function") {
       onBeforeToggleMarkdownMode();
     }
-    state.markdownViewMode = state.markdownViewMode === "preview" ? "edit" : "preview";
     if (shouldAutosaveOnToggle(state)) {
       saveNow();
     }
+    state.markdownViewMode = state.markdownViewMode === "preview" ? "edit" : "preview";
     const disableEditorFocus = previousMode === "preview" && state.markdownViewMode === "edit";
     render({ focusEditor: !disableEditorFocus });
     if (typeof onAfterToggleMarkdownMode === "function") {
