@@ -120,7 +120,7 @@ fn build_app_menu(
         MENU_RESTORE_SESSION,
         "Restore Last Session",
         true,
-        None::<&str>,
+        Some("CmdOrCtrl+Shift+R"),
     )?;
     let close_active_file_item = MenuItem::with_id(
         app,
