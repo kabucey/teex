@@ -75,7 +75,6 @@ export function setupControllers({
     render: () => uiRenderer.render(),
     updateMenuState: callbacks.updateMenuState,
     invoke,
-    closeTabByPath: callbacks.closeTabByPath,
   });
 
   const tabTransferController = createTabTransferController({
@@ -171,6 +170,7 @@ export function setupControllers({
     restoreLastSession: callbacks.restoreLastSession,
     handleCrossWindowDragEnter: () => crossWindowDragController.handleDragEnter(),
     handleCrossWindowDragLeave: () => crossWindowDragController.handleDragLeave(),
+    handleContextMenuDelete: callbacks.handleContextMenuDelete,
     bindWindowDragDropEvents: () => dragDropController.bindWindowDragDropEvents(),
   });
 

@@ -22,7 +22,7 @@ import {
   clearAllSessions,
 } from "./app/session-persistence.js";
 import { createScrollSyncController } from "./ui/scroll-sync.js";
-import { confirmReloadExternalChange } from "./ui/native-dialog.js";
+import { confirmDelete, confirmReloadExternalChange } from "./ui/native-dialog.js";
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -114,6 +114,7 @@ const externalFileWatchState = {
     handleReceiveTransferredTabs,
     handleTabTransferResult,
     restoreLastSession,
+    handleContextMenuDelete,
     onFileSaved,
     onBeforeToggleMarkdownMode,
     onAfterToggleMarkdownMode,
@@ -397,6 +398,20 @@ async function closeTabByPath(path) {
     }
   } else if (state.activePath === path) {
     await closeSingleActiveFile();
+  }
+}
+
+async function handleContextMenuDelete(path) {
+  const fileName = baseName(path);
+  const confirmed = await confirmDelete(fileName);
+  if (!confirmed) {
+    return;
+  }
+  try {
+    await invoke("trash_file", { path });
+    await closeTabByPath(path);
+  } catch (err) {
+    console.error("Failed to move file to trash:", err);
   }
 }
 

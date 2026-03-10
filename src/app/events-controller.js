@@ -19,6 +19,7 @@ export function createAppEventsController({
   restoreLastSession,
   handleCrossWindowDragEnter,
   handleCrossWindowDragLeave,
+  handleContextMenuDelete,
 }) {
   async function bindAppEvents() {
     const label = await invoke("get_window_label");
@@ -68,6 +69,9 @@ export function createAppEventsController({
       }),
       listen(`${events.crossWindowDragLeave}/${label}`, () => {
         handleCrossWindowDragLeave();
+      }),
+      listen(`${events.contextMenuDelete}/${label}`, async (event) => {
+        await handleContextMenuDelete(event.payload);
       }),
       bindWindowDragDropEvents(),
     ]);

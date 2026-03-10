@@ -35,11 +35,13 @@ mod launch;
 mod mac_services;
 mod menu_events;
 mod path_utils;
+mod context_menu;
 mod cross_window_drag;
 mod tab_transfer;
 mod watchers;
 mod window_title;
 
+use context_menu::show_sidebar_context_menu;
 use files::{format_structured_text, list_project_entries, read_text_file, trash_file, write_text_file};
 use launch::{
     categorize_paths, get_launch_context, open_paths_in_new_window, queue_open_paths,
@@ -74,6 +76,7 @@ const EVENT_NEW_TAB: &str = "teex://new-tab";
 const EVENT_REQUEST_EXPORT_ALL_TABS: &str = "teex://request-export-all-tabs";
 const EVENT_RECEIVE_TRANSFERRED_TABS: &str = "teex://receive-transferred-tabs";
 const EVENT_TAB_TRANSFER_RESULT: &str = "teex://tab-transfer-result";
+const EVENT_CONTEXT_MENU_DELETE: &str = "teex://context-menu-delete";
 const EVENT_CROSS_WINDOW_DRAG_ENTER: &str = "teex://cross-window-drag-enter";
 const EVENT_CROSS_WINDOW_DRAG_LEAVE: &str = "teex://cross-window-drag-leave";
 

@@ -66,6 +66,8 @@ Prerequisites: Rust toolchain, Tauri CLI, and platform-specific Tauri/WebView bu
 - Rust uses standard `rustfmt` formatting (4-space indentation).
 - Use `camelCase` for JS variables/functions and serialized payload fields.
 - Use `SCREAMING_SNAKE_CASE` for JS/Rust constants (for event/menu IDs).
+- Prefer native desktop UI affordances over custom in-app UI when both are viable: use Tauri/OS menus, context menus, file dialogs, window behaviors, and platform integrations before building HTML/CSS/JS replacements.
+- If a custom in-app UI is required instead of a native one, keep the reason explicit in the code or PR notes (for example: missing native capability, cross-platform limitation, or richer app-specific behavior).
 - Keep frontend DOM IDs and state keys descriptive (`tab-bar`, `activeTabIndex`).
 - Keep files small: target roughly 200 lines per file when practical. If a file grows beyond that, consider refactoring into smaller modules/components/functions.
 - Hard cap for new/refactored code: keep files within 200-300 lines. If a file exceeds ~300 lines, split it before adding more logic (exceptions only for generated files or third-party vendored code).
@@ -86,6 +88,7 @@ Prerequisites: Rust toolchain, Tauri CLI, and platform-specific Tauri/WebView bu
 - In `src-tauri/src/tests/`, do not add redundant `_tests` suffixes to filenames (use `launch.rs`, not `launch_tests.rs`).
 - Prefer small, focused tests and cover error paths (missing file, invalid folder, read/write failures).
 - When changing file-open flows or app registration behavior, manually test representative file types configured in `src-tauri/tauri.conf.json` (for example: Markdown, text, JSON, YAML, TOML, CSV, XML).
+- When changing native menus, dialogs, context menus, or other OS-integrated UI, manually verify the affected behavior in `cargo tauri dev` on the target platform.
 - If the feature touches file opening/launch behavior, test multiple entry paths when supported:
   - opening from the app UI
   - OS “Open With” / double-click file association

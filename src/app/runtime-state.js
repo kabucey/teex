@@ -14,6 +14,7 @@ export const EVENTS = {
   restoreSession: "teex://restore-session",
   crossWindowDragEnter: "teex://cross-window-drag-enter",
   crossWindowDragLeave: "teex://cross-window-drag-leave",
+  contextMenuDelete: "teex://context-menu-delete",
 };
 
 export function createRuntimeState() {
