@@ -22,6 +22,7 @@ import {
   clearAllSessions,
 } from "./app/session-persistence.js";
 import { createScrollSyncController } from "./ui/scroll-sync.js";
+import { confirmReloadExternalChange } from "./ui/native-dialog.js";
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -107,6 +108,7 @@ const externalFileWatchState = {
     toggleSidebarVisibility,
     toggleMarkdownMode,
     closeActiveFileOrWindow,
+    closeTabByPath,
     createNewTab,
     handleRequestExportAllTabs,
     handleReceiveTransferredTabs,
@@ -387,6 +389,17 @@ async function closeTab(index) {
   }
 }
 
+async function closeTabByPath(path) {
+  if (hasTabSession()) {
+    const index = findOpenTabIndexByPath(path);
+    if (index !== -1) {
+      await closeTab(index);
+    }
+  } else if (state.activePath === path) {
+    await closeSingleActiveFile();
+  }
+}
+
 async function closeSingleActiveFile() {
   await tabController.closeSingleActiveFile();
   scrollSyncController?.afterContextCleared();
@@ -540,9 +553,7 @@ async function reloadExternallyChangedFile(path) {
 
   if (isDirty) {
     if (isActive) {
-      const confirmed = window.confirm(
-        `\"${baseName(path)}\" changed outside Teex. Reload and discard unsaved changes?`,
-      );
+      const confirmed = await confirmReloadExternalChange(baseName(path));
       if (!confirmed) {
         setStatus(`External change detected for ${baseName(path)} (kept local edits)`, true);
         return;

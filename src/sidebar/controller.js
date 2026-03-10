@@ -6,6 +6,8 @@ import {
   shouldCollapseHiddenSingleTabForSidebarOpen,
 } from "../ui/behavior.js";
 import { buildEntryTree, renderTreeHtml } from "./tree.js";
+import { showSidebarContextMenu } from "./context-menu.js";
+import { confirmDelete } from "../ui/native-dialog.js";
 
 export function createSidebarController({
   state,
@@ -23,6 +25,8 @@ export function createSidebarController({
   openFolderEntryInTabs,
   render,
   updateMenuState,
+  invoke,
+  closeTabByPath,
 }) {
   function markTreeDirty() {
     sidebarRenderState.treeDirty = true;
@@ -98,6 +102,20 @@ export function createSidebarController({
     }
 
     sidebarRenderState.activePath = selectedPath;
+  }
+
+  async function handleDeleteFile(path) {
+    const fileName = baseName(path);
+    const confirmed = await confirmDelete(fileName);
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await invoke("trash_file", { path });
+      closeTabByPath(path);
+    } catch (err) {
+      console.error("Failed to move file to trash:", err);
+    }
   }
 
   function bindSidebarItemEvents() {
@@ -177,6 +195,17 @@ export function createSidebarController({
 
         await saveNow();
         await openFolderEntryInTabs(path);
+      });
+
+      button.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        const path = button.dataset.path;
+        if (!path) {
+          return;
+        }
+        showSidebarContextMenu(event.clientX, event.clientY, {
+          onMoveToTrash: () => handleDeleteFile(path),
+        });
       });
     });
 

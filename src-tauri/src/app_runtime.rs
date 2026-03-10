@@ -38,7 +38,8 @@ pub(crate) fn run_app() {
             open_paths_in_new_window,
             set_theme,
             report_drag_position,
-            cancel_cross_window_drag_hover
+            cancel_cross_window_drag_hover,
+            trash_file
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");

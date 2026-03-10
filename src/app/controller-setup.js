@@ -74,6 +74,8 @@ export function setupControllers({
     openFolderEntryInTabs: callbacks.openFolderEntryInTabs,
     render: () => uiRenderer.render(),
     updateMenuState: callbacks.updateMenuState,
+    invoke,
+    closeTabByPath: callbacks.closeTabByPath,
   });
 
   const tabTransferController = createTabTransferController({

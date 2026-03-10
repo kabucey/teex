@@ -81,6 +81,25 @@ fn read_text_file_returns_error_for_missing_or_non_utf8_files() {
 }
 
 #[test]
+fn trash_file_moves_file_to_trash() {
+    let temp = TempTestDir::new();
+    let file = temp.write_text("delete-me.md", "bye");
+    let file_string = file.to_string_lossy().to_string();
+
+    trash_file(file_string).expect("trash file should succeed");
+    assert!(!file.exists(), "file should no longer exist on disk");
+}
+
+#[test]
+fn trash_file_returns_error_for_missing_file() {
+    let temp = TempTestDir::new();
+    let missing = temp.path().join("nope.txt");
+
+    let error = trash_file(missing.to_string_lossy().to_string()).unwrap_err();
+    assert!(error.contains("not found"));
+}
+
+#[test]
 fn format_structured_text_formats_json_input() {
     let result =
         format_structured_text("{\"name\":\"teex\"}".to_string(), Some("json".to_string()))

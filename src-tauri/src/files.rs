@@ -138,6 +138,15 @@ pub(crate) fn write_text_file(path: String, content: String) -> Result<(), Strin
 }
 
 #[tauri::command]
+pub(crate) fn trash_file(path: String) -> Result<(), String> {
+    let path_buf = PathBuf::from(&path);
+    if !path_buf.exists() {
+        return Err("File not found".to_string());
+    }
+    trash::delete(&path_buf).map_err(|e| format!("Unable to move file to trash: {e}"))
+}
+
+#[tauri::command]
 pub(crate) fn format_structured_text(
     content: String,
     preferred_kind: Option<String>,
