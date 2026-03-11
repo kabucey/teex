@@ -532,6 +532,11 @@ body {
   color: var(--accent);
 }
 
+.preview img {
+  max-width: 100%;
+  height: auto;
+}
+
 .preview .mermaid {
   margin: 1em 0;
   overflow-x: auto;

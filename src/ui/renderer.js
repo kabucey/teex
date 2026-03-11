@@ -1,6 +1,7 @@
-import { baseName, isCursorOutsideWindow } from "../app-utils.js";
+import { baseName, dirName, isCursorOutsideWindow } from "../app-utils.js";
 import { shouldShowTabBar } from "./behavior.js";
 import { escapeAttr, escapeHtml } from "./html-utils.js";
+import { rewritePreviewImages } from "./image-paths.js";
 import { renderMarkdown, renderMermaidDiagrams } from "./markdown-renderer.js";
 
 export function createUiRenderer({
@@ -260,6 +261,13 @@ export function createUiRenderer({
       el.editor.classList.add("hidden");
       el.preview.classList.remove("hidden");
       el.preview.innerHTML = renderMarkdown(state.content);
+      if (state.activePath && window.__TAURI__?.core?.convertFileSrc) {
+        rewritePreviewImages(
+          el.preview,
+          dirName(state.activePath),
+          window.__TAURI__.core.convertFileSrc,
+        );
+      }
       renderMermaidDiagrams(el.preview).catch((error) => {
         console.error(String(error));
       });
