@@ -155,7 +155,7 @@ body {
   align-items: center;
   gap: 6px;
   text-align: left;
-  color: var(--subtle);
+  color: color-mix(in oklab, var(--ink) 70%, var(--subtle));
   border-radius: 5px;
   padding: 5px 8px 5px calc(6px + (var(--indent) * 16px));
   font-size: 13px;
@@ -178,14 +178,14 @@ body {
   border-top: 3.5px solid transparent;
   border-bottom: 3.5px solid transparent;
   border-left: 5px solid currentColor;
-  opacity: 0.45;
+  opacity: 0.55;
   transition:
     transform 150ms ease,
     opacity 150ms ease;
 }
 
 .folder-toggle:hover .disclosure {
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .folder-toggle[aria-expanded="true"] .disclosure {
@@ -196,9 +196,9 @@ body {
   width: 14px;
   height: 10px;
   flex-shrink: 0;
-  border: 1px solid color-mix(in oklab, var(--line) 80%, transparent);
+  border: 1px solid color-mix(in oklab, var(--subtle) 70%, transparent);
   border-radius: 2px;
-  background: color-mix(in oklab, var(--ink) 4%, transparent);
+  background: color-mix(in oklab, var(--ink) 8%, transparent);
   position: relative;
   transition:
     background 150ms ease,
@@ -212,10 +212,10 @@ body {
   left: 1px;
   width: 7px;
   height: 4px;
-  border: 1px solid color-mix(in oklab, var(--line) 80%, transparent);
+  border: 1px solid color-mix(in oklab, var(--subtle) 70%, transparent);
   border-bottom: 0;
   border-radius: 2px 2px 0 0;
-  background: color-mix(in oklab, var(--ink) 6%, transparent);
+  background: color-mix(in oklab, var(--ink) 10%, transparent);
   transition:
     background 150ms ease,
     border-color 150ms ease;
@@ -243,7 +243,7 @@ body {
   border: 0;
   background: transparent;
   text-align: left;
-  color: var(--subtle);
+  color: color-mix(in oklab, var(--ink) 65%, var(--subtle));
   border-radius: 5px;
   font-size: 14px;
   padding: 5px 8px 5px calc(6px + (var(--indent) * 16px));
