@@ -192,22 +192,33 @@ export function createUiRenderer({
       updateDropIndicator(event.clientX);
     }
 
+    function cleanupDragUi() {
+      if (dragState) {
+        dragState.sourceEl.classList.remove("tab-dragging");
+        if (dragState.ghost) {
+          dragState.ghost.remove();
+        }
+      }
+      document.documentElement.classList.remove("tab-reordering");
+      dragState = null;
+      clearDropIndicators();
+      document.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseup", onMouseUp);
+    }
+
     function onMouseUp(event) {
       if (!dragState) {
         return;
       }
       if (dragState.dragging) {
         if (crossWindowDrag && crossWindowDrag.currentTargetLabel()) {
-          dragState.sourceEl.classList.remove("tab-dragging");
-          if (dragState.ghost) {
-            dragState.ghost.remove();
-          }
-          document.documentElement.classList.remove("tab-reordering");
-          dragState = null;
-          clearDropIndicators();
-          document.removeEventListener("mousemove", onMouseMove);
-          document.removeEventListener("mouseup", onMouseUp);
+          cleanupDragUi();
           crossWindowDrag.completeDrop();
+          return;
+        }
+        if (crossWindowDrag && isCursorOutsideWindow(event)) {
+          cleanupDragUi();
+          crossWindowDrag.completeDropAsNewWindow(event.screenX, event.screenY);
           return;
         }
         if (crossWindowDrag) {

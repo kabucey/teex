@@ -39,6 +39,10 @@ pub(crate) fn run_app() {
             set_theme,
             report_drag_position,
             cancel_cross_window_drag_hover,
+            show_tab_drag_preview,
+            hide_tab_drag_preview,
+            get_drag_preview_content,
+            create_window_from_drag,
             trash_file,
             show_sidebar_context_menu
         ])
@@ -268,6 +272,7 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
         by_window: Mutex::new(HashMap::new()),
     });
     app.manage(CrossWindowDragRegistry::new());
+    app.manage(TabDragPreviewState::new());
 
     #[cfg(target_os = "macos")]
     {

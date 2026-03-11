@@ -1,9 +1,12 @@
 import { shouldShowTabBar } from "../ui/behavior.js";
+import { baseName } from "../app-utils.js";
 import {
+  clearActiveFileInState,
   flushStateToActiveTabInState,
   hasTabSession,
   normalizeTransferTab,
   snapshotActiveFileAsTransferTab,
+  syncActiveTabToStateFromTabs,
 } from "./session.js";
 
 let nextDragId = 1;
@@ -15,17 +18,21 @@ export function createCrossWindowDragController({
   el,
   render,
   setStatus,
+  updateMenuState,
+  markSidebarTreeDirty,
 }) {
   let dragId = null;
   let fromIndex = -1;
   let targetLabel = null;
   let reporting = false;
+  let previewVisible = false;
 
   function activate(index) {
     dragId = `cwdrag-${nextDragId++}`;
     fromIndex = index;
     targetLabel = null;
     reporting = false;
+    previewVisible = false;
   }
 
   function isActive() {
@@ -34,6 +41,14 @@ export function createCrossWindowDragController({
 
   function currentTargetLabel() {
     return targetLabel;
+  }
+
+  function getTabPreviewInfo(index) {
+    flushStateToActiveTabInState(state);
+    const tab = hasTabSession(state) ? state.openFiles[index] : null;
+    const title = tab?.path ? baseName(tab.path) : (state.activePath ? baseName(state.activePath) : "Untitled");
+    const content = tab?.content ?? state.content ?? "";
+    return { title, content };
   }
 
   async function reportPosition(screenX, screenY) {
@@ -51,6 +66,22 @@ export function createCrossWindowDragController({
         physicalY,
       });
       targetLabel = result ?? null;
+
+      if (targetLabel) {
+        if (previewVisible) {
+          invoke("hide_tab_drag_preview").catch(() => {});
+          previewVisible = false;
+        }
+      } else {
+        const info = getTabPreviewInfo(fromIndex);
+        invoke("show_tab_drag_preview", {
+          physicalX,
+          physicalY,
+          title: info.title,
+          content: info.content,
+        }).catch(() => {});
+        previewVisible = true;
+      }
     } catch {
       targetLabel = null;
     } finally {
@@ -67,8 +98,12 @@ export function createCrossWindowDragController({
     fromIndex = -1;
     targetLabel = null;
     reporting = false;
+    previewVisible = false;
     try {
-      await invoke("cancel_cross_window_drag_hover", { dragId: id });
+      await Promise.all([
+        invoke("cancel_cross_window_drag_hover", { dragId: id }),
+        invoke("hide_tab_drag_preview"),
+      ]);
     } catch {
       // best-effort cleanup
     }
@@ -111,6 +146,7 @@ export function createCrossWindowDragController({
     fromIndex = -1;
     targetLabel = null;
     reporting = false;
+    previewVisible = false;
 
     try {
       await invoke("route_tab_transfer", {
@@ -123,6 +159,87 @@ export function createCrossWindowDragController({
       pendingOutgoingTabTransfers.delete(requestId);
       setStatus(String(error), true);
     }
+
+    try {
+      await invoke("cancel_cross_window_drag_hover", { dragId: savedDragId });
+    } catch {
+      // best-effort cleanup
+    }
+  }
+
+  function removeTabFromSource(index) {
+    if (!hasTabSession(state)) {
+      clearActiveFileInState(state);
+      if (state.mode !== "folder") {
+        state.mode = "empty";
+        markSidebarTreeDirty();
+      }
+      render();
+      updateMenuState();
+      return;
+    }
+
+    if (index < 0 || index >= state.openFiles.length) {
+      return;
+    }
+
+    state.openFiles.splice(index, 1);
+    if (state.openFiles.length === 0) {
+      state.activeTabIndex = 0;
+      clearActiveFileInState(state);
+      if (state.mode !== "folder") {
+        state.mode = "empty";
+        markSidebarTreeDirty();
+      }
+    } else {
+      if (state.activeTabIndex >= state.openFiles.length) {
+        state.activeTabIndex = state.openFiles.length - 1;
+      }
+      syncActiveTabToStateFromTabs(state);
+    }
+    render();
+    updateMenuState();
+  }
+
+  async function completeDropAsNewWindow(screenX, screenY) {
+    if (!dragId) {
+      return;
+    }
+
+    const tab = snapshotSingleTab(fromIndex);
+    if (!tab || !tab.path) {
+      await cancel();
+      return;
+    }
+
+    const physicalX = Math.round(screenX * window.devicePixelRatio);
+    const physicalY = Math.round(screenY * window.devicePixelRatio);
+
+    const savedDragId = dragId;
+    const savedFromIndex = fromIndex;
+    dragId = null;
+    fromIndex = -1;
+    targetLabel = null;
+    reporting = false;
+    previewVisible = false;
+
+    try {
+      await invoke("create_window_from_drag", {
+        physicalX,
+        physicalY,
+        path: tab.path,
+      });
+    } catch (error) {
+      setStatus(String(error), true);
+      try {
+        await invoke("cancel_cross_window_drag_hover", { dragId: savedDragId });
+      } catch {
+        // best-effort
+      }
+      return;
+    }
+
+    removeTabFromSource(savedFromIndex);
 
     try {
       await invoke("cancel_cross_window_drag_hover", { dragId: savedDragId });
@@ -156,6 +273,7 @@ export function createCrossWindowDragController({
     reportPosition,
     cancel,
     completeDrop,
+    completeDropAsNewWindow,
     handleDragEnter,
     handleDragLeave,
   };

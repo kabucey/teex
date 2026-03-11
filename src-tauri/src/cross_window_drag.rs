@@ -42,7 +42,7 @@ fn find_window_at_position(
     physical_y: i32,
 ) -> Option<String> {
     for (label, window) in app.webview_windows() {
-        if label == source_label {
+        if label == source_label || label == tab_drag_preview::PREVIEW_WINDOW_LABEL {
             continue;
         }
         if window_contains_point(&window, physical_x, physical_y) {

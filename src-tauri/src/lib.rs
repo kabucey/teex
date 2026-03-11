@@ -37,6 +37,7 @@ mod menu_events;
 mod path_utils;
 mod context_menu;
 mod cross_window_drag;
+mod tab_drag_preview;
 mod tab_transfer;
 mod watchers;
 mod window_title;
@@ -45,7 +46,7 @@ use context_menu::show_sidebar_context_menu;
 use files::{format_structured_text, list_project_entries, read_text_file, trash_file, write_text_file};
 use launch::{
     categorize_paths, get_launch_context, open_paths_in_new_window, queue_open_paths,
-    take_pending_open_paths,
+    queue_open_paths_for_window, take_pending_open_paths,
 };
 use menu_events::{
     emit_os_open_paths, emit_to_window, handle_app_menu_event, set_menu_item_enabled, target_window,
@@ -56,6 +57,10 @@ use path_utils::{file_kind, is_text_like, path_to_string, should_traverse};
 use cross_window_drag::{
     cancel_cross_window_drag_hover, cleanup_drag_entries_for_window, report_drag_position,
     CrossWindowDragRegistry,
+};
+use tab_drag_preview::{
+    create_window_from_drag, get_drag_preview_content, hide_tab_drag_preview,
+    show_tab_drag_preview, TabDragPreviewState,
 };
 use tab_transfer::{route_tab_transfer, route_tab_transfer_result, RequestExportAllTabsPayload};
 use watchers::{

@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  :root {
+    --bg: #282c34;
+    --panel: #21252b;
+    --ink: #ffffff;
+    --subtle: #abb2bf;
+    --line: #3a3f4b;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, monospace;
+    --ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #ffffff;
+      --panel: #f0f0f0;
+      --ink: #1a1a1a;
+      --subtle: #6b7280;
+      --line: #d1d5db;
+    }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg);
+    overflow: hidden;
+    opacity: 0.7;
+    border-radius: 8px;
+  }
+  .title-bar {
+    height: 28px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--ui);
+    font-size: 10px;
+    color: var(--subtle);
+    border-radius: 8px 8px 0 0;
+  }
+  .content {
+    flex: 1;
+    padding: 6px 8px;
+    font-family: var(--mono);
+    font-size: 7px;
+    line-height: 1.4;
+    color: var(--ink);
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: hidden;
+    height: calc(100vh - 28px);
+  }
+</style>
+</head>
+<body>
+  <div class="title-bar" id="title"></div>
+  <div class="content" id="content"></div>
+  <script>
+    const { invoke } = window.__TAURI__.core;
+    invoke("get_drag_preview_content").then((data) => {
+      if (data) {
+        document.getElementById("title").textContent = data.title || "";
+        document.getElementById("content").textContent = data.content || "";
+      }
+    }).catch(() => {});
+  </script>
+</body>
+</html>

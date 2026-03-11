@@ -33,6 +33,8 @@ export function setupControllers({
     el,
     render: callbacks.render,
     setStatus: callbacks.setStatus,
+    updateMenuState: callbacks.updateMenuState,
+    markSidebarTreeDirty: callbacks.markSidebarTreeDirty,
   });
 
   uiRenderer = createUiRenderer({
