@@ -257,6 +257,8 @@ export function createUiRenderer({
 
     if (el.editor.value !== state.content) {
       el.editor.value = state.content;
+      el.editor.selectionStart = 0;
+      el.editor.selectionEnd = 0;
     }
 
     if (shouldFocusEditor) {
