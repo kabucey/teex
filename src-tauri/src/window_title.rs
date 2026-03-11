@@ -32,8 +32,8 @@ unsafe fn set_macos_window_represented_path_main_thread(
     type Class = *const c_void;
 
     extern "C" {
-        fn objc_getClass(name: *const u8) -> Class;
-        fn sel_registerName(name: *const u8) -> Sel;
+        fn objc_getClass(name: *const c_char) -> Class;
+        fn sel_registerName(name: *const c_char) -> Sel;
         fn objc_msgSend();
     }
 
@@ -67,14 +67,14 @@ unsafe fn set_macos_window_represented_path_main_thread(
         let path_cstr = CString::new(path)
             .map_err(|_| "Represented path contains an unsupported NUL byte".to_string())?;
 
-        let ns_string_class = objc_getClass(b"NSString\0".as_ptr());
-        let ns_url_class = objc_getClass(b"NSURL\0".as_ptr());
+        let ns_string_class = objc_getClass(c"NSString".as_ptr());
+        let ns_url_class = objc_getClass(c"NSURL".as_ptr());
         if ns_string_class.is_null() || ns_url_class.is_null() {
             return Err("Unable to load macOS Foundation classes for proxy icon".to_string());
         }
 
-        let string_with_utf8_sel = sel_registerName(b"stringWithUTF8String:\0".as_ptr());
-        let file_url_with_path_sel = sel_registerName(b"fileURLWithPath:\0".as_ptr());
+        let string_with_utf8_sel = sel_registerName(c"stringWithUTF8String:".as_ptr());
+        let file_url_with_path_sel = sel_registerName(c"fileURLWithPath:".as_ptr());
 
         let ns_path = msg1_cstr(
             ns_string_class as Id,
@@ -95,7 +95,7 @@ unsafe fn set_macos_window_represented_path_main_thread(
         std::ptr::null_mut()
     };
 
-    let set_represented_url_sel = sel_registerName(b"setRepresentedURL:\0".as_ptr());
+    let set_represented_url_sel = sel_registerName(c"setRepresentedURL:".as_ptr());
     msg1_void_id(ns_window, set_represented_url_sel, represented_url);
 
     Ok(())

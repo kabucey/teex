@@ -10,7 +10,7 @@
 /// finishLaunching, then restores the original delegate method. This way:
 /// - First launch from Finder: our safe handler captures URLs, no crash
 /// - Subsequent file opens (app running): tao's restored handler works normally
-use std::ffi::c_void;
+use std::ffi::{c_char, c_void};
 use std::path::PathBuf;
 use std::sync::Mutex;
 
@@ -20,8 +20,8 @@ type Class = *const c_void;
 type Method = *mut c_void;
 
 extern "C" {
-    fn objc_getClass(name: *const u8) -> Class;
-    fn sel_registerName(name: *const u8) -> Sel;
+    fn objc_getClass(name: *const c_char) -> Class;
+    fn sel_registerName(name: *const c_char) -> Sel;
     fn objc_msgSend();
     fn object_getClass(obj: Id) -> Class;
     fn class_getInstanceMethod(cls: Class, sel: Sel) -> Method;
@@ -47,12 +47,12 @@ static CAPTURED: Mutex<Vec<String>> = Mutex::new(Vec::new());
 static ORIGINAL_FINISH_IMP: Mutex<usize> = Mutex::new(0);
 
 unsafe extern "C" fn safe_open_urls(_this: Id, _cmd: Sel, _app: Id, urls: Id) {
-    let count_sel = sel_registerName(b"count\0".as_ptr());
+    let count_sel = sel_registerName(c"count".as_ptr());
     let count = msg0_usize(urls, count_sel);
 
-    let obj_at_sel = sel_registerName(b"objectAtIndex:\0".as_ptr());
-    let abs_sel = sel_registerName(b"absoluteString\0".as_ptr());
-    let utf8_sel = sel_registerName(b"UTF8String\0".as_ptr());
+    let obj_at_sel = sel_registerName(c"objectAtIndex:".as_ptr());
+    let abs_sel = sel_registerName(c"absoluteString".as_ptr());
+    let utf8_sel = sel_registerName(c"UTF8String".as_ptr());
 
     let mut strings = Vec::new();
     for i in 0..count {
@@ -79,8 +79,8 @@ unsafe extern "C" fn safe_open_urls(_this: Id, _cmd: Sel, _app: Id, urls: Id) {
 }
 
 unsafe extern "C" fn swizzled_finish_launching(this: Id, cmd: Sel) {
-    let delegate_sel = sel_registerName(b"delegate\0".as_ptr());
-    let open_sel = sel_registerName(b"application:openURLs:\0".as_ptr());
+    let delegate_sel = sel_registerName(c"delegate".as_ptr());
+    let open_sel = sel_registerName(c"application:openURLs:".as_ptr());
 
     let delegate = msg0(this, delegate_sel);
 
@@ -101,11 +101,11 @@ unsafe extern "C" fn swizzled_finish_launching(this: Id, cmd: Sel) {
 
 pub fn install() {
     unsafe {
-        let cls = objc_getClass(b"NSApplication\0".as_ptr());
+        let cls = objc_getClass(c"NSApplication".as_ptr());
         if cls.is_null() {
             return;
         }
-        let sel = sel_registerName(b"finishLaunching\0".as_ptr());
+        let sel = sel_registerName(c"finishLaunching".as_ptr());
         let method = class_getInstanceMethod(cls, sel);
         if method.is_null() {
             return;

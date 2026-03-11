@@ -3,8 +3,8 @@ use super::*;
 type Id = *mut c_void;
 
 extern "C" {
-    fn objc_getClass(name: *const u8) -> *const c_void;
-    fn sel_registerName(name: *const u8) -> *const c_void;
+    fn objc_getClass(name: *const c_char) -> *const c_void;
+    fn sel_registerName(name: *const c_char) -> *const c_void;
     fn objc_msgSend();
 
     fn LSSetDefaultRoleHandlerForContentType(
@@ -18,15 +18,15 @@ const ROLES_ALL: u32 = 0xFFFF_FFFF;
 const MARKDOWN_UTI: &str = "net.daringfireball.markdown";
 
 unsafe fn ns_string(text: &str) -> Option<Id> {
-    let cls = objc_getClass(b"NSString\0".as_ptr());
+    let cls = objc_getClass(c"NSString".as_ptr());
     if cls.is_null() {
         return None;
     }
-    let sel = sel_registerName(b"stringWithUTF8String:\0".as_ptr());
+    let sel = sel_registerName(c"stringWithUTF8String:".as_ptr());
     let c_text = CString::new(text).ok()?;
     let f: unsafe extern "C" fn(Id, *const c_void, *const i8) -> Id =
         std::mem::transmute(objc_msgSend as *const c_void);
-    let value = f(cls as Id, sel, c_text.as_ptr() as *const i8);
+    let value = f(cls as Id, sel, c_text.as_ptr());
     if value.is_null() { None } else { Some(value) }
 }
 

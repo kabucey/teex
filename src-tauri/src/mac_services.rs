@@ -6,8 +6,8 @@ type Sel = *const c_void;
 type Class = *const c_void;
 
 extern "C" {
-    fn objc_getClass(name: *const u8) -> Class;
-    fn sel_registerName(name: *const u8) -> Sel;
+    fn objc_getClass(name: *const c_char) -> Class;
+    fn sel_registerName(name: *const c_char) -> Sel;
     fn objc_msgSend();
     fn objc_allocateClassPair(
         superclass: Class,
@@ -74,12 +74,12 @@ unsafe fn msg0_usize(obj: Id, sel: Sel) -> usize {
 }
 
 unsafe fn ns_string(text: &str) -> Option<Id> {
-    let cls = objc_getClass(b"NSString\0".as_ptr());
+    let cls = objc_getClass(c"NSString".as_ptr());
     if cls.is_null() {
         return None;
     }
 
-    let sel = sel_registerName(b"stringWithUTF8String:\0".as_ptr());
+    let sel = sel_registerName(c"stringWithUTF8String:".as_ptr());
     let c_text = CString::new(text).ok()?;
     let value = msg1_ptr(cls as Id, sel, c_text.as_ptr());
     if value.is_null() { None } else { Some(value) }
@@ -90,7 +90,7 @@ unsafe fn path_from_ns_string(value: Id) -> Option<PathBuf> {
         return None;
     }
 
-    let utf8_sel = sel_registerName(b"UTF8String\0".as_ptr());
+    let utf8_sel = sel_registerName(c"UTF8String".as_ptr());
     let c_str = msg0(value, utf8_sel) as *const i8;
     if c_str.is_null() {
         return None;
@@ -105,31 +105,31 @@ unsafe fn extract_paths_from_pasteboard(pasteboard: Id) -> Vec<PathBuf> {
         return Vec::new();
     }
 
-    let nsurl_cls = objc_getClass(b"NSURL\0".as_ptr());
+    let nsurl_cls = objc_getClass(c"NSURL".as_ptr());
     if nsurl_cls.is_null() {
         return Vec::new();
     }
 
-    let nsarray_cls = objc_getClass(b"NSArray\0".as_ptr());
+    let nsarray_cls = objc_getClass(c"NSArray".as_ptr());
     if nsarray_cls.is_null() {
         return Vec::new();
     }
 
-    let array_with_sel = sel_registerName(b"arrayWithObject:\0".as_ptr());
+    let array_with_sel = sel_registerName(c"arrayWithObject:".as_ptr());
     let classes = msg1(nsarray_cls as Id, array_with_sel, nsurl_cls as Id);
     if classes.is_null() {
         return Vec::new();
     }
 
-    let read_sel = sel_registerName(b"readObjectsForClasses:options:\0".as_ptr());
+    let read_sel = sel_registerName(c"readObjectsForClasses:options:".as_ptr());
     let urls = msg2(pasteboard, read_sel, classes, std::ptr::null_mut());
     if urls.is_null() {
         return Vec::new();
     }
 
-    let count_sel = sel_registerName(b"count\0".as_ptr());
-    let object_at_sel = sel_registerName(b"objectAtIndex:\0".as_ptr());
-    let path_sel = sel_registerName(b"path\0".as_ptr());
+    let count_sel = sel_registerName(c"count".as_ptr());
+    let object_at_sel = sel_registerName(c"objectAtIndex:".as_ptr());
+    let path_sel = sel_registerName(c"path".as_ptr());
     let count = msg0_usize(urls, count_sel);
 
     let mut paths = Vec::new();
@@ -204,7 +204,7 @@ unsafe extern "C" fn service_new_window_here(
 
 pub(crate) fn install() {
     unsafe {
-        let ns_object = objc_getClass(b"NSObject\0".as_ptr());
+        let ns_object = objc_getClass(c"NSObject".as_ptr());
         if ns_object.is_null() {
             return;
         }
@@ -215,7 +215,7 @@ pub(crate) fn install() {
         };
 
         let provider_class = {
-            let existing = objc_getClass(b"TeexServicesProvider\0".as_ptr());
+            let existing = objc_getClass(c"TeexServicesProvider".as_ptr());
             if !existing.is_null() {
                 existing
             } else {
@@ -224,8 +224,8 @@ pub(crate) fn install() {
                     return;
                 }
 
-                let tab_sel = sel_registerName(b"newTeexTabHere:userData:error:\0".as_ptr());
-                let window_sel = sel_registerName(b"newTeexWindowHere:userData:error:\0".as_ptr());
+                let tab_sel = sel_registerName(c"newTeexTabHere:userData:error:".as_ptr());
+                let window_sel = sel_registerName(c"newTeexWindowHere:userData:error:".as_ptr());
                 let types = CString::new("v@:@@^@").ok();
                 let Some(types) = types else {
                     return;
@@ -255,24 +255,24 @@ pub(crate) fn install() {
             }
         };
 
-        let alloc_sel = sel_registerName(b"alloc\0".as_ptr());
-        let init_sel = sel_registerName(b"init\0".as_ptr());
+        let alloc_sel = sel_registerName(c"alloc".as_ptr());
+        let init_sel = sel_registerName(c"init".as_ptr());
         let provider = msg0(msg0(provider_class as Id, alloc_sel), init_sel);
         if provider.is_null() {
             return;
         }
 
-        let ns_app_cls = objc_getClass(b"NSApplication\0".as_ptr());
+        let ns_app_cls = objc_getClass(c"NSApplication".as_ptr());
         if ns_app_cls.is_null() {
             return;
         }
-        let shared_sel = sel_registerName(b"sharedApplication\0".as_ptr());
+        let shared_sel = sel_registerName(c"sharedApplication".as_ptr());
         let app = msg0(ns_app_cls as Id, shared_sel);
         if app.is_null() {
             return;
         }
 
-        let set_provider_sel = sel_registerName(b"setServicesProvider:\0".as_ptr());
+        let set_provider_sel = sel_registerName(c"setServicesProvider:".as_ptr());
         msg1_void(app, set_provider_sel, provider);
     }
 }
