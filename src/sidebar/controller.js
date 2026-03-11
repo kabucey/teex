@@ -4,6 +4,7 @@ import {
   shouldSidebarSingleClickIgnoreSamePath,
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
+  sidebarClickModifierAction,
 } from "../ui/behavior.js";
 import { buildEntryTree, renderTreeHtml } from "./tree.js";
 
@@ -111,6 +112,23 @@ export function createSidebarController({
 
         const path = button.dataset.path;
         if (!path) {
+          return;
+        }
+
+        const modifierAction = sidebarClickModifierAction(event);
+
+        if (modifierAction === "new-window") {
+          invoke("open_paths_in_new_window", { paths: [path] });
+          return;
+        }
+
+        if (modifierAction === "new-tab") {
+          rememberSidebarSingleClick(path);
+          const openPromise = (async () => {
+            await saveNow();
+            await openFolderEntryInTabs(path);
+          })();
+          setSidebarSingleClickOpenPromise(openPromise);
           return;
         }
 

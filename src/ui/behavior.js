@@ -52,6 +52,14 @@ export function shouldShowTabBar(openFilesCount) {
   return Number(openFilesCount) >= 2;
 }
 
+export function sidebarClickModifierAction(event) {
+  const accel = event.metaKey || event.ctrlKey;
+  if (!accel) {
+    return null;
+  }
+  return event.shiftKey ? "new-window" : "new-tab";
+}
+
 export function shouldSuppressDropOverlayForSelfHover({
   paths,
   activePath,

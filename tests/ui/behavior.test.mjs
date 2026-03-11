@@ -10,6 +10,7 @@ import {
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
   shouldSuppressDropOverlayForSelfHover,
+  sidebarClickModifierAction,
 } from "../../src/ui/behavior.js";
 
 test("single-file UI opens in folder mode use folder tab flow", () => {
@@ -234,6 +235,45 @@ test("tab bar only shows with two or more open files", () => {
   assert.equal(shouldShowTabBar(1), false);
   assert.equal(shouldShowTabBar(2), true);
   assert.equal(shouldShowTabBar(3), true);
+});
+
+test("sidebar click with metaKey returns new-tab action", () => {
+  assert.equal(
+    sidebarClickModifierAction({ metaKey: true, ctrlKey: false, shiftKey: false }),
+    "new-tab",
+  );
+});
+
+test("sidebar click with ctrlKey returns new-tab action", () => {
+  assert.equal(
+    sidebarClickModifierAction({ metaKey: false, ctrlKey: true, shiftKey: false }),
+    "new-tab",
+  );
+});
+
+test("sidebar click with metaKey+shiftKey returns new-window action", () => {
+  assert.equal(
+    sidebarClickModifierAction({ metaKey: true, ctrlKey: false, shiftKey: true }),
+    "new-window",
+  );
+});
+
+test("sidebar click with ctrlKey+shiftKey returns new-window action", () => {
+  assert.equal(
+    sidebarClickModifierAction({ metaKey: false, ctrlKey: true, shiftKey: true }),
+    "new-window",
+  );
+});
+
+test("sidebar click without modifier returns null", () => {
+  assert.equal(
+    sidebarClickModifierAction({ metaKey: false, ctrlKey: false, shiftKey: false }),
+    null,
+  );
+  assert.equal(
+    sidebarClickModifierAction({ metaKey: false, ctrlKey: false, shiftKey: true }),
+    null,
+  );
 });
 
 test("drop overlay suppression heuristic matches single dragged active file", () => {
