@@ -31,7 +31,42 @@ function makeState(overrides = {}) {
 
 test("normalizeTransferTab sanitizes invalid and partial tab records", () => {
   assert.equal(normalizeTransferTab(null), null);
-  assert.equal(normalizeTransferTab({ path: "" }), null);
+
+  // Empty string path is preserved (not rejected)
+  assert.deepEqual(normalizeTransferTab({ path: "" }), {
+    path: "",
+    kind: "text",
+    content: "",
+    writable: true,
+    isDirty: false,
+    markdownViewMode: "edit",
+    scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+  });
+
+  // Null path (untitled tab) is preserved
+  assert.deepEqual(
+    normalizeTransferTab({ path: null, kind: "text", content: "draft" }),
+    {
+      path: null,
+      kind: "text",
+      content: "draft",
+      writable: true,
+      isDirty: false,
+      markdownViewMode: "edit",
+      scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+    },
+  );
+
+  // Undefined path becomes null
+  assert.deepEqual(normalizeTransferTab({ kind: "text" }), {
+    path: null,
+    kind: "text",
+    content: "",
+    writable: true,
+    isDirty: false,
+    markdownViewMode: "edit",
+    scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+  });
 
   assert.deepEqual(
     normalizeTransferTab({
@@ -207,6 +242,23 @@ test("snapshot helpers return none/single/tabs payloads", () => {
     kind: "single",
     tabs: [snapshotActiveFileAsTransferTab(single)],
     singlePath: "/one.md",
+  });
+
+  // Untitled active file (no path) can be snapshotted
+  const untitled = makeState({
+    activePath: null,
+    activeKind: "text",
+    content: "draft content",
+    isDirty: true,
+  });
+  assert.deepEqual(snapshotActiveFileAsTransferTab(untitled), {
+    path: null,
+    content: "draft content",
+    kind: "text",
+    writable: true,
+    isDirty: true,
+    markdownViewMode: "edit",
+    scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
   });
 
   const tabs = makeState({

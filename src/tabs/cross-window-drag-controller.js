@@ -263,8 +263,14 @@ export function createCrossWindowDragController({
     }
 
     const isPathMode = dragMode === "path";
-    const path = isPathMode ? dragPath : snapshotSingleTab(fromIndex)?.path;
-    if (!path) {
+    const tab = isPathMode ? null : snapshotSingleTab(fromIndex);
+    const path = isPathMode ? dragPath : (tab?.path ?? null);
+
+    if (isPathMode && !path) {
+      await cancel();
+      return;
+    }
+    if (!isPathMode && !tab) {
       await cancel();
       return;
     }
@@ -274,6 +280,7 @@ export function createCrossWindowDragController({
 
     const savedDragId = dragId;
     const savedFromIndex = fromIndex;
+    const savedIsPathMode = isPathMode;
     dragId = null;
     fromIndex = -1;
     targetLabel = null;
@@ -283,8 +290,9 @@ export function createCrossWindowDragController({
     dragPath = null;
     dragPreviewInfo = null;
 
+    let newWindowLabel;
     try {
-      await invoke("create_window_from_drag", {
+      newWindowLabel = await invoke("create_window_from_drag", {
         physicalX,
         physicalY,
         path,
@@ -299,7 +307,26 @@ export function createCrossWindowDragController({
       return;
     }
 
-    if (!isPathMode) {
+    if (!savedIsPathMode && !path && newWindowLabel && tab) {
+      const requestId = `cwdrag-transfer-${nextDragId++}`;
+      pendingOutgoingTabTransfers.set(requestId, {
+        kind: "single-drag",
+        tabCount: 1,
+        fromIndex: savedFromIndex,
+      });
+      try {
+        await invoke("route_tab_transfer", {
+          sourceLabel: state.windowLabel,
+          targetLabel: newWindowLabel,
+          requestId,
+          tabs: [tab],
+        });
+      } catch {
+        pendingOutgoingTabTransfers.delete(requestId);
+      }
+    }
+
+    if (!savedIsPathMode) {
       removeTabFromSource(savedFromIndex);
     }
 

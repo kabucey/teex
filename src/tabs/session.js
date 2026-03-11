@@ -96,13 +96,13 @@ export function syncActiveTabToStateFromTabs(state) {
 }
 
 export function normalizeTransferTab(rawTab) {
-  if (!rawTab || typeof rawTab.path !== "string" || !rawTab.path) {
+  if (!rawTab) {
     return null;
   }
 
   const kind = rawTab.kind === "markdown" ? "markdown" : "text";
   return {
-    path: rawTab.path,
+    path: rawTab.path ?? null,
     content: typeof rawTab.content === "string" ? rawTab.content : "",
     kind,
     writable: rawTab.writable !== false,
@@ -125,7 +125,7 @@ export function normalizeTransferTab(rawTab) {
 }
 
 export function snapshotActiveFileAsTransferTab(state) {
-  if (!state.activePath || !state.activeKind) {
+  if (!state.activeKind) {
     return null;
   }
 

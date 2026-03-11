@@ -193,7 +193,7 @@ test("completeDropAsNewWindow creates window with path and removes source tab", 
   assert.equal(createCalls[0].args.physicalY, 600);
   assert.equal(createCalls[0].args.path, "/tmp/test.md");
 
-  // No route_tab_transfer — uses path queuing instead
+  // No route_tab_transfer for saved tabs — backend opens file by path
   const transferCalls = calls.filter((c) => c.command === "route_tab_transfer");
   assert.equal(transferCalls.length, 0);
 
@@ -203,22 +203,38 @@ test("completeDropAsNewWindow creates window with path and removes source tab", 
   assert.ok(getRenderCount() > 0);
 });
 
-test("completeDropAsNewWindow cancels for untitled tabs (no path)", async () => {
-  const { state, controller, calls } = createHarness({
+test("completeDropAsNewWindow succeeds for untitled tabs and transfers content", async () => {
+  const { state, controller, calls, getRenderCount } = createHarness({
     invokeResults: {
       create_window_from_drag: "teex-window-new",
     },
   });
 
   state.openFiles[0].path = null;
+  state.openFiles[0].content = "unsaved draft";
+  state.content = "unsaved draft";
+  state.activePath = null;
   controller.activate(0);
   await controller.completeDropAsNewWindow(400, 300);
 
+  // Window created with null path
   const createCalls = calls.filter(
     (c) => c.command === "create_window_from_drag",
   );
-  assert.equal(createCalls.length, 0);
-  assert.equal(state.openFiles.length, 2);
+  assert.equal(createCalls.length, 1);
+  assert.equal(createCalls[0].args.path, null);
+
+  // Tab transfer sent with content
+  const transferCalls = calls.filter((c) => c.command === "route_tab_transfer");
+  assert.equal(transferCalls.length, 1);
+  assert.equal(transferCalls[0].args.targetLabel, "teex-window-new");
+  assert.equal(transferCalls[0].args.tabs[0].path, null);
+  assert.equal(transferCalls[0].args.tabs[0].content, "unsaved draft");
+
+  // Source tab removed
+  assert.equal(state.openFiles.length, 1);
+  assert.equal(state.openFiles[0].path, "/tmp/other.txt");
+  assert.ok(getRenderCount() > 0);
 });
 
 test("completeDropAsNewWindow does not remove tab when window creation fails", async () => {
