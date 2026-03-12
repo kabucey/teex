@@ -1,5 +1,5 @@
 import { baseName, dirName, isCursorOutsideWindow } from "../app-utils.js";
-import { shouldShowTabBar } from "./behavior.js";
+import { canGoBack, canGoForward } from "../tabs/navigation.js";
 import { escapeAttr, escapeHtml } from "./html-utils.js";
 import { rewritePreviewImages } from "./image-paths.js";
 import { renderMarkdown, renderMermaidDiagrams } from "./markdown-renderer.js";
@@ -12,6 +12,7 @@ export function createUiRenderer({
   switchTab,
   moveTab,
   closeTab,
+  closeActiveFileOrWindow,
   crossWindowDrag,
 }) {
   function syncWindowTitle() {
@@ -35,11 +36,45 @@ export function createUiRenderer({
     });
   }
 
+  function getActiveNavState() {
+    if (state.openFiles.length > 0) {
+      const tab = state.openFiles[state.activeTabIndex];
+      if (tab) {
+        return tab;
+      }
+    }
+    return state;
+  }
+
   function renderTabBar() {
-    const show = shouldShowTabBar(state.openFiles.length);
-    el.tabBar.classList.toggle("hidden", !show);
+    const hasFile = state.openFiles.length > 0 || Boolean(state.activePath);
+    if (el.tabBarRow) {
+      el.tabBarRow.classList.toggle("hidden", !hasFile);
+    }
+
+    const navState = getActiveNavState();
+    if (el.navBack) {
+      el.navBack.disabled = !canGoBack(navState);
+    }
+    if (el.navForward) {
+      el.navForward.disabled = !canGoForward(navState);
+    }
 
     let html = "";
+
+    if (state.openFiles.length === 0 && state.activePath) {
+      const label = baseName(state.activePath);
+      const tooltip = state.activePath;
+      html += `<div class="tab tab-active" data-index="0">`;
+      html += `<button class="tab-close" data-index="0" title="Close" aria-label="Close ${escapeAttr(label)}">×</button>`;
+      html += `<span class="tab-label" title="${escapeAttr(tooltip)}">${escapeHtml(label)}</span>`;
+      if (state.isDirty) {
+        html += `<span class="tab-dirty">●</span>`;
+      }
+      html += `<span class="tab-shortcut" aria-hidden="true">⌘1</span>`;
+      html += "</div>";
+    }
+
     for (let i = 0; i < state.openFiles.length; i += 1) {
       const tab = state.openFiles[i];
       const isActive = i === state.activeTabIndex;
@@ -73,7 +108,11 @@ export function createUiRenderer({
       btn.addEventListener("click", async (event) => {
         event.stopPropagation();
         const index = parseInt(btn.dataset.index, 10);
-        await closeTab(index);
+        if (state.openFiles.length === 0) {
+          await closeActiveFileOrWindow();
+        } else {
+          await closeTab(index);
+        }
       });
     });
 

@@ -6,6 +6,7 @@ import {
   collectFolderPaths,
   hasFoldersInEntries,
   isAllCollapsed,
+  parentFolderPaths,
   renderTreeHtml,
 } from "../../src/sidebar/tree.js";
 
@@ -115,6 +116,27 @@ test("expand-all: renderTreeHtml with empty collapsedFolders shows all nested fi
   assert.match(html, /guide\.md/);
   assert.match(html, /ref\.md/);
   assert.doesNotMatch(html, /aria-expanded="false"/);
+});
+
+test("parentFolderPaths returns parent folder segments for a nested entry", () => {
+  const entries = [
+    { path: "/root/docs/api/ref.md", relPath: "docs/api/ref.md" },
+    { path: "/root/a.md", relPath: "a.md" },
+  ];
+  const result = parentFolderPaths(entries, "/root/docs/api/ref.md");
+  assert.deepEqual([...result].sort(), ["docs", "docs/api"]);
+});
+
+test("parentFolderPaths returns empty set for root-level file", () => {
+  const entries = [{ path: "/root/a.md", relPath: "a.md" }];
+  const result = parentFolderPaths(entries, "/root/a.md");
+  assert.deepEqual([...result], []);
+});
+
+test("parentFolderPaths returns empty set when path is not in entries", () => {
+  const entries = [{ path: "/root/a.md", relPath: "a.md" }];
+  const result = parentFolderPaths(entries, "/other/b.md");
+  assert.deepEqual([...result], []);
 });
 
 test("folder buttons have a title attribute with the folder name", () => {

@@ -39,6 +39,8 @@ export function createRuntimeState() {
       activeMarkdownScrollAnchor: null,
       fileScrollMemory: new Map(),
       isDirty: false,
+      navHistory: [],
+      navHistoryCursor: -1,
       isSaving: false,
       saveTimer: null,
       windowTitle: "",

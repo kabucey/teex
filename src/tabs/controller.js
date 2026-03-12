@@ -1,4 +1,5 @@
 import { promptToSaveBeforeClose } from "../ui/close-dirty-dialog.js";
+import { goBack, goForward, recordNavigation } from "./navigation.js";
 
 export function buildTabFromPayload(payload) {
   return {
@@ -282,6 +283,7 @@ export function createTabController({
       flushStateToActiveTab();
       state.openFiles[state.activeTabIndex] = tab;
       syncActiveTabToState();
+      recordNavOnActiveTab();
       setStatus(`Opened ${baseName(path)}`);
       render();
       updateMenuState();
@@ -327,6 +329,22 @@ export function createTabController({
     syncActiveTabToState();
     render();
     updateMenuState();
+  }
+
+  function getActiveNavState() {
+    if (hasTabSession()) {
+      const tab = state.openFiles[state.activeTabIndex];
+      if (tab) {
+        return tab;
+      }
+    }
+    return state;
+  }
+
+  function recordNavOnActiveTab() {
+    if (state.activePath) {
+      recordNavigation(getActiveNavState(), state.activePath);
+    }
   }
 
   function switchTab(index) {
@@ -447,6 +465,35 @@ export function createTabController({
     }
   }
 
+  async function loadFileIntoActiveTab(path) {
+    try {
+      const payload = await invoke("read_text_file", { path });
+      applyFilePayload(payload, { defaultMarkdownMode: "preview" });
+      render();
+      updateMenuState();
+    } catch (error) {
+      setStatus(String(error), true);
+    }
+  }
+
+  async function navigateBack() {
+    const navState = getActiveNavState();
+    const target = goBack(navState);
+    if (target === null) {
+      return;
+    }
+    await loadFileIntoActiveTab(target);
+  }
+
+  async function navigateForward() {
+    const navState = getActiveNavState();
+    const target = goForward(navState);
+    if (target === null) {
+      return;
+    }
+    await loadFileIntoActiveTab(target);
+  }
+
   return {
     createNewTab,
     openMultipleFiles,
@@ -458,5 +505,7 @@ export function createTabController({
     closeTab,
     closeSingleActiveFile,
     closeActiveFileOrWindow,
+    navigateBack,
+    navigateForward,
   };
 }

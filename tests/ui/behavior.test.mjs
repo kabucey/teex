@@ -6,7 +6,6 @@ import {
   getSingleFileUiOpenMode,
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
-  shouldShowTabBar,
   shouldSidebarSingleClickIgnoreSamePath,
   shouldSidebarSingleClickOpenAsTab,
   shouldSuppressDropOverlayForSelfHover,
@@ -243,13 +242,6 @@ test("sidebar single-click collapses hidden single-tab sessions before openEntry
     }),
     false,
   );
-});
-
-test("tab bar only shows with two or more open files", () => {
-  assert.equal(shouldShowTabBar(0), false);
-  assert.equal(shouldShowTabBar(1), false);
-  assert.equal(shouldShowTabBar(2), true);
-  assert.equal(shouldShowTabBar(3), true);
 });
 
 test("sidebar click with metaKey returns new-tab action", () => {

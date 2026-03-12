@@ -45,6 +45,7 @@ export function setupControllers({
     switchTab: callbacks.switchTab,
     moveTab: callbacks.moveTab,
     closeTab: callbacks.closeTab,
+    closeActiveFileOrWindow: callbacks.closeActiveFileOrWindow,
     crossWindowDrag: crossWindowDragController,
   });
 

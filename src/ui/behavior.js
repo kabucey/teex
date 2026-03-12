@@ -64,10 +64,6 @@ export function shouldCollapseHiddenSingleTabForSidebarOpen({
   return mode === "folder" && Number(openFilesCount) === 1;
 }
 
-export function shouldShowTabBar(openFilesCount) {
-  return Number(openFilesCount) >= 2;
-}
-
 export function sidebarClickModifierAction(event) {
   const accel = event.metaKey || event.ctrlKey;
   if (!accel) {

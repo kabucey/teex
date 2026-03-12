@@ -15,7 +15,10 @@ export function bindElements(el) {
   el.projectRootLabel = document.querySelector("#project-root-label");
   el.projectList = document.querySelector("#project-list");
   el.collapseToggleBtn = document.querySelector("#collapse-toggle-btn");
+  el.tabBarRow = document.querySelector(".tab-bar-row");
   el.tabBar = document.querySelector("#tab-bar");
+  el.navBack = document.querySelector("#nav-back");
+  el.navForward = document.querySelector("#nav-forward");
   el.editorState = document.querySelector("#editor-state");
   el.editor = document.querySelector("#editor");
   el.preview = document.querySelector("#preview");
@@ -33,6 +36,8 @@ export function bindUiEvents({
   saveNow,
   hasTabSession,
   switchTab,
+  navigateBack,
+  navigateForward,
   onEditorScroll,
   onPreviewScroll,
   onDirtyStateChanged,
@@ -139,6 +144,22 @@ export function bindUiEvents({
       await saveNow();
     }
 
+    if (event.metaKey && event.key === "[") {
+      event.preventDefault();
+      if (typeof navigateBack === "function") {
+        navigateBack();
+      }
+      return;
+    }
+
+    if (event.metaKey && event.key === "]") {
+      event.preventDefault();
+      if (typeof navigateForward === "function") {
+        navigateForward();
+      }
+      return;
+    }
+
     if (event.metaKey && /^[1-9]$/.test(event.key)) {
       const index = parseInt(event.key, 10) - 1;
       if (hasTabSession() && index < state.openFiles.length) {
@@ -216,6 +237,18 @@ export function bindUiEvents({
       toggleCollapseAllFolders();
     });
   }
+
+  el.navBack.addEventListener("click", () => {
+    if (typeof navigateBack === "function") {
+      navigateBack();
+    }
+  });
+
+  el.navForward.addEventListener("click", () => {
+    if (typeof navigateForward === "function") {
+      navigateForward();
+    }
+  });
 
   el.projectRootLabel.addEventListener("dblclick", async (event) => {
     if (state.mode !== "folder" || !state.rootPath) {

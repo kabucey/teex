@@ -63,6 +63,21 @@ export function isAllCollapsed(entries, collapsedFolders) {
   return true;
 }
 
+export function parentFolderPaths(entries, filePath) {
+  const result = new Set();
+  const entry = entries.find((e) => e.path === filePath);
+  if (!entry) {
+    return result;
+  }
+
+  const parts = entry.relPath.split("/").filter(Boolean);
+  for (let i = 0; i < parts.length - 1; i += 1) {
+    result.add(parts.slice(0, i + 1).join("/"));
+  }
+
+  return result;
+}
+
 export function renderTreeHtml(node, depth, collapsedFolders) {
   const folders = [...node.folders.values()].sort((a, b) =>
     a.name.localeCompare(b.name),

@@ -8,6 +8,7 @@ import {
 } from "./app/session-persistence.js";
 import { loadSidebarWidth } from "./app/sidebar-width-persistence.js";
 import { baseName } from "./app-utils.js";
+import { recordNavigation } from "./tabs/navigation.js";
 import {
   applyFilePayloadToState,
   clearActiveFileInState,
@@ -184,6 +185,8 @@ function bindUiEvents() {
     saveNow,
     hasTabSession,
     switchTab,
+    navigateBack,
+    navigateForward,
     onEditorScroll: () => scrollSyncController?.onEditorScroll(),
     onPreviewScroll: () => scrollSyncController?.onPreviewScroll(),
     onDirtyStateChanged: () => renderChrome(),
@@ -269,10 +272,18 @@ async function openSingleFileFromUi(path) {
 async function openFolder(path) {
   scrollSyncController?.beforeContextReplace();
   await fileController.openFolder(path);
+  if (!hasTabSession() && state.activePath) {
+    recordNavigation(state, state.activePath);
+    renderChrome();
+  }
 }
 
 async function openEntry(path) {
   await fileController.openEntry(path);
+  if (!hasTabSession() && state.activePath) {
+    recordNavigation(state, state.activePath);
+    renderChrome();
+  }
 }
 
 async function openFolderEntryInTabs(path) {
@@ -385,6 +396,14 @@ async function openFileAsTab(path) {
 
 async function _openFileInTabs(path) {
   await tabController.openFileInTabs(path);
+}
+
+function navigateBack() {
+  tabController.navigateBack();
+}
+
+function navigateForward() {
+  tabController.navigateForward();
 }
 
 function switchTab(index) {

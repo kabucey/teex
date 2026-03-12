@@ -1,4 +1,4 @@
-import { collectFolderPaths } from "../sidebar/tree.js";
+import { collectFolderPaths, parentFolderPaths } from "../sidebar/tree.js";
 import { getSingleFileUiOpenMode } from "../ui/behavior.js";
 
 export function didProjectEntriesChange(previousEntries, nextEntries) {
@@ -180,6 +180,9 @@ export function createFileController({
         const nextPath = entries.some((entry) => entry.path === previous)
           ? previous
           : fallback;
+        for (const folder of parentFolderPaths(entries, nextPath)) {
+          state.collapsedFolders.delete(folder);
+        }
         await openEntry(nextPath);
       } else {
         clearActiveFile();

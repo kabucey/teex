@@ -27,7 +27,15 @@
         <div id="sidebar-resizer" class="sidebar-resizer hidden" aria-hidden="true"></div>
 
         <section id="main-pane" class="main-pane">
-          <div id="tab-bar" class="tab-bar hidden"></div>
+          <div class="tab-bar-row">
+            <button id="nav-back" class="nav-btn" type="button" title="Back (⌘[)" disabled aria-label="Navigate back">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M10.3 2.3a1 1 0 0 1 0 1.4L6.42 8l3.88 4.3a1 1 0 1 1-1.5 1.4l-4.5-5a1 1 0 0 1 0-1.4l4.5-5a1 1 0 0 1 1.5 0z"/></svg>
+            </button>
+            <button id="nav-forward" class="nav-btn" type="button" title="Forward (⌘])" disabled aria-label="Navigate forward">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M5.7 2.3a1 1 0 0 1 1.5 0l4.5 5a1 1 0 0 1 0 1.4l-4.5 5a1 1 0 1 1-1.5-1.4L9.58 8 5.7 3.7a1 1 0 0 1 0-1.4z"/></svg>
+            </button>
+            <div id="tab-bar" class="tab-bar"></div>
+          </div>
           <div id="editor-state" class="editor-state">
             <textarea id="editor" class="editor" spellcheck="false"></textarea>
             <article id="preview" class="preview hidden"></article>
