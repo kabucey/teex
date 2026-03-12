@@ -1,9 +1,9 @@
 import { collectFolderPaths, parentFolderPaths } from "../sidebar/tree.js";
-import { getSingleFileUiOpenMode } from "../ui/behavior.js";
 import {
   snapshotActiveStateAsTab,
   switchToSingleFileState,
 } from "../tabs/tab-state.js";
+import { getSingleFileUiOpenMode } from "../ui/behavior.js";
 
 export function didProjectEntriesChange(previousEntries, nextEntries) {
   if (!Array.isArray(previousEntries) || !Array.isArray(nextEntries)) {

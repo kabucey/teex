@@ -1,4 +1,5 @@
 import { setupControllers } from "./app/controller-setup.js";
+import { createExternalFileWatchController } from "./app/external-file-watch-controller.js";
 import { createRuntimeState, EVENTS } from "./app/runtime-state.js";
 import {
   clearAllSessions,
@@ -6,6 +7,7 @@ import {
   pruneStaleWindows,
   saveWindowSession,
 } from "./app/session-persistence.js";
+import { createSessionRestoreController } from "./app/session-restore.js";
 import { loadSidebarWidth } from "./app/sidebar-width-persistence.js";
 import { baseName } from "./app-utils.js";
 import { buildCollapsedFoldersFromExpanded } from "./sidebar/tree.js";
@@ -53,14 +55,9 @@ let openPathsController;
 let dragDropController;
 let appEventsController;
 let scrollSyncController;
+let externalFileWatchController;
+let sessionRestoreController;
 let sessionSaveEnabled = false;
-const externalFileWatchState = {
-  signature: "",
-  syncPromise: null,
-  pendingSync: false,
-  recentlySavedAtByPath: new Map(),
-  handlingChangedPaths: new Set(),
-};
 
 ({
   sidebarController,
@@ -141,6 +138,35 @@ function applySavedTheme() {
 function applySavedSidebarWidth() {
   state.sidebarWidth = loadSidebarWidth();
 }
+
+sessionRestoreController = createSessionRestoreController({
+  state,
+  invoke,
+  loadAllSessions,
+  clearAllSessions,
+  pruneStaleWindows,
+  buildCollapsedFoldersFromExpanded,
+  reconcileRestoredFolderTabs,
+  markSidebarTreeDirty,
+  openFolder,
+  openFile,
+  openMultipleFiles,
+  openFolderEntryInTabs,
+  switchTab,
+  render,
+});
+
+externalFileWatchController = createExternalFileWatchController({
+  state,
+  invoke,
+  baseName,
+  hasTabSession,
+  applyFilePayload,
+  render,
+  updateMenuState,
+  setStatus,
+  confirmReloadExternalChange,
+});
 
 window.addEventListener("DOMContentLoaded", async () => {
   applySavedTheme();
@@ -224,25 +250,7 @@ async function handleProjectFolderChanged() {
 }
 
 async function handleProjectFileChanged(path) {
-  if (typeof path !== "string" || !path) {
-    return;
-  }
-
-  const savedAt = externalFileWatchState.recentlySavedAtByPath.get(path);
-  if (savedAt && Date.now() - savedAt < 1200) {
-    return;
-  }
-
-  if (externalFileWatchState.handlingChangedPaths.has(path)) {
-    return;
-  }
-
-  externalFileWatchState.handlingChangedPaths.add(path);
-  try {
-    await reloadExternallyChangedFile(path);
-  } finally {
-    externalFileWatchState.handlingChangedPaths.delete(path);
-  }
+  await externalFileWatchController.handleProjectFileChanged(path);
 }
 
 async function handleDroppedPaths(paths) {
@@ -335,91 +343,11 @@ async function handleTabTransferResult(payload) {
 }
 
 async function restoreLastSession() {
-  const sessions = loadAllSessions();
-  if (sessions.length === 0) {
-    return;
-  }
-
-  clearAllSessions();
-
-  await restoreSessionInCurrentWindow(sessions[0]);
-
-  for (let i = 1; i < sessions.length; i++) {
-    const paths = sessionPaths(sessions[i]);
-    if (paths.length > 0) {
-      await invoke("open_paths_in_new_window", { paths });
-    }
-  }
-}
-
-async function restoreSessionInCurrentWindow(session) {
-  if (session.mode === "folder" && session.folderPath) {
-    await openFolder(session.folderPath);
-    restoreFolderExpansionState(session);
-    await restoreFolderTabs(session);
-    return;
-  }
-
-  const paths = sessionPaths(session);
-  if (!paths.length) {
-    return;
-  }
-
-  if (paths.length === 1) {
-    await openFile(paths[0]);
-  } else {
-    await openMultipleFiles(paths);
-    const targetIndex = session.activeTabIndex ?? 0;
-    if (targetIndex > 0 && targetIndex < state.openFiles.length) {
-      switchTab(targetIndex);
-    }
-  }
-}
-
-async function restoreFolderTabs(session) {
-  const paths = (session.tabs ?? []).map((t) => t.path).filter(Boolean);
-  if (paths.length === 0) {
-    return;
-  }
-
-  for (const path of paths) {
-    await openFolderEntryInTabs(path);
-  }
-
-  const { switchToIndex } = reconcileRestoredFolderTabs(
-    state,
-    session.tabs,
-    session.activeTabIndex,
-  );
-  if (switchToIndex >= 0) {
-    switchTab(switchToIndex);
-  }
-  render();
-}
-
-function restoreFolderExpansionState(session) {
-  const expandedFolders = new Set(
-    (session.expandedFolders ?? []).filter((path) => typeof path === "string"),
-  );
-  state.collapsedFolders = buildCollapsedFoldersFromExpanded(
-    state.entries,
-    expandedFolders,
-  );
-  state.savedCollapsedFolders = null;
-  sidebarController.markTreeDirty();
-}
-
-function sessionPaths(session) {
-  if (session.mode === "folder" && session.folderPath) {
-    return [session.folderPath];
-  }
-  return (session.tabs ?? []).map((t) => t.path).filter(Boolean);
+  await sessionRestoreController.restoreLastSession();
 }
 
 function pruneStaleWindowsAsync() {
-  invoke("get_all_window_labels")
-    .then((labels) => pruneStaleWindows(labels))
-    .catch(() => {});
+  sessionRestoreController.pruneStaleWindowsAsync();
 }
 
 async function openMultipleFiles(paths) {
@@ -531,7 +459,7 @@ function updateMenuState() {
 function render(options = {}) {
   uiRenderer.render(options);
   scrollSyncController?.scheduleRestoreAfterRender();
-  syncWatchedProjectFiles();
+  externalFileWatchController.syncWatchedProjectFiles();
   if (sessionSaveEnabled) {
     flushStateToActiveTab();
     saveWindowSession(state, state.windowLabel);
@@ -550,153 +478,5 @@ function setStatus(message, isError = false) {
 }
 
 function onFileSaved(path) {
-  if (typeof path !== "string" || !path) {
-    return;
-  }
-  externalFileWatchState.recentlySavedAtByPath.set(path, Date.now());
-  setTimeout(() => {
-    const savedAt = externalFileWatchState.recentlySavedAtByPath.get(path);
-    if (savedAt && Date.now() - savedAt >= 1200) {
-      externalFileWatchState.recentlySavedAtByPath.delete(path);
-    }
-  }, 1500);
-}
-
-function collectWatchedProjectFilePaths() {
-  const paths = new Set();
-
-  if (Array.isArray(state.openFiles) && state.openFiles.length > 0) {
-    for (const tab of state.openFiles) {
-      if (tab && typeof tab.path === "string" && tab.path) {
-        paths.add(tab.path);
-      }
-    }
-  } else if (typeof state.activePath === "string" && state.activePath) {
-    paths.add(state.activePath);
-  }
-
-  return [...paths].sort();
-}
-
-function buildWatchedProjectFileSignature(paths) {
-  return paths.join("\n");
-}
-
-function syncWatchedProjectFiles() {
-  const paths = collectWatchedProjectFilePaths();
-  const signature = buildWatchedProjectFileSignature(paths);
-
-  if (
-    externalFileWatchState.signature === signature &&
-    !externalFileWatchState.pendingSync
-  ) {
-    return;
-  }
-
-  externalFileWatchState.signature = signature;
-
-  if (externalFileWatchState.syncPromise) {
-    externalFileWatchState.pendingSync = true;
-    return;
-  }
-
-  externalFileWatchState.syncPromise = (async () => {
-    try {
-      await invoke("watch_project_files", { paths });
-    } catch (error) {
-      setStatus(String(error), true);
-    }
-  })().finally(() => {
-    externalFileWatchState.syncPromise = null;
-    if (externalFileWatchState.pendingSync) {
-      externalFileWatchState.pendingSync = false;
-      syncWatchedProjectFiles();
-    }
-  });
-}
-
-function findOpenTabIndexByPath(path) {
-  return state.openFiles.findIndex((tab) => tab?.path === path);
-}
-
-function isActiveFileDirtyForPath(path) {
-  return state.activePath === path && state.isDirty;
-}
-
-function isOpenTabDirtyForPath(path) {
-  const index = findOpenTabIndexByPath(path);
-  if (index === -1) {
-    return false;
-  }
-  return Boolean(state.openFiles[index]?.isDirty);
-}
-
-async function reloadExternallyChangedFile(path) {
-  const hasTabs = hasTabSession();
-  const activePath = state.activePath;
-  const isActive = activePath === path;
-  const isDirty = hasTabs
-    ? isOpenTabDirtyForPath(path)
-    : isActiveFileDirtyForPath(path);
-
-  if (isDirty) {
-    if (isActive) {
-      const confirmed = await confirmReloadExternalChange(baseName(path));
-      if (!confirmed) {
-        setStatus(
-          `External change detected for ${baseName(path)} (kept local edits)`,
-          true,
-        );
-        return;
-      }
-    } else {
-      setStatus(
-        `External change detected for dirty tab ${baseName(path)}`,
-        true,
-      );
-      return;
-    }
-  }
-
-  try {
-    const payload = await invoke("read_text_file", { path });
-
-    if (hasTabs) {
-      const tabIndex = findOpenTabIndexByPath(path);
-      if (tabIndex === -1) {
-        return;
-      }
-      const tab = state.openFiles[tabIndex];
-      if (!tab) {
-        return;
-      }
-      tab.content = payload.content;
-      tab.kind = payload.kind;
-      tab.writable = payload.writable;
-      tab.isDirty = false;
-      if (payload.kind !== "markdown") {
-        tab.markdownViewMode = "edit";
-      }
-
-      if (state.activeTabIndex === tabIndex) {
-        applyFilePayload(payload, {
-          defaultMarkdownMode: "preview",
-          preserveMarkdownMode: true,
-        });
-      }
-    } else if (isActive) {
-      applyFilePayload(payload, {
-        defaultMarkdownMode: "preview",
-        preserveMarkdownMode: true,
-      });
-    } else {
-      return;
-    }
-
-    setStatus(`Reloaded ${baseName(path)} (changed outside Teex)`);
-    render();
-    updateMenuState();
-  } catch (error) {
-    setStatus(String(error), true);
-  }
+  externalFileWatchController.onFileSaved(path);
 }

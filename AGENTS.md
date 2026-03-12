@@ -25,6 +25,8 @@ This repository is a Tauri 2 desktop app.
 - This repo currently uses static frontend files (`src/index.html`, `src/main.js`, `src/styles.css`) rather than a JS bundler/project manifest at the repo root (no `package.json`).
 - Common edit targets:
   - `src/main.js`: primary frontend app logic (UI state, tab management, drag/drop, Tauri event listeners/invokes)
+  - `src/app/session-restore.js`: session restore orchestration extracted from `src/main.js`
+  - `src/app/external-file-watch-controller.js`: open-file watch syncing and external reload handling
   - `src/styles.css`: app styling/layout
   - `src/index.html`: app shell/DOM structure
   - `src-tauri/src/lib.rs`: backend entrypoint/shared state/constants and module wiring (keep small)
