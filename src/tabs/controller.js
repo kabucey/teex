@@ -1,30 +1,9 @@
-import { promptToSaveBeforeClose } from "../ui/close-dirty-dialog.js";
 import { goBack, goForward, recordNavigation } from "./navigation.js";
-import {
-  buildTabFromPayload,
-  buildUntitledTab,
-  snapshotActiveStateAsTab,
-  switchToMultiTabFileState,
-  switchToSingleFileState,
-} from "./tab-state.js";
+import { createTabCloseController } from "./tab-close-controller.js";
+import { createTabOpenController } from "./tab-open-controller.js";
+import { buildUntitledTab, snapshotActiveStateAsTab } from "./tab-state.js";
 
 export { buildTabFromPayload } from "./tab-state.js";
-
-async function clearProjectFolderWatch(invoke) {
-  try {
-    await invoke("clear_project_folder_watch");
-  } catch {
-    // Best-effort cleanup only.
-  }
-}
-
-function isEmptyUntitledActiveState(state) {
-  if (state.activePath || state.isDirty) {
-    return false;
-  }
-
-  return typeof state.content === "string" && state.content.trim().length === 0;
-}
 
 export function createTabController({
   state,
@@ -41,239 +20,8 @@ export function createTabController({
   hasTabSession,
   flushStateToActiveTab,
   syncActiveTabToState,
-  promptCloseDirty = promptToSaveBeforeClose,
+  promptCloseDirty,
 }) {
-  let closeInProgress = false;
-
-  async function canCloseDirtyTab(index) {
-    const tab = state.openFiles[index];
-    if (!tab) {
-      return true;
-    }
-
-    const isActive = index === state.activeTabIndex;
-    const isDirty = isActive ? state.isDirty : tab.isDirty;
-    if (!isDirty) {
-      return true;
-    }
-
-    const label = tab.path ? baseName(tab.path) : "Untitled";
-    const decision = await promptCloseDirty(label);
-    if (decision === "cancel") {
-      return false;
-    }
-    if (decision === "discard") {
-      return true;
-    }
-
-    if (!isActive && tab.path && tab.writable) {
-      try {
-        await invoke("write_text_file", {
-          path: tab.path,
-          content: tab.content,
-        });
-        tab.isDirty = false;
-        return true;
-      } catch (error) {
-        setStatus(String(error), true);
-        return false;
-      }
-    }
-
-    let previousActiveIndex = null;
-    if (!isActive) {
-      previousActiveIndex = state.activeTabIndex;
-      flushStateToActiveTab();
-      state.activeTabIndex = index;
-      syncActiveTabToState();
-    }
-
-    await saveNow();
-    const saveSucceeded = !state.isDirty;
-    if (!saveSucceeded && previousActiveIndex !== null) {
-      flushStateToActiveTab();
-      state.activeTabIndex = previousActiveIndex;
-      syncActiveTabToState();
-      render();
-      updateMenuState();
-    }
-    return saveSucceeded;
-  }
-
-  async function canCloseSingleActiveFile() {
-    if (!state.activePath || !state.isDirty) {
-      return true;
-    }
-
-    const decision = await promptCloseDirty(baseName(state.activePath));
-    if (decision === "cancel") {
-      return false;
-    }
-    if (decision === "discard") {
-      return true;
-    }
-
-    await saveNow();
-    return !state.isDirty;
-  }
-
-  async function openMultipleFiles(paths) {
-    await saveNow();
-
-    const loaded = [];
-    for (const path of paths) {
-      try {
-        const payload = await invoke("read_text_file", { path });
-        loaded.push(buildTabFromPayload(payload));
-      } catch (error) {
-        setStatus(String(error), true);
-      }
-    }
-
-    if (loaded.length === 0) {
-      render();
-      updateMenuState();
-      return;
-    }
-
-    if (loaded.length === 1) {
-      await clearProjectFolderWatch(invoke);
-      const tab = loaded[0];
-      switchToSingleFileState({
-        state,
-        payload: tab,
-        applyFilePayload,
-        markSidebarTreeDirty,
-      });
-      setStatus(`Opened ${baseName(tab.path)}`);
-      render();
-      updateMenuState();
-      return;
-    }
-
-    await clearProjectFolderWatch(invoke);
-    switchToMultiTabFileState({
-      state,
-      tabs: loaded,
-      activeTabIndex: 0,
-      markSidebarTreeDirty,
-    });
-    syncActiveTabToState();
-    setStatus(`Opened ${loaded.length} files`);
-    render();
-    updateMenuState();
-  }
-
-  async function openFileAsTab(path) {
-    if (!path) {
-      return;
-    }
-
-    const existing = state.openFiles.findIndex((f) => f.path === path);
-    if (existing !== -1) {
-      flushStateToActiveTab();
-      state.activeTabIndex = existing;
-      syncActiveTabToState();
-      render();
-      updateMenuState();
-      return;
-    }
-
-    try {
-      const payload = await invoke("read_text_file", { path });
-      const tab = buildTabFromPayload(payload);
-      flushStateToActiveTab();
-      state.openFiles.push(tab);
-      state.activeTabIndex = state.openFiles.length - 1;
-      syncActiveTabToState();
-      setStatus(`Opened ${baseName(path)}`);
-      render();
-      updateMenuState();
-    } catch (error) {
-      setStatus(String(error), true);
-    }
-  }
-
-  async function openFileInTabs(path) {
-    if (!path) {
-      return;
-    }
-
-    if (state.mode === "files") {
-      const hasOnlyEmptyUntitledTab =
-        state.openFiles.length === 1 &&
-        state.activeTabIndex === 0 &&
-        isEmptyUntitledActiveState(state);
-      if (hasOnlyEmptyUntitledTab) {
-        await openFile(path);
-        return;
-      }
-      await openFileAsTab(path);
-      return;
-    }
-
-    if (state.mode !== "file" || !state.activePath) {
-      await openFile(path);
-      return;
-    }
-
-    if (state.activePath === path) {
-      return;
-    }
-
-    try {
-      const payload = await invoke("read_text_file", { path });
-      const currentTab = snapshotActiveStateAsTab(state);
-      const nextTab = buildTabFromPayload(payload);
-      if (!currentTab) {
-        return;
-      }
-
-      await clearProjectFolderWatch(invoke);
-      switchToMultiTabFileState({
-        state,
-        tabs: [currentTab, nextTab],
-        activeTabIndex: 1,
-        markSidebarTreeDirty,
-      });
-      syncActiveTabToState();
-      setStatus(`Opened ${baseName(path)}`);
-      render();
-      updateMenuState();
-    } catch (error) {
-      setStatus(String(error), true);
-    }
-  }
-
-  async function replaceActiveTab(path) {
-    if (!path) {
-      return;
-    }
-
-    try {
-      const payload = await invoke("read_text_file", { path });
-      const tab = buildTabFromPayload(payload);
-      flushStateToActiveTab();
-      const prev = state.openFiles[state.activeTabIndex];
-      if (prev) {
-        tab.navHistory = prev.navHistory;
-        tab.navHistoryCursor = prev.navHistoryCursor;
-        if (prev.path && !Array.isArray(tab.navHistory)) {
-          tab.navHistory = [prev.path];
-          tab.navHistoryCursor = 0;
-        }
-      }
-      state.openFiles[state.activeTabIndex] = tab;
-      syncActiveTabToState();
-      recordNavOnActiveTab();
-      setStatus(`Opened ${baseName(path)}`);
-      render();
-      updateMenuState();
-    } catch (error) {
-      setStatus(String(error), true);
-    }
-  }
-
   function createNewTab() {
     flushStateToActiveTab();
 
@@ -310,6 +58,38 @@ export function createTabController({
     }
   }
 
+  const openController = createTabOpenController({
+    state,
+    invoke,
+    baseName,
+    setStatus,
+    render,
+    updateMenuState,
+    markSidebarTreeDirty,
+    saveNow,
+    openFile,
+    applyFilePayload,
+    flushStateToActiveTab,
+    syncActiveTabToState,
+    recordNavOnActiveTab,
+  });
+
+  const closeController = createTabCloseController({
+    state,
+    invoke,
+    baseName,
+    setStatus,
+    render,
+    updateMenuState,
+    markSidebarTreeDirty,
+    saveNow,
+    clearActiveFile,
+    hasTabSession,
+    flushStateToActiveTab,
+    syncActiveTabToState,
+    promptCloseDirty,
+  });
+
   function switchTab(index) {
     if (index === state.activeTabIndex) {
       return;
@@ -328,7 +108,6 @@ export function createTabController({
     const [tab] = state.openFiles.splice(fromIndex, 1);
     state.openFiles.splice(toIndex, 0, tab);
 
-    // Keep activeTabIndex pointing at the same tab.
     const active = state.activeTabIndex;
     if (active === fromIndex) {
       state.activeTabIndex = toIndex;
@@ -342,117 +121,13 @@ export function createTabController({
     updateMenuState();
   }
 
-  async function closeTab(index) {
-    if (closeInProgress) {
-      return;
-    }
-    closeInProgress = true;
-    try {
-      const tab = state.openFiles[index];
-      if (!tab) {
-        return;
-      }
-
-      if (!(await canCloseDirtyTab(index))) {
-        return;
-      }
-
-      state.openFiles.splice(index, 1);
-
-      if (state.openFiles.length === 0) {
-        state.openFiles = [];
-        state.activeTabIndex = 0;
-        clearActiveFile();
-        if (state.mode !== "folder") {
-          state.mode = "empty";
-          markSidebarTreeDirty();
-        }
-        render();
-        updateMenuState();
-        return;
-      }
-
-      if (state.activeTabIndex >= state.openFiles.length) {
-        state.activeTabIndex = state.openFiles.length - 1;
-      }
-      syncActiveTabToState();
-      render();
-      updateMenuState();
-    } finally {
-      closeInProgress = false;
-    }
-  }
-
-  async function closeSingleActiveFile() {
-    if (closeInProgress) {
-      return;
-    }
-    closeInProgress = true;
-    try {
-      if (!state.activePath) {
-        return;
-      }
-
-      const closingLabel = baseName(state.activePath);
-      if (!(await canCloseSingleActiveFile())) {
-        return;
-      }
-
-      state.openFiles = [];
-      state.activeTabIndex = 0;
-      clearActiveFile();
-      if (state.mode !== "folder") {
-        state.mode = "empty";
-        markSidebarTreeDirty();
-      }
-
-      setStatus(`Closed ${closingLabel}`);
-      render();
-      updateMenuState();
-    } finally {
-      closeInProgress = false;
-    }
-  }
-
-  async function closeActiveFileOrWindow() {
-    if (hasTabSession()) {
-      await closeTab(state.activeTabIndex);
-    } else if (state.activePath) {
-      await closeSingleActiveFile();
-    }
-
-    if (state.mode === "empty") {
-      await invoke("close_current_window").catch((error) => {
-        setStatus(String(error), true);
-      });
-    }
-  }
-
-  async function loadFileIntoActiveTab(path) {
-    try {
-      const payload = await invoke("read_text_file", { path });
-      applyFilePayload(payload, { defaultMarkdownMode: "preview" });
-      flushStateToActiveTab();
-      const tab = state.openFiles[state.activeTabIndex];
-      if (tab) {
-        tab.path = payload.path;
-        tab.kind = payload.kind;
-        tab.writable = payload.writable;
-      }
-      render();
-      updateMenuState();
-    } catch (error) {
-      setStatus(String(error), true);
-    }
-  }
-
   async function navigateBack() {
     const navState = getActiveNavState();
     const target = goBack(navState);
     if (target === null) {
       return;
     }
-    await loadFileIntoActiveTab(target);
+    await openController.loadFileIntoActiveTab(target);
   }
 
   async function navigateForward() {
@@ -461,20 +136,20 @@ export function createTabController({
     if (target === null) {
       return;
     }
-    await loadFileIntoActiveTab(target);
+    await openController.loadFileIntoActiveTab(target);
   }
 
   return {
     createNewTab,
-    openMultipleFiles,
-    openFileAsTab,
-    openFileInTabs,
-    replaceActiveTab,
+    openMultipleFiles: openController.openMultipleFiles,
+    openFileAsTab: openController.openFileAsTab,
+    openFileInTabs: openController.openFileInTabs,
+    replaceActiveTab: openController.replaceActiveTab,
     switchTab,
     moveTab,
-    closeTab,
-    closeSingleActiveFile,
-    closeActiveFileOrWindow,
+    closeTab: closeController.closeTab,
+    closeSingleActiveFile: closeController.closeSingleActiveFile,
+    closeActiveFileOrWindow: closeController.closeActiveFileOrWindow,
     navigateBack,
     navigateForward,
   };
