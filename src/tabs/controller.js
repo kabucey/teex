@@ -267,20 +267,19 @@ export function createTabController({
       return;
     }
 
-    const existing = state.openFiles.findIndex((f) => f.path === path);
-    if (existing !== -1) {
-      flushStateToActiveTab();
-      state.activeTabIndex = existing;
-      syncActiveTabToState();
-      render();
-      updateMenuState();
-      return;
-    }
-
     try {
       const payload = await invoke("read_text_file", { path });
       const tab = buildTabFromPayload(payload);
       flushStateToActiveTab();
+      const prev = state.openFiles[state.activeTabIndex];
+      if (prev) {
+        tab.navHistory = prev.navHistory;
+        tab.navHistoryCursor = prev.navHistoryCursor;
+        if (prev.path && !Array.isArray(tab.navHistory)) {
+          tab.navHistory = [prev.path];
+          tab.navHistoryCursor = 0;
+        }
+      }
       state.openFiles[state.activeTabIndex] = tab;
       syncActiveTabToState();
       recordNavOnActiveTab();
@@ -469,6 +468,13 @@ export function createTabController({
     try {
       const payload = await invoke("read_text_file", { path });
       applyFilePayload(payload, { defaultMarkdownMode: "preview" });
+      flushStateToActiveTab();
+      const tab = state.openFiles[state.activeTabIndex];
+      if (tab) {
+        tab.path = payload.path;
+        tab.kind = payload.kind;
+        tab.writable = payload.writable;
+      }
       render();
       updateMenuState();
     } catch (error) {

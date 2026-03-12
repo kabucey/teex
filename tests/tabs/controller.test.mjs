@@ -12,6 +12,7 @@ function createControllerHarness({
   invoke = async () => {},
   openFile = async () => {},
   promptCloseDirty = async () => "cancel",
+  applyFilePayload = () => {},
 } = {}) {
   const state = {
     mode: "files",
@@ -37,7 +38,7 @@ function createControllerHarness({
     markSidebarTreeDirty: () => {},
     saveNow,
     openFile,
-    applyFilePayload: () => {},
+    applyFilePayload,
     clearActiveFile: () => {
       state.activePath = null;
       state.activeKind = null;
@@ -52,8 +53,6 @@ function createControllerHarness({
       if (!tab) {
         return;
       }
-      tab.path = state.activePath;
-      tab.kind = state.activeKind;
       tab.content = state.content;
       tab.isDirty = state.isDirty;
       tab.markdownViewMode = state.markdownViewMode;
@@ -529,7 +528,7 @@ test("closeActiveFileOrWindow does not close window when last tab removed in fol
   assert.ok(!invokeCalls.includes("close_current_window"));
 });
 
-test("replaceActiveTab switches to existing tab if path already open", async () => {
+test("replaceActiveTab loads file into current tab even if already open in another tab", async () => {
   const { state, controller } = createControllerHarness({
     stateOverrides: {
       openFiles: [
@@ -559,13 +558,24 @@ test("replaceActiveTab switches to existing tab if path already open", async () 
       isDirty: false,
       markdownViewMode: "preview",
     },
+    invoke: async (command, payload) => {
+      if (command === "read_text_file" && payload?.path === "/tmp/b.md") {
+        return {
+          path: "/tmp/b.md",
+          content: "# b",
+          kind: "markdown",
+          writable: true,
+        };
+      }
+    },
   });
 
   await controller.replaceActiveTab("/tmp/b.md");
 
   assert.equal(state.openFiles.length, 2);
-  assert.equal(state.activeTabIndex, 1);
+  assert.equal(state.activeTabIndex, 0);
   assert.equal(state.activePath, "/tmp/b.md");
+  assert.equal(state.openFiles[0].path, "/tmp/b.md");
 });
 
 test("replaceActiveTab replaces active tab content when path not already open", async () => {
@@ -618,6 +628,138 @@ test("replaceActiveTab replaces active tab content when path not already open", 
   assert.equal(state.content, "# c");
   assert.equal(state.openFiles[0].path, "/tmp/c.md");
   assert.equal(state.openFiles[1].path, "/tmp/b.md");
+});
+
+test("replaceActiveTab records initial file so back button works after first switch", async () => {
+  const { state, controller } = createControllerHarness({
+    stateOverrides: {
+      openFiles: [
+        {
+          path: "/tmp/a.md",
+          kind: "markdown",
+          content: "# a",
+          writable: true,
+          isDirty: false,
+          markdownViewMode: "preview",
+          scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+        },
+      ],
+      activeTabIndex: 0,
+      activePath: "/tmp/a.md",
+      activeKind: "markdown",
+      content: "# a",
+      isDirty: false,
+      markdownViewMode: "preview",
+    },
+    invoke: async (command, payload) => {
+      if (command === "read_text_file" && payload?.path === "/tmp/b.md") {
+        return {
+          path: "/tmp/b.md",
+          content: "# b",
+          kind: "markdown",
+          writable: true,
+        };
+      }
+    },
+  });
+
+  // Tab has no nav history yet (first file opened without navigation recording)
+  assert.equal(state.openFiles[0].navHistory, undefined);
+
+  await controller.replaceActiveTab("/tmp/b.md");
+
+  // Both files should be in history so back button works
+  assert.deepEqual(state.openFiles[0].navHistory, ["/tmp/a.md", "/tmp/b.md"]);
+  assert.equal(state.openFiles[0].navHistoryCursor, 1);
+});
+
+test("replaceActiveTab preserves navigation history for back/forward", async () => {
+  const { state, controller } = createControllerHarness({
+    stateOverrides: {
+      openFiles: [
+        {
+          path: "/tmp/a.md",
+          kind: "markdown",
+          content: "# a",
+          writable: true,
+          isDirty: false,
+          markdownViewMode: "preview",
+          scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+          navHistory: ["/tmp/a.md"],
+          navHistoryCursor: 0,
+        },
+      ],
+      activeTabIndex: 0,
+      activePath: "/tmp/a.md",
+      activeKind: "markdown",
+      content: "# a",
+      isDirty: false,
+      markdownViewMode: "preview",
+    },
+    invoke: async (command, payload) => {
+      if (command === "read_text_file" && payload?.path === "/tmp/b.md") {
+        return {
+          path: "/tmp/b.md",
+          content: "# b",
+          kind: "markdown",
+          writable: true,
+        };
+      }
+    },
+  });
+
+  await controller.replaceActiveTab("/tmp/b.md");
+
+  assert.equal(state.openFiles[0].path, "/tmp/b.md");
+  assert.deepEqual(state.openFiles[0].navHistory, ["/tmp/a.md", "/tmp/b.md"]);
+  assert.equal(state.openFiles[0].navHistoryCursor, 1);
+});
+
+test("navigateBack updates tab title to previous file", async () => {
+  const { state, controller } = createControllerHarness({
+    stateOverrides: {
+      openFiles: [
+        {
+          path: "/tmp/b.md",
+          kind: "markdown",
+          content: "# b",
+          writable: true,
+          isDirty: false,
+          markdownViewMode: "preview",
+          scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+          navHistory: ["/tmp/a.md", "/tmp/b.md"],
+          navHistoryCursor: 1,
+        },
+      ],
+      activeTabIndex: 0,
+      activePath: "/tmp/b.md",
+      activeKind: "markdown",
+      content: "# b",
+      isDirty: false,
+      markdownViewMode: "preview",
+    },
+    invoke: async (command, payload) => {
+      if (command === "read_text_file" && payload?.path === "/tmp/a.md") {
+        return {
+          path: "/tmp/a.md",
+          content: "# a",
+          kind: "markdown",
+          writable: true,
+        };
+      }
+    },
+    applyFilePayload: (payload) => {
+      state.activePath = payload.path;
+      state.activeKind = payload.kind;
+      state.content = payload.content;
+      state.isDirty = false;
+    },
+  });
+
+  await controller.navigateBack();
+
+  assert.equal(state.activePath, "/tmp/a.md");
+  assert.equal(state.openFiles[0].path, "/tmp/a.md");
 });
 
 test("replaceActiveTab does nothing for null path", async () => {
