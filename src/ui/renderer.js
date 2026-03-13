@@ -1,5 +1,6 @@
 import { baseName, dirName, isCursorOutsideWindow } from "../app-utils.js";
 import { canGoBack, canGoForward } from "../tabs/navigation.js";
+import { buildTabDisambiguations } from "../tabs/tab-disambiguation.js";
 import { escapeAttr, escapeHtml } from "./html-utils.js";
 import { rewritePreviewImages } from "./image-paths.js";
 import { renderMarkdown, renderMermaidDiagrams } from "./markdown-renderer.js";
@@ -60,6 +61,7 @@ export function createUiRenderer({
       el.navForward.disabled = !canGoForward(navState);
     }
 
+    const disambiguations = buildTabDisambiguations(state.openFiles);
     let html = "";
 
     if (state.openFiles.length === 0 && state.activePath) {
@@ -83,7 +85,8 @@ export function createUiRenderer({
       const tooltip = tab.path || "Untitled";
       html += `<div class="tab${isActive ? " tab-active" : ""}" data-index="${i}">`;
       html += `<button class="tab-close" data-index="${i}" title="Close" aria-label="Close ${escapeAttr(label)}">×</button>`;
-      html += `<span class="tab-label" title="${escapeAttr(tooltip)}">${escapeHtml(label)}</span>`;
+      const folder = disambiguations.get(i);
+      html += `<span class="tab-label" title="${escapeAttr(tooltip)}">${escapeHtml(label)}${folder ? `<span class="tab-folder">${escapeHtml(folder)}</span>` : ""}</span>`;
       if (isDirty) {
         html += `<span class="tab-dirty">●</span>`;
       }

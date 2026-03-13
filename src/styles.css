@@ -408,6 +408,16 @@ body {
   pointer-events: none;
 }
 
+.tab-folder {
+  font-size: 9px;
+  color: var(--subtle);
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: color-mix(in oklab, var(--subtle) 12%, transparent);
+  letter-spacing: 0.02em;
+}
+
 .tab-close {
   flex-shrink: 0;
   border: 0;
