@@ -734,3 +734,27 @@ kbd {
     grid-template-columns: var(--sidebar-width, 220px) 1px 1fr;
   }
 }
+
+.toast {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%) translateY(8px);
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  color: var(--subtle);
+  font: 12px var(--ui);
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+  z-index: 50;
+}
+
+.toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}

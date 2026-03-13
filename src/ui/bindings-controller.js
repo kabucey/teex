@@ -6,6 +6,11 @@ import {
   detectStructuredPasteKind,
   formatStructuredPasteText,
 } from "./paste-format.js";
+import {
+  insertWithFormattingUndo,
+  undoPasteFormatting,
+} from "./paste-insert.js";
+import { showToast } from "./toast.js";
 
 export function bindElements(el) {
   el.workspace = document.querySelector("#workspace");
@@ -55,6 +60,7 @@ export function bindUiEvents({
   });
 
   let pasteFormatting = false;
+  let pasteUndoState = null;
 
   el.editor.addEventListener("paste", async (event) => {
     const text = event.clipboardData?.getData("text/plain");
@@ -79,11 +85,14 @@ export function bindUiEvents({
         text,
         activePath: state.activePath,
       });
-      document.execCommand(
-        "insertText",
-        false,
-        formatResult?.formatted || text,
+
+      const { inserted, undoState } = insertWithFormattingUndo(
+        el.editor,
+        text,
+        formatResult?.formatted || null,
       );
+
+      pasteUndoState = undoState;
 
       state.content = el.editor.value;
       state.isDirty = true;
@@ -91,7 +100,12 @@ export function bindUiEvents({
         onDirtyStateChanged();
       }
 
-      if (!formatResult?.detectedKind) {
+      if (inserted === "formatted") {
+        const kindLabel = (
+          formatResult.detectedKind || detectedKind
+        ).toUpperCase();
+        showToast(`Reformatted as ${kindLabel} — ⌘Z to undo`);
+      } else if (!formatResult?.detectedKind) {
         setStatus(
           `Unable to auto-format pasted ${detectedKind.toUpperCase()} (invalid syntax)`,
           true,
@@ -103,6 +117,7 @@ export function bindUiEvents({
   });
 
   el.editor.addEventListener("input", (event) => {
+    pasteUndoState = null;
     state.content = event.target.value;
     state.isDirty = true;
     if (typeof onDirtyStateChanged === "function") {
@@ -123,6 +138,22 @@ export function bindUiEvents({
   });
 
   document.addEventListener("keydown", async (event) => {
+    if (
+      pasteUndoState &&
+      event.metaKey &&
+      !event.shiftKey &&
+      event.key.toLowerCase() === "z"
+    ) {
+      event.preventDefault();
+      pasteUndoState = undoPasteFormatting(el.editor, pasteUndoState);
+      state.content = el.editor.value;
+      state.isDirty = pasteUndoState !== null || el.editor.value !== "";
+      if (typeof onDirtyStateChanged === "function") {
+        onDirtyStateChanged();
+      }
+      return;
+    }
+
     if (event.metaKey && event.key.toLowerCase() === "e") {
       event.preventDefault();
       toggleMarkdownMode();
