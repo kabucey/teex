@@ -1,6 +1,7 @@
 import { baseName, dirName, isCursorOutsideWindow } from "../app-utils.js";
 import { canGoBack, canGoForward } from "../tabs/navigation.js";
 import { buildTabDisambiguations } from "../tabs/tab-disambiguation.js";
+import { hasActiveContent, isUntitledTab } from "./behavior.js";
 import { escapeAttr, escapeHtml } from "./html-utils.js";
 import { rewritePreviewImages } from "./image-paths.js";
 import { renderMarkdown, renderMermaidDiagrams } from "./markdown-renderer.js";
@@ -296,6 +297,13 @@ export function createUiRenderer({
 
   function renderMainPane(options = {}) {
     const shouldFocusEditor = options.focusEditor !== false;
+
+    if (!hasActiveContent(state)) {
+      el.editor.classList.add("hidden");
+      el.preview.classList.add("hidden");
+      return;
+    }
+
     if (
       state.activeKind === "markdown" &&
       state.markdownViewMode === "preview"
@@ -362,17 +370,14 @@ export function createUiRenderer({
 export function buildWindowTitleState(state) {
   const nextRepresentedPath =
     state.mode === "folder" ? state.rootPath || null : state.activePath || null;
-  const isUntitled =
-    !state.activePath &&
-    state.openFiles.length > 0 &&
-    state.openFiles[state.activeTabIndex]?.path === null;
-  const baseTitle = isUntitled
+  const untitled = isUntitledTab(state);
+  const baseTitle = untitled
     ? "Untitled"
     : nextRepresentedPath
       ? baseName(nextRepresentedPath)
       : "Teex";
   const hasUnsavedChanges =
-    state.isDirty && (Boolean(state.activePath) || isUntitled);
+    state.isDirty && (Boolean(state.activePath) || untitled);
   const nextTitle = hasUnsavedChanges ? `${baseTitle}  ●` : baseTitle;
 
   return {

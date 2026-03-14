@@ -1,4 +1,4 @@
-import { collectFolderPaths, parentFolderPaths } from "../sidebar/tree.js";
+import { collectFolderPaths } from "../sidebar/tree.js";
 import {
   snapshotActiveStateAsTab,
   switchToSingleFileState,
@@ -176,21 +176,11 @@ export function createFileController({
       state.activeTabIndex = 0;
       await watchProjectFolder(path);
 
-      if (entries.length > 0) {
-        const previous = state.activePath;
-        const fallback = entries[0].path;
-        const nextPath = entries.some((entry) => entry.path === previous)
-          ? previous
-          : fallback;
-        for (const folder of parentFolderPaths(entries, nextPath)) {
-          state.collapsedFolders.delete(folder);
-        }
-        await openEntry(nextPath);
-      } else {
-        clearActiveFile();
+      clearActiveFile();
+      if (entries.length === 0) {
         setStatus("Folder has no text-like files");
-        render();
       }
+      render();
     } catch (error) {
       setStatus(String(error), true);
       render();

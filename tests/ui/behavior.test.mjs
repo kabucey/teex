@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   getSidebarSelectedPath,
   getSingleFileUiOpenMode,
+  hasActiveContent,
+  isUntitledTab,
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
   shouldSidebarSingleClickIgnoreSamePath,
@@ -375,6 +377,93 @@ test("drop overlay suppression heuristic does not suppress other-window/same-app
       paths: null,
       activePath: "/root/a.md",
       rootPath: "/root",
+    }),
+    false,
+  );
+});
+
+test("isUntitledTab returns true for untitled tab with null path", () => {
+  assert.equal(
+    isUntitledTab({
+      activePath: null,
+      openFiles: [{ path: null }],
+      activeTabIndex: 0,
+    }),
+    true,
+  );
+});
+
+test("isUntitledTab returns false when a file is active", () => {
+  assert.equal(
+    isUntitledTab({
+      activePath: "/root/a.md",
+      openFiles: [{ path: "/root/a.md" }],
+      activeTabIndex: 0,
+    }),
+    false,
+  );
+});
+
+test("isUntitledTab returns false when no tabs are open", () => {
+  assert.equal(
+    isUntitledTab({
+      activePath: null,
+      openFiles: [],
+      activeTabIndex: 0,
+    }),
+    false,
+  );
+});
+
+test("isUntitledTab returns false when openFiles is missing", () => {
+  assert.equal(
+    isUntitledTab({
+      activePath: null,
+      activeTabIndex: 0,
+    }),
+    false,
+  );
+});
+
+test("hasActiveContent returns true for saved file", () => {
+  assert.equal(
+    hasActiveContent({
+      activePath: "/root/a.md",
+      openFiles: [],
+      activeTabIndex: 0,
+    }),
+    true,
+  );
+});
+
+test("hasActiveContent returns true for untitled tab", () => {
+  assert.equal(
+    hasActiveContent({
+      activePath: null,
+      openFiles: [{ path: null }],
+      activeTabIndex: 0,
+    }),
+    true,
+  );
+});
+
+test("hasActiveContent returns false when no file and no untitled tab", () => {
+  assert.equal(
+    hasActiveContent({
+      activePath: null,
+      openFiles: [],
+      activeTabIndex: 0,
+    }),
+    false,
+  );
+});
+
+test("hasActiveContent returns false for folder with no file open", () => {
+  assert.equal(
+    hasActiveContent({
+      activePath: null,
+      openFiles: [],
+      activeTabIndex: 0,
     }),
     false,
   );

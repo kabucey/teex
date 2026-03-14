@@ -1,3 +1,14 @@
+export function isUntitledTab({ activePath, openFiles, activeTabIndex }) {
+  const files = openFiles || [];
+  return (
+    !activePath && files.length > 0 && files[activeTabIndex]?.path === null
+  );
+}
+
+export function hasActiveContent(state) {
+  return Boolean(state.activePath) || isUntitledTab(state);
+}
+
 export function getSingleFileUiOpenMode(stateMode) {
   if (stateMode === "folder") {
     return "folderTabs";

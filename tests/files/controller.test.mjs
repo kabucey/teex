@@ -253,3 +253,31 @@ test("openFolderEntryInTabs falls back to openEntry when active state cannot be 
     { message: "Opened next.md", isError: false },
   ]);
 });
+
+test("openFolder does not auto-open any file when folder has entries", async () => {
+  const invokeCalls = [];
+  const harness = createFileControllerHarness({
+    invoke: async (command, args) => {
+      invokeCalls.push({ command, args });
+      if (command === "list_project_entries") {
+        return [
+          { path: "/project/a.md", relPath: "a.md" },
+          { path: "/project/b.md", relPath: "b.md" },
+        ];
+      }
+    },
+  });
+
+  await harness.controller.openFolder("/project");
+
+  assert.equal(harness.state.mode, "folder");
+  assert.equal(harness.state.rootPath, "/project");
+  assert.equal(harness.state.entries.length, 2);
+  assert.equal(harness.state.activePath, null);
+  assert.equal(harness.state.activeKind, null);
+  assert.equal(harness.state.content, "");
+  assert.deepEqual(
+    invokeCalls.filter((c) => c.command === "read_text_file"),
+    [],
+  );
+});

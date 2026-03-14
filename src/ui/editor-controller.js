@@ -1,10 +1,7 @@
+import { hasActiveContent } from "./behavior.js";
+
 export function isEditableState(state) {
-  const openFiles = state.openFiles || [];
-  const isUntitled =
-    !state.activePath &&
-    openFiles.length > 0 &&
-    openFiles[state.activeTabIndex]?.path === null;
-  if (!state.activePath && !isUntitled) {
+  if (!hasActiveContent(state)) {
     return false;
   }
 
