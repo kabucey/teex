@@ -100,14 +100,14 @@ export function renderTreeHtml(node, depth, collapsedFolders) {
   for (const folder of folders) {
     const isCollapsed = collapsedFolders.has(folder.path);
     const expanded = !isCollapsed;
-    html += `<button class="folder-toggle" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}" title="${escapeAttr(folder.name)}"><span class="disclosure" aria-hidden="true"></span><span class="folder-icon" aria-hidden="true"></span><span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
+    html += `<button class="folder-toggle" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}"><span class="disclosure" aria-hidden="true"></span><span class="folder-icon" aria-hidden="true"></span><span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
     if (!isCollapsed) {
       html += renderTreeHtml(folder, depth + 1, collapsedFolders);
     }
   }
 
   for (const file of node.files) {
-    html += `<button class="project-item" style="--indent:${depth};" data-path="${escapeAttr(file.path)}" title="${escapeAttr(file.relPath)}">${escapeHtml(file.name)}</button>`;
+    html += `<button class="project-item" style="--indent:${depth};" data-path="${escapeAttr(file.path)}">${escapeHtml(file.name)}</button>`;
   }
 
   return html;

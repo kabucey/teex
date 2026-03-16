@@ -169,11 +169,11 @@ test("parentFolderPaths returns empty set when path is not in entries", () => {
   assert.deepEqual([...result], []);
 });
 
-test("folder buttons have a title attribute with the folder name", () => {
+test("folder buttons do not have a static title attribute", () => {
   const tree = buildEntryTree([
     { path: "/root/docs/guide.md", relPath: "docs/guide.md" },
   ]);
 
   const html = renderTreeHtml(tree, 0, new Set());
-  assert.match(html, /folder-toggle[^>]*title="docs"/);
+  assert.doesNotMatch(html, /folder-toggle[^>]*title="/);
 });

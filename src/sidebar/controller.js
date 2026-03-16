@@ -116,6 +116,14 @@ export function createSidebarController({
 
   function bindSidebarItemEvents() {
     el.projectList.querySelectorAll(".project-item").forEach((button) => {
+      button.addEventListener("mouseenter", () => {
+        if (button.scrollWidth > button.clientWidth) {
+          button.title = button.textContent;
+        } else {
+          button.removeAttribute("title");
+        }
+      });
+
       button.addEventListener("click", (event) => {
         if (event.detail !== 1) {
           return;
@@ -242,6 +250,15 @@ export function createSidebarController({
     }
 
     el.projectList.querySelectorAll(".folder-toggle").forEach((button) => {
+      button.addEventListener("mouseenter", () => {
+        const label = button.querySelector(".folder-label");
+        if (label && label.scrollWidth > label.clientWidth) {
+          button.title = label.textContent;
+        } else {
+          button.removeAttribute("title");
+        }
+      });
+
       button.addEventListener("click", () => {
         const { folderPath } = button.dataset;
         if (!folderPath) {
