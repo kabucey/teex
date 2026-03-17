@@ -158,6 +158,18 @@ fn format_structured_text_formats_xml_input() {
 }
 
 #[test]
+fn format_structured_text_indents_xml_with_existing_linebreaks() {
+    let input = "<note>\n<to>Tove</to>\n<from>Jani</from>\n<heading>Reminder</heading>\n<body>Don't forget me this weekend!</body>\n</note>".to_string();
+    let result = format_structured_text(input, Some("xml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("xml"));
+    assert!(result.changed, "should detect formatting change");
+    let expected = "<note>\n  <to>Tove</to>\n  <from>Jani</from>\n  <heading>Reminder</heading>\n  <body>Don't forget me this weekend!</body>\n</note>";
+    assert_eq!(result.formatted, expected);
+}
+
+#[test]
 fn format_structured_text_formats_csv_input() {
     let input = "name,age,city\nAlice,30,NYC\nBob,25,LA".to_string();
     let result = format_structured_text(input, Some("csv".to_string()))
@@ -179,4 +191,211 @@ fn format_structured_text_returns_unchanged_for_already_formatted_toml() {
 
     assert_eq!(result.detected_kind.as_deref(), Some("toml"));
     assert!(!result.changed);
+}
+
+#[test]
+fn format_structured_text_returns_unchanged_for_already_formatted_json() {
+    let input = "{\n  \"name\": \"teex\"\n}".to_string();
+    let result = format_structured_text(input.clone(), Some("json".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("json"));
+    assert!(!result.changed);
+    assert_eq!(result.formatted, input);
+}
+
+#[test]
+fn format_structured_text_returns_unchanged_for_already_formatted_yaml() {
+    // serde_yml normalizes "0.1.0" → quoted string, so use values that roundtrip cleanly
+    let input = "name: teex\ncount: 1".to_string();
+    let result = format_structured_text(input.clone(), Some("yaml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("yaml"));
+    assert!(!result.changed);
+    assert_eq!(result.formatted, input);
+}
+
+#[test]
+fn format_structured_text_returns_unchanged_for_already_formatted_xml() {
+    let input = "<note>\n  <to>Tove</to>\n</note>".to_string();
+    let result = format_structured_text(input.clone(), Some("xml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("xml"));
+    assert!(!result.changed);
+    assert_eq!(result.formatted, input);
+}
+
+#[test]
+fn format_structured_text_returns_unchanged_for_already_formatted_csv() {
+    let input = "name ,age\nAlice,30".to_string();
+    let result = format_structured_text(input.clone(), Some("csv".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("csv"));
+    assert!(!result.changed);
+    assert_eq!(result.formatted, input);
+}
+
+// --- Auto-detection (no preferred_kind) ---
+
+#[test]
+fn format_structured_text_auto_detects_json() {
+    let input = "{\"a\":1}".to_string();
+    let result = format_structured_text(input, None)
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("json"));
+    assert!(result.changed);
+    assert_eq!(result.formatted, "{\n  \"a\": 1\n}");
+}
+
+#[test]
+fn format_structured_text_auto_detects_yaml_mapping() {
+    let input = "{host: localhost, port: 8080}".to_string();
+    let result = format_structured_text(input, None)
+        .expect("format structured text should succeed");
+
+    // JSON is tried first but this isn't valid JSON, so YAML picks it up
+    assert_eq!(result.detected_kind.as_deref(), Some("yaml"));
+    assert!(result.changed);
+    assert!(result.formatted.contains("host: localhost"));
+    assert!(result.formatted.contains("port: 8080"));
+}
+
+// --- Nested structures ---
+
+#[test]
+fn format_structured_text_formats_nested_json() {
+    let input = "{\"a\":{\"b\":{\"c\":1}}}".to_string();
+    let result = format_structured_text(input, Some("json".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(result.changed);
+    assert_eq!(
+        result.formatted,
+        "{\n  \"a\": {\n    \"b\": {\n      \"c\": 1\n    }\n  }\n}"
+    );
+}
+
+#[test]
+fn format_structured_text_formats_nested_xml() {
+    let input = "<a><b><c>deep</c></b></a>".to_string();
+    let result = format_structured_text(input, Some("xml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(result.changed);
+    assert!(result.formatted.contains("    <c>deep</c>"));
+}
+
+#[test]
+fn format_structured_text_formats_toml_with_nested_tables() {
+    let input = "[server]\nhost=\"localhost\"\nport=8080".to_string();
+    let result = format_structured_text(input, Some("toml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(result.changed);
+    assert!(result.formatted.contains("[server]"));
+    assert!(result.formatted.contains("host = \"localhost\""));
+    assert!(result.formatted.contains("port = 8080"));
+}
+
+// --- TSV (tab-separated CSV) ---
+
+#[test]
+fn format_structured_text_formats_tsv_input() {
+    let input = "name\tage\nAlice\t30\nBob\t25".to_string();
+    let result = format_structured_text(input, Some("csv".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("csv"));
+    let lines: Vec<&str> = result.formatted.lines().collect();
+    assert_eq!(lines.len(), 3);
+    assert!(lines[0].contains('\t'));
+}
+
+// --- JSON array ---
+
+#[test]
+fn format_structured_text_formats_json_array() {
+    let input = "[1,2,3]".to_string();
+    let result = format_structured_text(input, Some("json".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(result.changed);
+    assert_eq!(result.formatted, "[\n  1,\n  2,\n  3\n]");
+}
+
+// --- YAML sequence ---
+
+#[test]
+fn format_structured_text_formats_yaml_sequence() {
+    let input = "[1, 2, 3]".to_string();
+    let result = format_structured_text(input, Some("yaml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("yaml"));
+    assert!(result.changed);
+    assert!(result.formatted.contains("- 1"));
+}
+
+// --- XML with attributes ---
+
+#[test]
+fn format_structured_text_formats_xml_with_attributes() {
+    let input = "<root attr=\"val\"><child id=\"1\">text</child></root>".to_string();
+    let result = format_structured_text(input, Some("xml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(result.changed);
+    assert!(result.formatted.contains("  <child id=\"1\">"));
+}
+
+// --- Invalid input returns unchanged ---
+
+#[test]
+fn format_structured_text_returns_unchanged_for_invalid_json() {
+    let input = "{not valid json".to_string();
+    let result = format_structured_text(input.clone(), Some("json".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(!result.changed);
+    assert_eq!(result.formatted, input);
+}
+
+#[test]
+fn format_structured_text_returns_unchanged_for_invalid_toml() {
+    let input = "[[[invalid toml".to_string();
+    let result = format_structured_text(input.clone(), Some("toml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(!result.changed);
+    assert_eq!(result.formatted, input);
+}
+
+#[test]
+fn format_structured_text_returns_unchanged_for_invalid_xml() {
+    let input = "not xml at all {{{".to_string();
+    let result = format_structured_text(input.clone(), Some("xml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(!result.changed);
+    assert_eq!(result.formatted, input);
+}
+
+// --- CSV edge cases ---
+
+#[test]
+fn format_structured_text_formats_csv_with_uneven_columns() {
+    let input = "a,bb,ccc\n1111,22,3".to_string();
+    let result = format_structured_text(input, Some("csv".to_string()))
+        .expect("format structured text should succeed");
+
+    assert!(result.changed);
+    let lines: Vec<&str> = result.formatted.lines().collect();
+    assert_eq!(lines.len(), 2);
+    // Last column should not be padded
+    assert!(lines[0].ends_with("ccc"));
+    assert!(lines[1].ends_with("3"));
 }

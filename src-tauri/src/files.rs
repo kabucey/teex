@@ -56,6 +56,7 @@ fn format_xml(content: &str) -> Option<String> {
     loop {
         match reader.read_event() {
             Ok(Event::Eof) => break,
+            Ok(Event::Text(ref t)) if t.iter().all(|b| b.is_ascii_whitespace()) => continue,
             Ok(event) => {
                 if writer.write_event(event).is_err() {
                     return None;

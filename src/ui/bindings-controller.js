@@ -82,7 +82,7 @@ export function bindUiEvents({
         activePath: state.activePath,
       });
 
-      const { inserted } = insertFormattedPaste(
+      const { inserted } = await insertFormattedPaste(
         el.editor,
         text,
         formatResult?.formatted || null,
