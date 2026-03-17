@@ -178,6 +178,7 @@ export function setupControllers({
     handleCrossWindowDragLeave: () =>
       crossWindowDragController.handleDragLeave(),
     handleContextMenuDelete: callbacks.handleContextMenuDelete,
+    openRecentFolder: callbacks.openFolder,
     bindWindowDragDropEvents: () =>
       dragDropController.bindWindowDragDropEvents(),
   });

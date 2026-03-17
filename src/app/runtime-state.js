@@ -15,6 +15,8 @@ export const EVENTS = {
   crossWindowDragEnter: "teex://cross-window-drag-enter",
   crossWindowDragLeave: "teex://cross-window-drag-leave",
   contextMenuDelete: "teex://context-menu-delete",
+  openRecentFile: "teex://open-recent-file",
+  openRecentFolder: "teex://open-recent-folder",
 };
 
 export function createRuntimeState() {

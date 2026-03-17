@@ -258,6 +258,29 @@ pub(super) fn handle_app_menu_event(app: &tauri::AppHandle, event: tauri::menu::
             app_runtime::apply_theme(app, theme);
             let _ = app.emit(EVENT_SET_THEME, theme);
         }
-        _ => {}
+        MENU_CLEAR_RECENTS => {
+            recent_files::clear(app);
+        }
+        id => {
+            if let Some(path) = id.strip_prefix(MENU_RECENT_FILE_PREFIX) {
+                if let Some(window) = target_window(app) {
+                    emit_to_window(
+                        app,
+                        window.label(),
+                        EVENT_OPEN_RECENT_FILE,
+                        path.to_string(),
+                    );
+                }
+            } else if let Some(path) = id.strip_prefix(MENU_RECENT_FOLDER_PREFIX) {
+                if let Some(window) = target_window(app) {
+                    emit_to_window(
+                        app,
+                        window.label(),
+                        EVENT_OPEN_RECENT_FOLDER,
+                        path.to_string(),
+                    );
+                }
+            }
+        }
     }
 }

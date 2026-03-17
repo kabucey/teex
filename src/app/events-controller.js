@@ -20,6 +20,7 @@ export function createAppEventsController({
   handleCrossWindowDragEnter,
   handleCrossWindowDragLeave,
   handleContextMenuDelete,
+  openRecentFolder,
 }) {
   async function bindAppEvents() {
     const label = await invoke("get_window_label");
@@ -72,6 +73,12 @@ export function createAppEventsController({
       }),
       listen(`${events.contextMenuDelete}/${label}`, async (event) => {
         await handleContextMenuDelete(event.payload);
+      }),
+      listen(`${events.openRecentFile}/${label}`, async (event) => {
+        await openSingleFileFromUi(event.payload);
+      }),
+      listen(`${events.openRecentFolder}/${label}`, async (event) => {
+        await openRecentFolder(event.payload);
       }),
       bindWindowDragDropEvents(),
     ]);

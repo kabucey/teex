@@ -48,7 +48,9 @@ pub(crate) fn run_app() {
             get_drag_preview_content,
             create_window_from_drag,
             trash_file,
-            show_sidebar_context_menu
+            show_sidebar_context_menu,
+            add_recent_file,
+            add_recent_folder
         ])
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
@@ -79,7 +81,7 @@ pub(crate) fn run_app() {
     });
 }
 
-fn build_app_menu(
+pub(crate) fn build_app_menu(
     app: &tauri::AppHandle,
 ) -> tauri::Result<(tauri::menu::Menu<tauri::Wry>, ThemeMenuState)> {
     let open_file_item = MenuItem::with_id(
@@ -174,12 +176,15 @@ fn build_app_menu(
         .items(&[&theme_system_item, &theme_light_item, &theme_dark_item])
         .build()?;
 
+    let recent_submenu = build_recent_submenu_from_state(app)?;
+
     let file_submenu = SubmenuBuilder::new(app, "File")
         .items(&[
             &new_tab_item,
             &new_window_item,
             &open_file_item,
             &open_folder_item,
+            &recent_submenu,
             &PredefinedMenuItem::separator(app)?,
             &restore_session_item,
             &PredefinedMenuItem::separator(app)?,
@@ -252,7 +257,22 @@ fn build_app_menu(
     Ok((menu, theme_state))
 }
 
+fn build_recent_submenu_from_state(
+    app: &tauri::AppHandle,
+) -> tauri::Result<tauri::menu::Submenu<tauri::Wry>> {
+    let (files, folders) = if let Some(state) = app.try_state::<recent_files::RecentState>() {
+        let files = state.files.lock().unwrap().clone();
+        let folders = state.folders.lock().unwrap().clone();
+        (files, folders)
+    } else {
+        (vec![], vec![])
+    };
+    recent_files::build_recent_submenu(app, &files, &folders)
+}
+
 fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
+    recent_files::init(app);
+
     let (menu, theme_state) = build_app_menu(app.handle())?;
     app.set_menu(menu.clone())?;
     app.manage(theme_state);

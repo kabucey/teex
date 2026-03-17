@@ -12,4 +12,5 @@ mod cli_install;
 mod common;
 mod files;
 mod launch;
+mod recent_files;
 mod utils;

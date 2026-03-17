@@ -36,6 +36,7 @@ mod mac_services;
 mod menu_events;
 mod path_utils;
 mod context_menu;
+mod recent_files;
 mod cross_window_drag;
 mod tab_drag_preview;
 mod tab_transfer;
@@ -67,6 +68,7 @@ use watchers::{
     clear_project_file_watch_for_label, clear_project_folder_watch_for_label,
     install_project_file_watch, install_project_folder_watch,
 };
+use recent_files::{add_recent_file, add_recent_folder};
 use window_title::set_window_title;
 
 const EVENT_OPEN_FILE_SELECTED: &str = "teex://open-file-selected";
@@ -102,6 +104,11 @@ const MENU_THEME_DARK: &str = "theme_dark";
 const EVENT_SET_THEME: &str = "teex://set-theme";
 const MENU_RESTORE_SESSION: &str = "restore_session";
 const EVENT_RESTORE_SESSION: &str = "teex://restore-session";
+const MENU_CLEAR_RECENTS: &str = "clear_recents";
+const MENU_RECENT_FILE_PREFIX: &str = "recent_file:";
+const MENU_RECENT_FOLDER_PREFIX: &str = "recent_folder:";
+const EVENT_OPEN_RECENT_FILE: &str = "teex://open-recent-file";
+const EVENT_OPEN_RECENT_FOLDER: &str = "teex://open-recent-folder";
 static NEXT_WINDOW_ID: AtomicUsize = AtomicUsize::new(1);
 static NEXT_TRANSFER_REQUEST_ID: AtomicUsize = AtomicUsize::new(1);
 const FOLDER_WATCH_DEBOUNCE: Duration = Duration::from_millis(250);

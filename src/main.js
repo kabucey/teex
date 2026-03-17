@@ -273,6 +273,7 @@ function startPendingOpenPathPoller() {
 async function openFile(path) {
   scrollSyncController?.beforeContextReplace();
   await fileController.openFile(path);
+  invoke("add_recent_file", { path }).catch(() => {});
 }
 
 async function openSingleFileFromUi(path) {
@@ -282,6 +283,7 @@ async function openSingleFileFromUi(path) {
 async function openFolder(path) {
   scrollSyncController?.beforeContextReplace();
   await fileController.openFolder(path);
+  invoke("add_recent_folder", { path }).catch(() => {});
   if (!hasTabSession() && state.activePath) {
     recordNavigation(state, state.activePath);
     renderChrome();
@@ -353,10 +355,14 @@ function pruneStaleWindowsAsync() {
 async function openMultipleFiles(paths) {
   scrollSyncController?.beforeContextReplace();
   await tabController.openMultipleFiles(paths);
+  for (const path of paths) {
+    invoke("add_recent_file", { path }).catch(() => {});
+  }
 }
 
 async function openFileAsTab(path) {
   await tabController.openFileAsTab(path);
+  invoke("add_recent_file", { path }).catch(() => {});
 }
 
 async function _openFileInTabs(path) {
