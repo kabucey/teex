@@ -21,6 +21,73 @@ function createMockEditor(initialValue = "", selectionStart = 0) {
   return editor;
 }
 
+function createUndoableEditor(initialValue = "") {
+  const undoStack = [];
+  const redoStack = [];
+  const editor = {
+    value: initialValue,
+    selectionStart: initialValue.length,
+    selectionEnd: initialValue.length,
+    focused: false,
+    focus() {
+      this.focused = true;
+    },
+    setSelectionRange(start, end) {
+      this.selectionStart = start;
+      this.selectionEnd = end;
+    },
+  };
+
+  globalThis.document = {
+    execCommand(command, _showUI, text) {
+      if (command !== "insertText") return false;
+      const before = editor.value.slice(0, editor.selectionStart);
+      const after = editor.value.slice(editor.selectionEnd);
+      undoStack.push({
+        value: editor.value,
+        selectionStart: editor.selectionStart,
+        selectionEnd: editor.selectionEnd,
+      });
+      redoStack.length = 0;
+      editor.value = before + text + after;
+      const cursor = before.length + text.length;
+      editor.selectionStart = cursor;
+      editor.selectionEnd = cursor;
+      return true;
+    },
+  };
+
+  function undo() {
+    if (undoStack.length === 0) return false;
+    const snapshot = undoStack.pop();
+    redoStack.push({
+      value: editor.value,
+      selectionStart: editor.selectionStart,
+      selectionEnd: editor.selectionEnd,
+    });
+    editor.value = snapshot.value;
+    editor.selectionStart = snapshot.selectionStart;
+    editor.selectionEnd = snapshot.selectionEnd;
+    return true;
+  }
+
+  function redo() {
+    if (redoStack.length === 0) return false;
+    const snapshot = redoStack.pop();
+    undoStack.push({
+      value: editor.value,
+      selectionStart: editor.selectionStart,
+      selectionEnd: editor.selectionEnd,
+    });
+    editor.value = snapshot.value;
+    editor.selectionStart = snapshot.selectionStart;
+    editor.selectionEnd = snapshot.selectionEnd;
+    return true;
+  }
+
+  return { editor, undo, redo };
+}
+
 beforeEach(() => {
   execCommandCalls = [];
   globalThis.document = {
@@ -128,73 +195,6 @@ describe("insertFormattedPaste", () => {
 });
 
 describe("JSON paste undo scenario", () => {
-  function createUndoableEditor(initialValue = "") {
-    const undoStack = [];
-    const redoStack = [];
-    const editor = {
-      value: initialValue,
-      selectionStart: initialValue.length,
-      selectionEnd: initialValue.length,
-      focused: false,
-      focus() {
-        this.focused = true;
-      },
-      setSelectionRange(start, end) {
-        this.selectionStart = start;
-        this.selectionEnd = end;
-      },
-    };
-
-    globalThis.document = {
-      execCommand(command, _showUI, text) {
-        if (command !== "insertText") return false;
-        const before = editor.value.slice(0, editor.selectionStart);
-        const after = editor.value.slice(editor.selectionEnd);
-        undoStack.push({
-          value: editor.value,
-          selectionStart: editor.selectionStart,
-          selectionEnd: editor.selectionEnd,
-        });
-        redoStack.length = 0;
-        editor.value = before + text + after;
-        const cursor = before.length + text.length;
-        editor.selectionStart = cursor;
-        editor.selectionEnd = cursor;
-        return true;
-      },
-    };
-
-    function undo() {
-      if (undoStack.length === 0) return false;
-      const snapshot = undoStack.pop();
-      redoStack.push({
-        value: editor.value,
-        selectionStart: editor.selectionStart,
-        selectionEnd: editor.selectionEnd,
-      });
-      editor.value = snapshot.value;
-      editor.selectionStart = snapshot.selectionStart;
-      editor.selectionEnd = snapshot.selectionEnd;
-      return true;
-    }
-
-    function redo() {
-      if (redoStack.length === 0) return false;
-      const snapshot = redoStack.pop();
-      undoStack.push({
-        value: editor.value,
-        selectionStart: editor.selectionStart,
-        selectionEnd: editor.selectionEnd,
-      });
-      editor.value = snapshot.value;
-      editor.selectionStart = snapshot.selectionStart;
-      editor.selectionEnd = snapshot.selectionEnd;
-      return true;
-    }
-
-    return { editor, undo, redo };
-  }
-
   it("paste unformatted JSON, undo to raw, undo to blank", () => {
     const { editor, undo } = createUndoableEditor("");
     const raw = '{"name":"Alice","age":30}';
@@ -324,73 +324,6 @@ describe("JSON paste undo scenario", () => {
 });
 
 describe("YAML paste undo scenario", () => {
-  function createUndoableEditor(initialValue = "") {
-    const undoStack = [];
-    const redoStack = [];
-    const editor = {
-      value: initialValue,
-      selectionStart: initialValue.length,
-      selectionEnd: initialValue.length,
-      focused: false,
-      focus() {
-        this.focused = true;
-      },
-      setSelectionRange(start, end) {
-        this.selectionStart = start;
-        this.selectionEnd = end;
-      },
-    };
-
-    globalThis.document = {
-      execCommand(command, _showUI, text) {
-        if (command !== "insertText") return false;
-        const before = editor.value.slice(0, editor.selectionStart);
-        const after = editor.value.slice(editor.selectionEnd);
-        undoStack.push({
-          value: editor.value,
-          selectionStart: editor.selectionStart,
-          selectionEnd: editor.selectionEnd,
-        });
-        redoStack.length = 0;
-        editor.value = before + text + after;
-        const cursor = before.length + text.length;
-        editor.selectionStart = cursor;
-        editor.selectionEnd = cursor;
-        return true;
-      },
-    };
-
-    function undo() {
-      if (undoStack.length === 0) return false;
-      const snapshot = undoStack.pop();
-      redoStack.push({
-        value: editor.value,
-        selectionStart: editor.selectionStart,
-        selectionEnd: editor.selectionEnd,
-      });
-      editor.value = snapshot.value;
-      editor.selectionStart = snapshot.selectionStart;
-      editor.selectionEnd = snapshot.selectionEnd;
-      return true;
-    }
-
-    function redo() {
-      if (redoStack.length === 0) return false;
-      const snapshot = redoStack.pop();
-      undoStack.push({
-        value: editor.value,
-        selectionStart: editor.selectionStart,
-        selectionEnd: editor.selectionEnd,
-      });
-      editor.value = snapshot.value;
-      editor.selectionStart = snapshot.selectionStart;
-      editor.selectionEnd = snapshot.selectionEnd;
-      return true;
-    }
-
-    return { editor, undo, redo };
-  }
-
   it("paste unformatted YAML, undo to raw, undo to blank", () => {
     const { editor, undo } = createUndoableEditor("");
     const raw = "{name: Alice, age: 30}";
@@ -460,5 +393,153 @@ describe("YAML paste undo scenario", () => {
 
     undo();
     assert.equal(editor.value, "");
+  });
+});
+
+describe("TOML paste undo scenario", () => {
+  it("paste unformatted TOML, undo to raw, undo to blank", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = 'name="teex"\nversion="0.1.0"';
+    const formatted = 'name = "teex"\nversion = "0.1.0"';
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, formatted);
+
+    undo();
+    assert.equal(editor.value, raw);
+
+    undo();
+    assert.equal(editor.value, "");
+  });
+
+  it("paste TOML, undo to raw, redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = 'name="teex"';
+    const formatted = 'name = "teex"';
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, formatted);
+
+    undo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
+  });
+
+  it("paste TOML, full undo to blank, full redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = "port=8080";
+    const formatted = "port = 8080";
+
+    insertFormattedPaste(editor, raw, formatted);
+
+    undo();
+    undo();
+    assert.equal(editor.value, "");
+
+    redo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
+  });
+});
+
+describe("XML paste undo scenario", () => {
+  it("paste unformatted XML, undo to raw, undo to blank", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = "<root><child>text</child></root>";
+    const formatted = "<root>\n  <child>text</child>\n</root>";
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, formatted);
+
+    undo();
+    assert.equal(editor.value, raw);
+
+    undo();
+    assert.equal(editor.value, "");
+  });
+
+  it("paste XML, undo to raw, redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = "<a><b/></a>";
+    const formatted = "<a>\n  <b/>\n</a>";
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, formatted);
+
+    undo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
+  });
+
+  it("paste XML, full undo to blank, full redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = "<x><y>1</y></x>";
+    const formatted = "<x>\n  <y>1</y>\n</x>";
+
+    insertFormattedPaste(editor, raw, formatted);
+
+    undo();
+    undo();
+    assert.equal(editor.value, "");
+
+    redo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
+  });
+});
+
+describe("CSV paste undo scenario", () => {
+  it("paste unaligned CSV, undo to raw, undo to blank", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = "name,age,city\nAlice,30,NYC";
+    const formatted = "name ,age,city\nAlice,30 ,NYC";
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, formatted);
+
+    undo();
+    assert.equal(editor.value, raw);
+
+    undo();
+    assert.equal(editor.value, "");
+  });
+
+  it("paste CSV, undo to raw, redo back to formatted", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = "a,b\n1,2";
+    const formatted = "a,b\n1,2";
+
+    insertFormattedPaste(editor, raw, formatted);
+    // Same content → single-step raw insert
+    assert.equal(editor.value, raw);
+
+    undo();
+    assert.equal(editor.value, "");
+  });
+
+  it("paste CSV, full undo to blank, full redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = "x,yy\n111,2";
+    const formatted = "x  ,yy\n111,2";
+
+    insertFormattedPaste(editor, raw, formatted);
+
+    undo();
+    undo();
+    assert.equal(editor.value, "");
+
+    redo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
   });
 });

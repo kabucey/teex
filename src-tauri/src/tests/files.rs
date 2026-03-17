@@ -131,3 +131,52 @@ fn format_structured_text_returns_unchanged_for_plain_text() {
     assert!(!result.changed);
     assert_eq!(result.formatted, input);
 }
+
+#[test]
+fn format_structured_text_formats_toml_input() {
+    let input = "name=\"teex\"\nversion=\"0.1.0\"\n[dependencies]\nserde=\"1\"".to_string();
+    let result = format_structured_text(input, Some("toml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("toml"));
+    assert!(result.changed);
+    assert!(result.formatted.contains("name = \"teex\""));
+    assert!(result.formatted.contains("[dependencies]"));
+    assert!(result.formatted.contains("serde = \"1\""));
+}
+
+#[test]
+fn format_structured_text_formats_xml_input() {
+    let input = "<root><child>text</child><other/></root>".to_string();
+    let result = format_structured_text(input, Some("xml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("xml"));
+    assert!(result.changed);
+    assert!(result.formatted.contains("  <child>"));
+    assert!(result.formatted.contains("  <other/>"));
+}
+
+#[test]
+fn format_structured_text_formats_csv_input() {
+    let input = "name,age,city\nAlice,30,NYC\nBob,25,LA".to_string();
+    let result = format_structured_text(input, Some("csv".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("csv"));
+    assert!(result.changed);
+    let lines: Vec<&str> = result.formatted.lines().collect();
+    assert_eq!(lines.len(), 3);
+    assert!(lines[0].starts_with("name "));
+    assert!(lines[1].starts_with("Alice"));
+}
+
+#[test]
+fn format_structured_text_returns_unchanged_for_already_formatted_toml() {
+    let input = "name = \"teex\"\nversion = \"0.1.0\"".to_string();
+    let result = format_structured_text(input.clone(), Some("toml".to_string()))
+        .expect("format structured text should succeed");
+
+    assert_eq!(result.detected_kind.as_deref(), Some("toml"));
+    assert!(!result.changed);
+}

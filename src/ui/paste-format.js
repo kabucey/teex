@@ -1,5 +1,8 @@
 const JSON_EXTENSIONS = new Set(["json", "jsonc", "geojson"]);
 const YAML_EXTENSIONS = new Set(["yaml", "yml"]);
+const TOML_EXTENSIONS = new Set(["toml"]);
+const XML_EXTENSIONS = new Set(["xml", "svg", "xhtml"]);
+const CSV_EXTENSIONS = new Set(["csv", "tsv"]);
 const COMPOSE_ROOT_KEYS = new Set([
   "version",
   "services",
@@ -27,6 +30,16 @@ function looksLikeJson(text) {
   return /^\s*[[{]/.test(text);
 }
 
+function looksLikeToml(text) {
+  const hasSection = /(^|\n)\s*\[[A-Za-z0-9_.-]+\]/.test(text);
+  const hasKeyEquals = /(^|\n)\s*[A-Za-z0-9_.-]+\s*=\s*\S/.test(text);
+  return hasSection || (hasKeyEquals && !/:\s/.test(text));
+}
+
+function looksLikeXml(text) {
+  return /^\s*<[?A-Za-z!]/.test(text);
+}
+
 function looksLikeYaml(text) {
   if (!/\n/.test(text) && !/^\s*-\s+/.test(text)) {
     return false;
@@ -51,12 +64,27 @@ export function detectStructuredPasteKind({ activePath, text }) {
   if (YAML_EXTENSIONS.has(extension)) {
     return "yaml";
   }
+  if (TOML_EXTENSIONS.has(extension)) {
+    return "toml";
+  }
+  if (XML_EXTENSIONS.has(extension)) {
+    return "xml";
+  }
+  if (CSV_EXTENSIONS.has(extension)) {
+    return "csv";
+  }
 
   if (looksLikeJson(text)) {
     return "json";
   }
+  if (looksLikeXml(text)) {
+    return "xml";
+  }
   if (looksLikeYaml(text)) {
     return "yaml";
+  }
+  if (looksLikeToml(text)) {
+    return "toml";
   }
 
   return null;

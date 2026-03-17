@@ -39,6 +39,91 @@ fn format_yaml(content: &str) -> Option<String> {
     Some(formatted.trim_end_matches('\n').to_string())
 }
 
+fn format_toml(content: &str) -> Option<String> {
+    let value: toml::Value = toml::from_str(content).ok()?;
+    let formatted = toml::to_string_pretty(&value).ok()?;
+    Some(formatted.trim_end_matches('\n').to_string())
+}
+
+fn format_xml(content: &str) -> Option<String> {
+    use quick_xml::events::Event;
+    use quick_xml::reader::Reader;
+    use quick_xml::writer::Writer;
+
+    let mut reader = Reader::from_str(content);
+    let mut writer = Writer::new_with_indent(Vec::new(), b' ', 2);
+
+    loop {
+        match reader.read_event() {
+            Ok(Event::Eof) => break,
+            Ok(event) => {
+                if writer.write_event(event).is_err() {
+                    return None;
+                }
+            }
+            Err(_) => return None,
+        }
+    }
+
+    let bytes = writer.into_inner();
+    let formatted = String::from_utf8(bytes).ok()?;
+    Some(formatted.trim_end_matches('\n').to_string())
+}
+
+fn format_csv(content: &str) -> Option<String> {
+    let delimiter = if content.contains('\t') { b'\t' } else { b',' };
+
+    let mut reader = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .delimiter(delimiter)
+        .flexible(true)
+        .from_reader(content.as_bytes());
+
+    let rows: Vec<Vec<String>> = reader
+        .records()
+        .filter_map(|r| r.ok())
+        .map(|r| r.iter().map(|f| f.to_string()).collect())
+        .collect();
+
+    if rows.is_empty() {
+        return None;
+    }
+
+    let col_count = rows.iter().map(|r| r.len()).max().unwrap_or(0);
+    if col_count == 0 {
+        return None;
+    }
+
+    let mut widths = vec![0usize; col_count];
+    for row in &rows {
+        for (i, field) in row.iter().enumerate() {
+            widths[i] = widths[i].max(field.trim().len());
+        }
+    }
+
+    let sep = if delimiter == b'\t' { "\t" } else { "," };
+    let formatted: Vec<String> = rows
+        .iter()
+        .map(|row| {
+            let padded: Vec<String> = (0..col_count)
+                .map(|i| {
+                    let field = row.get(i).map(|f| f.trim()).unwrap_or("");
+                    if delimiter == b'\t' {
+                        field.to_string()
+                    } else if i < col_count - 1 {
+                        format!("{:<width$}", field, width = widths[i])
+                    } else {
+                        field.to_string()
+                    }
+                })
+                .collect();
+            padded.join(sep)
+        })
+        .collect();
+
+    Some(formatted.join("\n"))
+}
+
 fn format_structured(
     content: &str,
     preferred_kind: Option<&str>,
@@ -47,6 +132,9 @@ fn format_structured(
     let candidates: &[&str] = match preferred.as_deref() {
         Some("json") => &["json", "yaml"],
         Some("yaml") => &["yaml", "json"],
+        Some("toml") => &["toml"],
+        Some("xml") => &["xml"],
+        Some("csv") => &["csv"],
         _ => &["json", "yaml"],
     };
 
@@ -54,6 +142,9 @@ fn format_structured(
         let formatted = match *candidate {
             "json" => format_json(content),
             "yaml" => format_yaml(content),
+            "toml" => format_toml(content),
+            "xml" => format_xml(content),
+            "csv" => format_csv(content),
             _ => None,
         };
 
