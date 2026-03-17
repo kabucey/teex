@@ -1,218 +1,464 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
-import {
-  insertWithFormattingUndo,
-  redoPasteFormatting,
-  undoPasteFormatting,
-} from "../../src/ui/paste-insert.js";
+import { beforeEach, describe, it } from "node:test";
+import { insertFormattedPaste } from "../../src/ui/paste-insert.js";
+
+let execCommandCalls;
 
 function createMockEditor(initialValue = "", selectionStart = 0) {
-  return {
+  const editor = {
     value: initialValue,
     selectionStart,
     selectionEnd: selectionStart,
+    focused: false,
+    focus() {
+      this.focused = true;
+    },
+    setSelectionRange(start, end) {
+      this.selectionStart = start;
+      this.selectionEnd = end;
+    },
   };
+  return editor;
 }
 
-describe("insertWithFormattingUndo", () => {
-  it("inserts raw text only when formattedText is null", () => {
+beforeEach(() => {
+  execCommandCalls = [];
+  globalThis.document = {
+    execCommand(command, showUI, value) {
+      execCommandCalls.push({ command, showUI, value });
+      return true;
+    },
+  };
+});
+
+describe("insertFormattedPaste", () => {
+  it("inserts raw text when formattedText is null", () => {
     const editor = createMockEditor();
-    const result = insertWithFormattingUndo(editor, "hello", null);
+    const result = insertFormattedPaste(editor, "hello", null);
 
     assert.equal(result.inserted, "raw");
-    assert.equal(result.undoState, null);
-    assert.equal(editor.value, "hello");
+    assert.equal(execCommandCalls.length, 1);
+    assert.equal(execCommandCalls[0].value, "hello");
+    assert.equal(editor.focused, true);
   });
 
-  it("inserts raw text only when formattedText equals rawText", () => {
+  it("inserts raw text when formattedText equals rawText", () => {
     const editor = createMockEditor();
-    const result = insertWithFormattingUndo(editor, "same", "same");
+    const result = insertFormattedPaste(editor, "same", "same");
 
     assert.equal(result.inserted, "raw");
-    assert.equal(result.undoState, null);
-    assert.equal(editor.value, "same");
+    assert.equal(execCommandCalls.length, 1);
+    assert.equal(execCommandCalls[0].value, "same");
   });
 
-  it("inserts formatted text and returns undo state", () => {
+  it("performs two-step insert when formattedText differs", () => {
     const editor = createMockEditor();
     const raw = '{"a":1}';
     const formatted = '{\n  "a": 1\n}';
 
-    const result = insertWithFormattingUndo(editor, raw, formatted);
+    const result = insertFormattedPaste(editor, raw, formatted);
 
     assert.equal(result.inserted, "formatted");
-    assert.equal(editor.value, formatted);
-    assert.equal(result.undoState.phase, "formatted");
-    assert.deepEqual(result.undoState.prePaste, {
-      value: "",
-      selStart: 0,
-      selEnd: 0,
-    });
-    assert.equal(result.undoState.rawPaste.value, raw);
+    assert.equal(execCommandCalls.length, 2);
+    assert.equal(execCommandCalls[0].value, raw);
+    assert.equal(execCommandCalls[1].value, formatted);
   });
 
-  it("works when pasting into middle of existing text", () => {
-    const editor = createMockEditor("abcdef", 3);
-    const raw = '{"x":2}';
-    const formatted = '{\n  "x": 2\n}';
+  it("selects raw text before replacing with formatted", () => {
+    const editor = createMockEditor("prefix", 6);
+    const raw = '{"a":1}';
+    const formatted = '{\n  "a": 1\n}';
 
-    const result = insertWithFormattingUndo(editor, raw, formatted);
+    insertFormattedPaste(editor, raw, formatted);
 
-    assert.equal(result.inserted, "formatted");
-    assert.equal(editor.value, `abc${formatted}def`);
-    assert.equal(result.undoState.rawPaste.value, `abc${raw}def`);
-    assert.deepEqual(result.undoState.prePaste, {
-      value: "abcdef",
-      selStart: 3,
-      selEnd: 3,
-    });
+    // After step 1 (insertText with raw), selection should be set to
+    // cover the raw text before step 2
+    assert.equal(editor.selectionStart, 6);
+    assert.equal(editor.selectionEnd, 6 + raw.length);
   });
 
-  it("replaces selected text when pasting", () => {
-    const editor = createMockEditor("abcdef", 1);
-    editor.selectionEnd = 4;
-    const raw = '{"x":2}';
-    const formatted = '{\n  "x": 2\n}';
+  it("uses insertText command for all insertions", () => {
+    const editor = createMockEditor();
+    insertFormattedPaste(editor, "text", '{\n  "text"\n}');
 
-    const result = insertWithFormattingUndo(editor, raw, formatted);
+    for (const call of execCommandCalls) {
+      assert.equal(call.command, "insertText");
+      assert.equal(call.showUI, false);
+    }
+  });
 
-    assert.equal(editor.value, `a${formatted}ef`);
-    assert.equal(result.undoState.rawPaste.value, `a${raw}ef`);
-    assert.deepEqual(result.undoState.prePaste, {
-      value: "abcdef",
-      selStart: 1,
-      selEnd: 4,
-    });
+  it("focuses the editor before inserting", () => {
+    const editor = createMockEditor();
+    let focusedBeforeExec = false;
+
+    editor.focus = function () {
+      this.focused = true;
+    };
+
+    globalThis.document = {
+      execCommand() {
+        focusedBeforeExec = editor.focused;
+        return true;
+      },
+    };
+
+    insertFormattedPaste(editor, "hello", null);
+    assert.equal(focusedBeforeExec, true);
+  });
+
+  it("selects from cursor position zero when editor is empty", () => {
+    const editor = createMockEditor("", 0);
+    const raw = '{"a":1}';
+    const formatted = '{\n  "a": 1\n}';
+
+    insertFormattedPaste(editor, raw, formatted);
+
+    assert.equal(editor.selectionStart, 0);
+    assert.equal(editor.selectionEnd, raw.length);
+  });
+
+  it("returns raw when formattedText is empty string", () => {
+    const editor = createMockEditor();
+    const result = insertFormattedPaste(editor, "hello", "");
+
+    assert.equal(result.inserted, "raw");
+    assert.equal(execCommandCalls.length, 1);
+    assert.equal(execCommandCalls[0].value, "hello");
   });
 });
 
-describe("undoPasteFormatting", () => {
-  it("first undo reverts formatted to raw text", () => {
-    const editor = createMockEditor();
-    const raw = '{"a":1}';
-    const formatted = '{\n  "a": 1\n}';
+describe("JSON paste undo scenario", () => {
+  function createUndoableEditor(initialValue = "") {
+    const undoStack = [];
+    const redoStack = [];
+    const editor = {
+      value: initialValue,
+      selectionStart: initialValue.length,
+      selectionEnd: initialValue.length,
+      focused: false,
+      focus() {
+        this.focused = true;
+      },
+      setSelectionRange(start, end) {
+        this.selectionStart = start;
+        this.selectionEnd = end;
+      },
+    };
 
-    const { undoState } = insertWithFormattingUndo(editor, raw, formatted);
+    globalThis.document = {
+      execCommand(command, _showUI, text) {
+        if (command !== "insertText") return false;
+        const before = editor.value.slice(0, editor.selectionStart);
+        const after = editor.value.slice(editor.selectionEnd);
+        undoStack.push({
+          value: editor.value,
+          selectionStart: editor.selectionStart,
+          selectionEnd: editor.selectionEnd,
+        });
+        redoStack.length = 0;
+        editor.value = before + text + after;
+        const cursor = before.length + text.length;
+        editor.selectionStart = cursor;
+        editor.selectionEnd = cursor;
+        return true;
+      },
+    };
+
+    function undo() {
+      if (undoStack.length === 0) return false;
+      const snapshot = undoStack.pop();
+      redoStack.push({
+        value: editor.value,
+        selectionStart: editor.selectionStart,
+        selectionEnd: editor.selectionEnd,
+      });
+      editor.value = snapshot.value;
+      editor.selectionStart = snapshot.selectionStart;
+      editor.selectionEnd = snapshot.selectionEnd;
+      return true;
+    }
+
+    function redo() {
+      if (redoStack.length === 0) return false;
+      const snapshot = redoStack.pop();
+      undoStack.push({
+        value: editor.value,
+        selectionStart: editor.selectionStart,
+        selectionEnd: editor.selectionEnd,
+      });
+      editor.value = snapshot.value;
+      editor.selectionStart = snapshot.selectionStart;
+      editor.selectionEnd = snapshot.selectionEnd;
+      return true;
+    }
+
+    return { editor, undo, redo };
+  }
+
+  it("paste unformatted JSON, undo to raw, undo to blank", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = '{"name":"Alice","age":30}';
+    const formatted = '{\n  "name": "Alice",\n  "age": 30\n}';
+
+    insertFormattedPaste(editor, raw, formatted);
     assert.equal(editor.value, formatted);
 
-    const next = undoPasteFormatting(editor, undoState);
-
+    // First undo: back to raw (unformatted) JSON
+    undo();
     assert.equal(editor.value, raw);
-    assert.equal(next.phase, "raw");
-  });
 
-  it("second undo reverts raw text to pre-paste state", () => {
-    const editor = createMockEditor("existing");
-    editor.selectionStart = 8;
-    editor.selectionEnd = 8;
-    const raw = '{"a":1}';
-    const formatted = '{\n  "a": 1\n}';
-
-    const { undoState } = insertWithFormattingUndo(editor, raw, formatted);
-    const next = undoPasteFormatting(editor, undoState);
-    const final = undoPasteFormatting(editor, next);
-
-    assert.equal(editor.value, "existing");
-    assert.equal(editor.selectionStart, 8);
-    assert.equal(final.phase, "pre-paste");
-  });
-
-  it("returns null when undoState is null", () => {
-    const editor = createMockEditor();
-    assert.equal(undoPasteFormatting(editor, null), null);
-  });
-
-  it("places cursor correctly after each undo step", () => {
-    const editor = createMockEditor("abcdef", 3);
-    const raw = '{"x":2}';
-    const formatted = '{\n  "x": 2\n}';
-
-    const { undoState } = insertWithFormattingUndo(editor, raw, formatted);
-    assert.equal(editor.selectionStart, 3 + formatted.length);
-
-    const next = undoPasteFormatting(editor, undoState);
-    assert.equal(editor.selectionStart, 3 + raw.length);
-
-    undoPasteFormatting(editor, next);
-    assert.equal(editor.selectionStart, 3);
-  });
-
-  it("returns null when phase is already pre-paste", () => {
-    const editor = createMockEditor();
-    const raw = '{"a":1}';
-    const formatted = '{\n  "a": 1\n}';
-
-    const { undoState } = insertWithFormattingUndo(editor, raw, formatted);
-    const s1 = undoPasteFormatting(editor, undoState);
-    const s2 = undoPasteFormatting(editor, s1);
-
-    assert.equal(s2.phase, "pre-paste");
-    assert.equal(undoPasteFormatting(editor, s2), null);
-  });
-});
-
-describe("redoPasteFormatting", () => {
-  it("first redo restores raw text from pre-paste", () => {
-    const editor = createMockEditor();
-    const raw = '{"a":1}';
-    const formatted = '{\n  "a": 1\n}';
-
-    const { undoState } = insertWithFormattingUndo(editor, raw, formatted);
-    const s1 = undoPasteFormatting(editor, undoState);
-    const s2 = undoPasteFormatting(editor, s1);
-
+    // Second undo: back to blank
+    undo();
     assert.equal(editor.value, "");
-    const next = redoPasteFormatting(editor, s2);
-
-    assert.equal(editor.value, raw);
-    assert.equal(next.phase, "raw");
   });
 
-  it("second redo restores formatted text from raw", () => {
-    const editor = createMockEditor();
-    const raw = '{"a":1}';
-    const formatted = '{\n  "a": 1\n}';
+  it("paste JSON, undo to raw, redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = '{"x":1}';
+    const formatted = '{\n  "x": 1\n}';
 
-    const { undoState } = insertWithFormattingUndo(editor, raw, formatted);
-    const s1 = undoPasteFormatting(editor, undoState);
-    const s2 = undoPasteFormatting(editor, s1);
-
-    const r1 = redoPasteFormatting(editor, s2);
-    const r2 = redoPasteFormatting(editor, r1);
-
+    insertFormattedPaste(editor, raw, formatted);
     assert.equal(editor.value, formatted);
-    assert.equal(r2.phase, "formatted");
+
+    undo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
   });
 
-  it("returns null when undoState is null", () => {
-    const editor = createMockEditor();
-    assert.equal(redoPasteFormatting(editor, null), null);
+  it("paste JSON, full undo to blank, full redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = '{"x":1}';
+    const formatted = '{\n  "x": 1\n}';
+
+    insertFormattedPaste(editor, raw, formatted);
+
+    undo();
+    undo();
+    assert.equal(editor.value, "");
+
+    redo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
   });
 
-  it("returns null when phase is already formatted", () => {
-    const editor = createMockEditor();
-    const raw = '{"a":1}';
-    const formatted = '{\n  "a": 1\n}';
+  it("type, paste formatted JSON, undo each step", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = '{"key":"val"}';
+    const formatted = '{\n  "key": "val"\n}';
 
-    const { undoState } = insertWithFormattingUndo(editor, raw, formatted);
-    assert.equal(redoPasteFormatting(editor, undoState), null);
+    // Simulate typing "hello " by inserting via execCommand
+    document.execCommand("insertText", false, "hello ");
+    assert.equal(editor.value, "hello ");
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, `hello ${formatted}`);
+
+    // Undo formatting → raw
+    undo();
+    assert.equal(editor.value, `hello ${raw}`);
+
+    // Undo paste → just "hello "
+    undo();
+    assert.equal(editor.value, "hello ");
+
+    // Undo typing → blank
+    undo();
+    assert.equal(editor.value, "");
   });
 
-  it("places cursor correctly after each redo step", () => {
-    const editor = createMockEditor("abcdef", 3);
-    const raw = '{"x":2}';
-    const formatted = '{\n  "x": 2\n}';
+  it("raw-only paste produces single undo step", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = "plain text";
 
-    const { undoState } = insertWithFormattingUndo(editor, raw, formatted);
-    const s1 = undoPasteFormatting(editor, undoState);
-    const s2 = undoPasteFormatting(editor, s1);
+    insertFormattedPaste(editor, raw, null);
+    assert.equal(editor.value, "plain text");
 
-    assert.equal(editor.selectionStart, 3);
+    undo();
+    assert.equal(editor.value, "");
 
-    const r1 = redoPasteFormatting(editor, s2);
-    assert.equal(editor.selectionStart, 3 + raw.length);
+    // No more undo steps
+    const didUndo = undo();
+    assert.equal(didUndo, false);
+    assert.equal(editor.value, "");
+  });
 
-    redoPasteFormatting(editor, r1);
-    assert.equal(editor.selectionStart, 3 + formatted.length);
+  it("paste into middle of existing text, undo restores original", () => {
+    const { editor, undo } = createUndoableEditor("abcdef");
+    editor.selectionStart = 3;
+    editor.selectionEnd = 3;
+
+    const raw = '{"z":9}';
+    const formatted = '{\n  "z": 9\n}';
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, `abc${formatted}def`);
+
+    undo();
+    assert.equal(editor.value, `abc${raw}def`);
+
+    undo();
+    assert.equal(editor.value, "abcdef");
+  });
+
+  it("paste replacing a selection, undo restores selected text", () => {
+    const { editor, undo } = createUndoableEditor("abcdef");
+    editor.selectionStart = 1;
+    editor.selectionEnd = 4;
+
+    const raw = '{"z":9}';
+    const formatted = '{\n  "z": 9\n}';
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, `a${formatted}ef`);
+
+    undo();
+    assert.equal(editor.value, `a${raw}ef`);
+
+    undo();
+    assert.equal(editor.value, "abcdef");
+  });
+});
+
+describe("YAML paste undo scenario", () => {
+  function createUndoableEditor(initialValue = "") {
+    const undoStack = [];
+    const redoStack = [];
+    const editor = {
+      value: initialValue,
+      selectionStart: initialValue.length,
+      selectionEnd: initialValue.length,
+      focused: false,
+      focus() {
+        this.focused = true;
+      },
+      setSelectionRange(start, end) {
+        this.selectionStart = start;
+        this.selectionEnd = end;
+      },
+    };
+
+    globalThis.document = {
+      execCommand(command, _showUI, text) {
+        if (command !== "insertText") return false;
+        const before = editor.value.slice(0, editor.selectionStart);
+        const after = editor.value.slice(editor.selectionEnd);
+        undoStack.push({
+          value: editor.value,
+          selectionStart: editor.selectionStart,
+          selectionEnd: editor.selectionEnd,
+        });
+        redoStack.length = 0;
+        editor.value = before + text + after;
+        const cursor = before.length + text.length;
+        editor.selectionStart = cursor;
+        editor.selectionEnd = cursor;
+        return true;
+      },
+    };
+
+    function undo() {
+      if (undoStack.length === 0) return false;
+      const snapshot = undoStack.pop();
+      redoStack.push({
+        value: editor.value,
+        selectionStart: editor.selectionStart,
+        selectionEnd: editor.selectionEnd,
+      });
+      editor.value = snapshot.value;
+      editor.selectionStart = snapshot.selectionStart;
+      editor.selectionEnd = snapshot.selectionEnd;
+      return true;
+    }
+
+    function redo() {
+      if (redoStack.length === 0) return false;
+      const snapshot = redoStack.pop();
+      undoStack.push({
+        value: editor.value,
+        selectionStart: editor.selectionStart,
+        selectionEnd: editor.selectionEnd,
+      });
+      editor.value = snapshot.value;
+      editor.selectionStart = snapshot.selectionStart;
+      editor.selectionEnd = snapshot.selectionEnd;
+      return true;
+    }
+
+    return { editor, undo, redo };
+  }
+
+  it("paste unformatted YAML, undo to raw, undo to blank", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = "{name: Alice, age: 30}";
+    const formatted = "name: Alice\nage: 30\n";
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, formatted);
+
+    // First undo: back to raw (unformatted) YAML
+    undo();
+    assert.equal(editor.value, raw);
+
+    // Second undo: back to blank
+    undo();
+    assert.equal(editor.value, "");
+  });
+
+  it("paste YAML, undo to raw, redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = "{host: localhost, port: 8080}";
+    const formatted = "host: localhost\nport: 8080\n";
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, formatted);
+
+    undo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
+  });
+
+  it("paste YAML, full undo to blank, full redo back to formatted", () => {
+    const { editor, undo, redo } = createUndoableEditor("");
+    const raw = "{x: 1, y: 2}";
+    const formatted = "x: 1\ny: 2\n";
+
+    insertFormattedPaste(editor, raw, formatted);
+
+    undo();
+    undo();
+    assert.equal(editor.value, "");
+
+    redo();
+    assert.equal(editor.value, raw);
+
+    redo();
+    assert.equal(editor.value, formatted);
+  });
+
+  it("type, paste formatted YAML, undo each step", () => {
+    const { editor, undo } = createUndoableEditor("");
+    const raw = "{db: postgres, port: 5432}";
+    const formatted = "db: postgres\nport: 5432\n";
+
+    document.execCommand("insertText", false, "# config\n");
+    assert.equal(editor.value, "# config\n");
+
+    insertFormattedPaste(editor, raw, formatted);
+    assert.equal(editor.value, `# config\n${formatted}`);
+
+    undo();
+    assert.equal(editor.value, `# config\n${raw}`);
+
+    undo();
+    assert.equal(editor.value, "# config\n");
+
+    undo();
+    assert.equal(editor.value, "");
   });
 });
