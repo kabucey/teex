@@ -254,6 +254,11 @@ pub(super) fn handle_app_menu_event(app: &tauri::AppHandle, event: tauri::menu::
                 emit_to_window(app, window.label(), EVENT_TOGGLE_STATUS_BAR, ());
             }
         }
+        MENU_FIND => {
+            if let Some(window) = target_window(app) {
+                emit_to_window(app, window.label(), EVENT_FIND, ());
+            }
+        }
         MENU_THEME_SYSTEM | MENU_THEME_LIGHT | MENU_THEME_DARK => {
             let theme = match event.id().0.as_str() {
                 MENU_THEME_LIGHT => "light",

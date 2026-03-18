@@ -18,6 +18,7 @@ export const EVENTS = {
   openRecentFile: "teex://open-recent-file",
   openRecentFolder: "teex://open-recent-folder",
   toggleStatusBar: "teex://toggle-status-bar",
+  find: "teex://find",
 };
 
 export function createRuntimeState() {

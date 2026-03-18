@@ -39,6 +39,15 @@
             <div id="tab-bar" class="tab-bar"></div>
           </div>
           <div id="editor-state" class="editor-state">
+            <div id="find-bar" class="find-bar hidden">
+              <div class="find-input-wrap">
+                <input id="find-input" class="find-input" type="text" placeholder="Find..." autocomplete="off" spellcheck="false">
+                <span id="find-count" class="find-count"></span>
+              </div>
+              <button id="find-prev" class="find-nav-btn" type="button" title="Previous (Shift+Enter)" aria-label="Previous match">&#x25B2;</button>
+              <button id="find-next" class="find-nav-btn" type="button" title="Next (Enter)" aria-label="Next match">&#x25BC;</button>
+              <button id="find-close" class="find-close-btn" type="button" title="Close (Escape)" aria-label="Close find bar">&times;</button>
+            </div>
             <textarea id="editor" class="editor" spellcheck="false"></textarea>
             <div id="code-editor" class="code-editor hidden"></div>
             <article id="preview" class="preview hidden"></article>

@@ -10,6 +10,7 @@ import {
 import { createSessionRestoreController } from "./app/session-restore.js";
 import { loadSidebarWidth } from "./app/sidebar-width-persistence.js";
 import { baseName } from "./app-utils.js";
+import { createFindController } from "./search/find-controller.js";
 import { buildCollapsedFoldersFromExpanded } from "./sidebar/tree.js";
 import { recordNavigation } from "./tabs/navigation.js";
 import {
@@ -58,6 +59,7 @@ let appEventsController;
 let scrollSyncController;
 let externalFileWatchController;
 let sessionRestoreController;
+let findController;
 let sessionSaveEnabled = false;
 
 const codeJarController = createCodeJarController({
@@ -133,8 +135,13 @@ const codeJarController = createCodeJarController({
     onBeforeToggleMarkdownMode,
     onAfterToggleMarkdownMode,
     onSavedStateChanged: renderChrome,
+    openFind,
   },
 }));
+
+function openFind() {
+  findController?.open();
+}
 
 function applySavedTheme() {
   const saved = localStorage.getItem("teex-theme");
@@ -187,6 +194,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   applySavedSidebarWidth();
   applySavedStatusBar();
   bindElements();
+  findController = createFindController({ state, el, codeJarController });
   scrollSyncController = createScrollSyncController({ state, el });
   bindUiEvents();
   await bindAppEvents();
@@ -234,6 +242,7 @@ function bindUiEvents() {
     onEditorScroll: () => scrollSyncController?.onEditorScroll(),
     onPreviewScroll: () => scrollSyncController?.onPreviewScroll(),
     onDirtyStateChanged: () => renderChrome(),
+    openFind,
   });
 }
 
@@ -287,6 +296,7 @@ function startPendingOpenPathPoller() {
 }
 
 async function openFile(path) {
+  findController?.close();
   scrollSyncController?.beforeContextReplace();
   await fileController.openFile(path);
   invoke("add_recent_file", { path }).catch(() => {});
@@ -394,6 +404,7 @@ function navigateForward() {
 }
 
 function switchTab(index) {
+  findController?.close();
   tabController.switchTab(index);
 }
 

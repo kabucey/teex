@@ -182,6 +182,7 @@ export function setupControllers({
     handleContextMenuDelete: callbacks.handleContextMenuDelete,
     openRecentFolder: callbacks.openFolder,
     toggleStatusBar: callbacks.toggleStatusBar,
+    openFind: callbacks.openFind,
     bindWindowDragDropEvents: () =>
       dragDropController.bindWindowDragDropEvents(),
   });

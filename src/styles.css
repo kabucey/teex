@@ -522,6 +522,7 @@ body {
 }
 
 .editor-state {
+  position: relative;
   flex: 1;
   min-height: 0;
 }
@@ -949,4 +950,85 @@ kbd {
 .toast-visible {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
+}
+
+/* Find bar */
+.find-bar {
+  position: absolute;
+  top: 4px;
+  right: 12px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 4px 4px 6px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.find-bar.hidden {
+  display: none;
+}
+
+.find-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.find-input {
+  width: 200px;
+  padding: 3px 6px;
+  padding-right: 58px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--ink);
+  font: 13px var(--ui);
+  outline: none;
+}
+
+.find-input:focus {
+  border-color: var(--accent);
+}
+
+.find-count {
+  position: absolute;
+  right: 6px;
+  font: 11px var(--ui);
+  color: var(--subtle);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.find-nav-btn,
+.find-close-btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--subtle);
+  font-size: 11px;
+  padding: 2px 5px;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.find-nav-btn:hover,
+.find-close-btn:hover {
+  background: var(--line);
+  color: var(--ink);
+}
+
+mark {
+  background: rgba(255, 200, 50, 0.35);
+  color: inherit;
+  border-radius: 2px;
+}
+
+mark.find-active {
+  background: rgba(255, 165, 0, 0.7);
+  outline: 1px solid rgba(255, 165, 0, 0.9);
 }

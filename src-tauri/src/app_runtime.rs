@@ -202,6 +202,7 @@ pub(crate) fn build_app_menu(
         ])
         .build()?;
 
+    let find_item = MenuItem::with_id(app, MENU_FIND, "Find", true, Some("CmdOrCtrl+F"))?;
     let edit_submenu = SubmenuBuilder::new(app, "Edit")
         .items(&[
             &PredefinedMenuItem::undo(app, None)?,
@@ -211,6 +212,8 @@ pub(crate) fn build_app_menu(
             &PredefinedMenuItem::copy(app, None)?,
             &PredefinedMenuItem::paste(app, None)?,
             &PredefinedMenuItem::select_all(app, None)?,
+            &PredefinedMenuItem::separator(app)?,
+            &find_item,
         ])
         .build()?;
 

@@ -27,6 +27,12 @@ export function bindElements(el) {
   el.preview = document.querySelector("#preview");
   el.statusBar = document.querySelector("#status-bar");
   el.statusBarLines = document.querySelector("#status-bar-lines");
+  el.findBar = document.querySelector("#find-bar");
+  el.findInput = document.querySelector("#find-input");
+  el.findCount = document.querySelector("#find-count");
+  el.findPrev = document.querySelector("#find-prev");
+  el.findNext = document.querySelector("#find-next");
+  el.findClose = document.querySelector("#find-close");
 }
 
 export function bindUiEvents({
@@ -47,6 +53,7 @@ export function bindUiEvents({
   onEditorScroll,
   onPreviewScroll,
   onDirtyStateChanged,
+  openFind,
 }) {
   window.addEventListener("dragover", (event) => {
     if (hasFileDragData(event)) {
@@ -129,6 +136,14 @@ export function bindUiEvents({
   });
 
   document.addEventListener("keydown", async (event) => {
+    if (event.metaKey && event.key.toLowerCase() === "f") {
+      event.preventDefault();
+      if (typeof openFind === "function") {
+        openFind();
+      }
+      return;
+    }
+
     if (event.metaKey && event.key.toLowerCase() === "a") {
       const isCodeEditorVisible =
         el.codeEditor && !el.codeEditor.classList.contains("hidden");

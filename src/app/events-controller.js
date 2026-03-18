@@ -22,6 +22,7 @@ export function createAppEventsController({
   handleContextMenuDelete,
   openRecentFolder,
   toggleStatusBar,
+  openFind,
 }) {
   async function bindAppEvents() {
     const label = await invoke("get_window_label");
@@ -83,6 +84,9 @@ export function createAppEventsController({
       }),
       listen(`${events.toggleStatusBar}/${label}`, () => {
         toggleStatusBar();
+      }),
+      listen(`${events.find}/${label}`, () => {
+        openFind();
       }),
       bindWindowDragDropEvents(),
     ]);
