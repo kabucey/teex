@@ -30,6 +30,7 @@ mod cli_install;
 #[cfg(target_os = "macos")]
 mod default_handler;
 mod files;
+mod git_status;
 mod launch;
 #[cfg(target_os = "macos")]
 mod mac_services;
@@ -45,6 +46,7 @@ mod window_title;
 
 use context_menu::show_sidebar_context_menu;
 use files::{format_structured_text, list_project_entries, read_text_file, trash_file, write_text_file};
+use git_status::git_status;
 use launch::{
     categorize_paths, get_launch_context, open_paths_in_new_window, queue_open_paths,
     queue_open_paths_for_window, take_pending_open_paths,

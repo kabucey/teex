@@ -11,6 +11,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 mod cli_install;
 mod common;
 mod files;
+mod git_status;
 mod launch;
 mod recent_files;
 mod utils;

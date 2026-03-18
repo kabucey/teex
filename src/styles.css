@@ -7,6 +7,9 @@
   --line: #3a3f4b;
   --accent: #7aa6da;
   --warn: #d54e53;
+  --git-modified: #e5c07b;
+  --git-added: #98c379;
+  --git-deleted: #e06c75;
   --mono:
     ui-monospace, "SF Mono", Menlo, Monaco, "Cascadia Mono", "Segoe UI Mono",
     monospace;
@@ -26,6 +29,9 @@
     --line: #d1d5db;
     --accent: #2563eb;
     --warn: #dc2626;
+    --git-modified: #b08800;
+    --git-added: #2a7e2e;
+    --git-deleted: #c72e2e;
     color-scheme: light;
   }
 }
@@ -39,6 +45,9 @@
   --line: #d1d5db;
   --accent: #2563eb;
   --warn: #dc2626;
+  --git-modified: #b08800;
+  --git-added: #2a7e2e;
+  --git-deleted: #c72e2e;
   color-scheme: light;
 }
 
@@ -297,11 +306,18 @@ body {
   cursor: pointer;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
   user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
   transition:
     background 100ms ease,
     color 100ms ease;
+}
+
+.project-item-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .project-item:hover {
@@ -312,6 +328,50 @@ body {
 .project-item.active {
   background: color-mix(in oklab, var(--accent) 14%, transparent);
   color: var(--ink);
+}
+
+/* Git status colors — override base, hover, and active states */
+.project-item.git-modified,
+.project-item.git-modified:hover,
+.project-item.active.git-modified {
+  color: var(--git-modified);
+}
+.project-item.git-added,
+.project-item.git-added:hover,
+.project-item.active.git-added,
+.project-item.git-untracked,
+.project-item.git-untracked:hover,
+.project-item.active.git-untracked,
+.project-item.git-renamed,
+.project-item.git-renamed:hover,
+.project-item.active.git-renamed {
+  color: var(--git-added);
+}
+.project-item.git-deleted,
+.project-item.git-deleted:hover,
+.project-item.active.git-deleted {
+  color: var(--git-deleted);
+}
+
+.folder-toggle.git-modified .folder-label {
+  color: var(--git-modified);
+}
+.folder-toggle.git-added .folder-label,
+.folder-toggle.git-untracked .folder-label,
+.folder-toggle.git-renamed .folder-label {
+  color: var(--git-added);
+}
+.folder-toggle.git-deleted .folder-label {
+  color: var(--git-deleted);
+}
+
+.git-badge {
+  flex-shrink: 0;
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  opacity: 0.7;
 }
 
 .main-pane {

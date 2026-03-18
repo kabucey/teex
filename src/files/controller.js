@@ -1,3 +1,4 @@
+import { didGitStatusChange, fetchGitStatus } from "../sidebar/git-status.js";
 import { collectFolderPaths } from "../sidebar/tree.js";
 import {
   snapshotActiveStateAsTab,
@@ -80,19 +81,29 @@ export function createFileController({
         const entries = await invoke("list_project_entries", {
           root: state.rootPath,
         });
-        if (!didProjectEntriesChange(state.entries, entries)) {
+        const nextGitStatus = await fetchGitStatus(invoke, state.rootPath);
+        const entriesChanged = didProjectEntriesChange(state.entries, entries);
+        const gitChanged = didGitStatusChange(
+          state.gitStatusMap,
+          nextGitStatus,
+        );
+
+        if (!entriesChanged && !gitChanged) {
           return;
         }
 
-        state.entries = entries;
+        if (entriesChanged) {
+          state.entries = entries;
 
-        const validFolderPaths = collectFolderPaths(entries);
-        state.collapsedFolders = new Set(
-          [...state.collapsedFolders].filter((folderPath) =>
-            validFolderPaths.has(folderPath),
-          ),
-        );
+          const validFolderPaths = collectFolderPaths(entries);
+          state.collapsedFolders = new Set(
+            [...state.collapsedFolders].filter((folderPath) =>
+              validFolderPaths.has(folderPath),
+            ),
+          );
+        }
 
+        state.gitStatusMap = nextGitStatus;
         markSidebarTreeDirty();
         render();
       } catch (error) {
@@ -170,6 +181,7 @@ export function createFileController({
       state.rootPath = path;
       state.entries = entries;
       state.collapsedFolders = collectFolderPaths(entries);
+      state.gitStatusMap = await fetchGitStatus(invoke, path);
       markSidebarTreeDirty();
       state.sidebarVisible = true;
       state.openFiles = [];

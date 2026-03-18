@@ -177,3 +177,52 @@ test("folder buttons do not have a static title attribute", () => {
   const html = renderTreeHtml(tree, 0, new Set());
   assert.doesNotMatch(html, /folder-toggle[^>]*title="/);
 });
+
+test("renderTreeHtml adds git-modified class and badge for modified files", () => {
+  const tree = buildEntryTree([
+    { path: "/root/a.md", relPath: "a.md" },
+    { path: "/root/b.md", relPath: "b.md" },
+  ]);
+  const gitStatusMap = { "a.md": "M" };
+  const html = renderTreeHtml(tree, 0, new Set(), gitStatusMap);
+
+  assert.match(html, /project-item git-modified/);
+  assert.match(html, /class="git-badge">M<\/span>/);
+  // b.md should not have a git class
+  assert.doesNotMatch(html, /b\.md.*git-modified/);
+});
+
+test("renderTreeHtml adds git-untracked class and badge for untracked files", () => {
+  const tree = buildEntryTree([{ path: "/root/new.txt", relPath: "new.txt" }]);
+  const gitStatusMap = { "new.txt": "?" };
+  const html = renderTreeHtml(tree, 0, new Set(), gitStatusMap);
+
+  assert.match(html, /project-item git-untracked/);
+  assert.match(html, /class="git-badge">\?<\/span>/);
+});
+
+test("renderTreeHtml adds git class to folders from propagated status", () => {
+  const tree = buildEntryTree([
+    { path: "/root/docs/guide.md", relPath: "docs/guide.md" },
+  ]);
+  const gitStatusMap = { docs: "M", "docs/guide.md": "M" };
+  const html = renderTreeHtml(tree, 0, new Set(), gitStatusMap);
+
+  assert.match(html, /folder-toggle git-modified/);
+});
+
+test("renderTreeHtml renders no git attributes when gitStatusMap is empty", () => {
+  const tree = buildEntryTree([{ path: "/root/a.md", relPath: "a.md" }]);
+  const html = renderTreeHtml(tree, 0, new Set(), {});
+
+  assert.doesNotMatch(html, /git-modified/);
+  assert.doesNotMatch(html, /git-badge/);
+});
+
+test("renderTreeHtml works without gitStatusMap argument (backward compat)", () => {
+  const tree = buildEntryTree([{ path: "/root/a.md", relPath: "a.md" }]);
+  const html = renderTreeHtml(tree, 0, new Set());
+
+  assert.match(html, /project-item/);
+  assert.doesNotMatch(html, /git-badge/);
+});

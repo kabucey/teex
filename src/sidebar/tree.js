@@ -1,4 +1,5 @@
 import { escapeAttr, escapeHtml } from "../ui/html-utils.js";
+import { gitStatusClass } from "./git-status.js";
 
 export function buildEntryTree(entries) {
   const root = { path: "", name: "", folders: new Map(), files: [] };
@@ -89,7 +90,12 @@ export function parentFolderPaths(entries, filePath) {
   return result;
 }
 
-export function renderTreeHtml(node, depth, collapsedFolders) {
+export function renderTreeHtml(
+  node,
+  depth,
+  collapsedFolders,
+  gitStatusMap = {},
+) {
   const folders = [...node.folders.values()].sort((a, b) =>
     a.name.localeCompare(b.name),
   );
@@ -100,14 +106,23 @@ export function renderTreeHtml(node, depth, collapsedFolders) {
   for (const folder of folders) {
     const isCollapsed = collapsedFolders.has(folder.path);
     const expanded = !isCollapsed;
-    html += `<button class="folder-toggle" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}"><span class="disclosure" aria-hidden="true"></span><span class="folder-icon" aria-hidden="true"></span><span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
+    const folderStatus = gitStatusMap[folder.path] || "";
+    const folderGitClass = folderStatus
+      ? ` ${gitStatusClass(folderStatus)}`
+      : "";
+    html += `<button class="folder-toggle${folderGitClass}" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}"><span class="disclosure" aria-hidden="true"></span><span class="folder-icon" aria-hidden="true"></span><span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
     if (!isCollapsed) {
-      html += renderTreeHtml(folder, depth + 1, collapsedFolders);
+      html += renderTreeHtml(folder, depth + 1, collapsedFolders, gitStatusMap);
     }
   }
 
   for (const file of node.files) {
-    html += `<button class="project-item" style="--indent:${depth};" data-path="${escapeAttr(file.path)}">${escapeHtml(file.name)}</button>`;
+    const fileStatus = gitStatusMap[file.relPath] || "";
+    const fileGitClass = fileStatus ? ` ${gitStatusClass(fileStatus)}` : "";
+    const badge = fileStatus
+      ? `<span class="git-badge">${escapeHtml(fileStatus)}</span>`
+      : "";
+    html += `<button class="project-item${fileGitClass}" style="--indent:${depth};" data-path="${escapeAttr(file.path)}"><span class="project-item-label">${escapeHtml(file.name)}</span>${badge}</button>`;
   }
 
   return html;

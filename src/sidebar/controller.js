@@ -7,6 +7,7 @@ import {
   sidebarClickModifierAction,
 } from "../ui/behavior.js";
 import { bindSidebarDragEvents } from "./drag.js";
+import { propagateFolderStatus } from "./git-status.js";
 import {
   buildEntryTree,
   collectFolderPaths,
@@ -339,10 +340,12 @@ export function createSidebarController({
 
     if (sidebarRenderState.treeDirty) {
       const tree = buildEntryTree(state.entries);
+      const augmentedGitMap = propagateFolderStatus(state.gitStatusMap);
       el.projectList.innerHTML = renderTreeHtml(
         tree,
         0,
         state.collapsedFolders,
+        augmentedGitMap,
       );
       bindSidebarItemEvents();
       sidebarRenderState.treeDirty = false;

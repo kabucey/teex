@@ -52,6 +52,7 @@ export function createRuntimeState() {
       windowRepresentedPath: null,
       windowLabel: "",
       statusBarVisible: false,
+      gitStatusMap: {},
     },
     el: {},
     sidebarRenderState: {
