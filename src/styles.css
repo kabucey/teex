@@ -200,6 +200,20 @@ body {
   min-width: 0;
 }
 
+.folder-children {
+  position: relative;
+}
+
+.folder-children::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(8px + (var(--indent) * 16px));
+  width: 1px;
+  background: color-mix(in oklab, var(--ink) 10%, transparent);
+}
+
 .folder-toggle {
   border: 0;
   background: transparent;

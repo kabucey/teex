@@ -219,6 +219,34 @@ test("renderTreeHtml renders no git attributes when gitStatusMap is empty", () =
   assert.doesNotMatch(html, /git-badge/);
 });
 
+test("renderTreeHtml wraps expanded folder children in folder-children div", () => {
+  const tree = buildEntryTree([
+    { path: "/root/docs/guide.md", relPath: "docs/guide.md" },
+    { path: "/root/a.md", relPath: "a.md" },
+  ]);
+  const html = renderTreeHtml(tree, 0, new Set());
+  assert.match(html, /<div class="folder-children" style="--indent:0;">/);
+  assert.match(html, /<\/div>/);
+});
+
+test("renderTreeHtml does not render folder-children div for collapsed folders", () => {
+  const tree = buildEntryTree([
+    { path: "/root/docs/guide.md", relPath: "docs/guide.md" },
+    { path: "/root/a.md", relPath: "a.md" },
+  ]);
+  const html = renderTreeHtml(tree, 0, new Set(["docs"]));
+  assert.doesNotMatch(html, /folder-children/);
+});
+
+test("renderTreeHtml nests folder-children divs for deep hierarchy", () => {
+  const tree = buildEntryTree([
+    { path: "/root/docs/api/ref.md", relPath: "docs/api/ref.md" },
+  ]);
+  const html = renderTreeHtml(tree, 0, new Set());
+  assert.match(html, /folder-children" style="--indent:0;"/);
+  assert.match(html, /folder-children" style="--indent:1;"/);
+});
+
 test("renderTreeHtml works without gitStatusMap argument (backward compat)", () => {
   const tree = buildEntryTree([{ path: "/root/a.md", relPath: "a.md" }]);
   const html = renderTreeHtml(tree, 0, new Set());

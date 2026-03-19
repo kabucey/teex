@@ -112,7 +112,9 @@ export function renderTreeHtml(
       : "";
     html += `<button class="folder-toggle${folderGitClass}" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}"><span class="disclosure" aria-hidden="true"></span><span class="folder-icon" aria-hidden="true"></span><span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
     if (!isCollapsed) {
+      html += `<div class="folder-children" style="--indent:${depth};">`;
       html += renderTreeHtml(folder, depth + 1, collapsedFolders, gitStatusMap);
+      html += `</div>`;
     }
   }
 
