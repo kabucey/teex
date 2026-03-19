@@ -23,6 +23,7 @@ export function bindElements(el) {
   el.navForward = document.querySelector("#nav-forward");
   el.editorState = document.querySelector("#editor-state");
   el.editor = document.querySelector("#editor");
+  el.editorBackdrop = document.querySelector("#editor-backdrop");
   el.codeEditor = document.querySelector("#code-editor");
   el.preview = document.querySelector("#preview");
   el.statusBar = document.querySelector("#status-bar");

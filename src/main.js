@@ -468,7 +468,7 @@ function onBeforeToggleMarkdownMode() {
 }
 
 function onAfterToggleMarkdownMode() {
-  // post-render scroll restoration is centralized in render()
+  findController?.refresh();
 }
 
 function toggleStatusBar() {
