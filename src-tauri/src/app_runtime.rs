@@ -311,6 +311,7 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
     #[cfg(target_os = "macos")]
     {
         macos::services::install();
+        macos::mouse_nav::install(app.handle());
         drain_mac_service_requests(app.handle());
 
         let paths = macos::apple_events::take_paths();

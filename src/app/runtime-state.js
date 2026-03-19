@@ -19,6 +19,8 @@ export const EVENTS = {
   openRecentFolder: "teex://open-recent-folder",
   toggleStatusBar: "teex://toggle-status-bar",
   find: "teex://find",
+  mouseNavBack: "teex://mouse-nav-back",
+  mouseNavForward: "teex://mouse-nav-forward",
 };
 
 export function createRuntimeState() {

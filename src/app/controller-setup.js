@@ -183,6 +183,8 @@ export function setupControllers({
     openRecentFolder: callbacks.openFolder,
     toggleStatusBar: callbacks.toggleStatusBar,
     openFind: callbacks.openFind,
+    navigateBack: callbacks.navigateBack,
+    navigateForward: callbacks.navigateForward,
     bindWindowDragDropEvents: () =>
       dragDropController.bindWindowDragDropEvents(),
   });

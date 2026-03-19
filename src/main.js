@@ -136,6 +136,8 @@ const codeJarController = createCodeJarController({
     onAfterToggleMarkdownMode,
     onSavedStateChanged: renderChrome,
     openFind,
+    navigateBack,
+    navigateForward,
   },
 }));
 

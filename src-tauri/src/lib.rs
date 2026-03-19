@@ -79,6 +79,8 @@ const EVENT_TAB_TRANSFER_RESULT: &str = "teex://tab-transfer-result";
 const EVENT_CONTEXT_MENU_DELETE: &str = "teex://context-menu-delete";
 const EVENT_CROSS_WINDOW_DRAG_ENTER: &str = "teex://cross-window-drag-enter";
 const EVENT_CROSS_WINDOW_DRAG_LEAVE: &str = "teex://cross-window-drag-leave";
+const EVENT_MOUSE_NAV_BACK: &str = "teex://mouse-nav-back";
+const EVENT_MOUSE_NAV_FORWARD: &str = "teex://mouse-nav-forward";
 
 const MENU_OPEN_FILE: &str = "open_file";
 const MENU_OPEN_FOLDER: &str = "open_folder";

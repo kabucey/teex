@@ -23,6 +23,8 @@ export function createAppEventsController({
   openRecentFolder,
   toggleStatusBar,
   openFind,
+  navigateBack,
+  navigateForward,
 }) {
   async function bindAppEvents() {
     const label = await invoke("get_window_label");
@@ -87,6 +89,12 @@ export function createAppEventsController({
       }),
       listen(`${events.find}/${label}`, () => {
         openFind();
+      }),
+      listen(`${events.mouseNavBack}/${label}`, () => {
+        navigateBack();
+      }),
+      listen(`${events.mouseNavForward}/${label}`, () => {
+        navigateForward();
       }),
       bindWindowDragDropEvents(),
     ]);

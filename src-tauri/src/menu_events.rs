@@ -22,7 +22,7 @@ pub(super) fn window_event(base: &str, label: &str) -> String {
     format!("{}/{}", base, label)
 }
 
-pub(super) fn emit_to_window(
+pub(crate) fn emit_to_window(
     app: &tauri::AppHandle,
     label: &str,
     event_name: &str,
@@ -98,7 +98,7 @@ pub(super) fn next_transfer_request_id() -> String {
     )
 }
 
-pub(super) fn target_window(app: &tauri::AppHandle) -> Option<tauri::Window> {
+pub(crate) fn target_window(app: &tauri::AppHandle) -> Option<tauri::Window> {
     let tracker = app.state::<FocusTracker>();
 
     if let Ok(created) = tracker.recently_created.lock() {
