@@ -162,6 +162,11 @@ function applySavedStatusBar() {
   state.statusBarVisible = localStorage.getItem("teex-status-bar") === "true";
 }
 
+function applySavedShowHiddenFiles() {
+  const saved = localStorage.getItem("teex-show-hidden-files");
+  state.showHiddenFiles = saved === null ? true : saved === "true";
+}
+
 sessionRestoreController = createSessionRestoreController({
   state,
   invoke,
@@ -195,6 +200,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   applySavedTheme();
   applySavedSidebarWidth();
   applySavedStatusBar();
+  applySavedShowHiddenFiles();
   bindElements();
   findController = createFindController({ state, el, codeJarController });
   scrollSyncController = createScrollSyncController({ state, el });
@@ -209,6 +215,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     invoke("set_theme", { theme: savedTheme }).catch(() => {});
   }
 
+  invoke("set_show_hidden_files_checked", {
+    checked: state.showHiddenFiles,
+  }).catch(() => {});
+
   listen("teex://set-theme", (event) => {
     const theme = event.payload;
     localStorage.setItem("teex-theme", theme);
@@ -217,6 +227,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     } else {
       document.documentElement.removeAttribute("data-theme");
     }
+  });
+
+  listen("teex://toggle-hidden-files", () => {
+    toggleHiddenFiles();
   });
 });
 
@@ -478,6 +492,18 @@ function toggleStatusBar() {
     state.statusBarVisible ? "true" : "false",
   );
   render();
+}
+
+function toggleHiddenFiles() {
+  state.showHiddenFiles = !state.showHiddenFiles;
+  localStorage.setItem(
+    "teex-show-hidden-files",
+    state.showHiddenFiles ? "true" : "false",
+  );
+  invoke("set_show_hidden_files_checked", {
+    checked: state.showHiddenFiles,
+  }).catch(() => {});
+  fileController.refreshOpenFolderEntries();
 }
 
 function toggleSidebarVisibility() {

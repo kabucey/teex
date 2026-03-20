@@ -254,6 +254,9 @@ pub(super) fn handle_app_menu_event(app: &tauri::AppHandle, event: tauri::menu::
                 emit_to_window(app, window.label(), EVENT_TOGGLE_STATUS_BAR, ());
             }
         }
+        MENU_SHOW_HIDDEN_FILES => {
+            let _ = app.emit(EVENT_TOGGLE_HIDDEN_FILES, ());
+        }
         MENU_FIND => {
             if let Some(window) = target_window(app) {
                 emit_to_window(app, window.label(), EVENT_FIND, ());

@@ -50,7 +50,7 @@ use menu_events::{
 };
 #[cfg(test)]
 use menu_events::{next_transfer_request_id, window_event};
-use path_utils::{file_kind, is_text_like, path_to_string, should_traverse};
+use path_utils::{file_kind, is_text_like, path_to_string, should_traverse_with_hidden};
 use recent_files::{add_recent_file, add_recent_folder};
 use tabs::{
     cancel_cross_window_drag_hover, cleanup_drag_entries_for_window, create_window_from_drag,
@@ -95,6 +95,8 @@ const MENU_NEW_TAB: &str = "new_tab";
 const MENU_TOGGLE_MARKDOWN_MODE: &str = "toggle_markdown_mode";
 const MENU_TOGGLE_STATUS_BAR: &str = "toggle_status_bar";
 const EVENT_TOGGLE_STATUS_BAR: &str = "teex://toggle-status-bar";
+const MENU_SHOW_HIDDEN_FILES: &str = "show_hidden_files";
+const EVENT_TOGGLE_HIDDEN_FILES: &str = "teex://toggle-hidden-files";
 const MENU_FIND: &str = "find";
 const EVENT_FIND: &str = "teex://find";
 const MENU_THEME_SYSTEM: &str = "theme_system";
@@ -249,6 +251,22 @@ fn set_menu_state(app: tauri::AppHandle, state: MenuState) -> Result<(), String>
         state.can_toggle_markdown_mode,
     )?;
 
+    Ok(())
+}
+
+#[tauri::command]
+fn set_show_hidden_files_checked(app: tauri::AppHandle, checked: bool) -> Result<(), String> {
+    let Some(menu) = app.menu() else {
+        return Ok(());
+    };
+    let Some(item) = menu.get(MENU_SHOW_HIDDEN_FILES) else {
+        return Ok(());
+    };
+    if let Some(check_item) = item.as_check_menuitem() {
+        check_item
+            .set_checked(checked)
+            .map_err(|e| format!("{e}"))?;
+    }
     Ok(())
 }
 

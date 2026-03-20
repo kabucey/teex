@@ -158,7 +158,10 @@ fn format_structured(
 }
 
 #[tauri::command]
-pub(crate) fn list_project_entries(root: String) -> Result<Vec<ProjectEntry>, String> {
+pub(crate) fn list_project_entries(
+    root: String,
+    show_hidden: bool,
+) -> Result<Vec<ProjectEntry>, String> {
     let root_path = PathBuf::from(root);
 
     if !root_path.is_dir() {
@@ -170,7 +173,7 @@ pub(crate) fn list_project_entries(root: String) -> Result<Vec<ProjectEntry>, St
     for entry in WalkDir::new(&root_path)
         .follow_links(false)
         .into_iter()
-        .filter_entry(should_traverse)
+        .filter_entry(|e| should_traverse_with_hidden(e, show_hidden))
     {
         let entry = match entry {
             Ok(item) => item,
@@ -181,9 +184,11 @@ pub(crate) fn list_project_entries(root: String) -> Result<Vec<ProjectEntry>, St
         if !path.is_file() || !is_text_like(path) {
             continue;
         }
-        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-            if name.starts_with('.') {
-                continue;
+        if !show_hidden {
+            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                if name.starts_with('.') {
+                    continue;
+                }
             }
         }
 

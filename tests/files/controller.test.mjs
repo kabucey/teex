@@ -28,6 +28,7 @@ function createFileControllerHarness({
     markdownViewMode: "preview",
     activeEditorScrollTop: 0,
     activePreviewScrollTop: 0,
+    showHiddenFiles: true,
     ...stateOverrides,
   };
 
@@ -280,4 +281,46 @@ test("openFolder does not auto-open any file when folder has entries", async () 
     invokeCalls.filter((c) => c.command === "read_text_file"),
     [],
   );
+});
+
+test("openFolder passes showHidden from state to list_project_entries", async () => {
+  const invokeCalls = [];
+  const harness = createFileControllerHarness({
+    stateOverrides: { showHiddenFiles: false },
+    invoke: async (command, args) => {
+      invokeCalls.push({ command, args });
+      if (command === "list_project_entries") {
+        return [];
+      }
+    },
+  });
+
+  await harness.controller.openFolder("/project");
+
+  const listCall = invokeCalls.find(
+    (c) => c.command === "list_project_entries",
+  );
+  assert.ok(listCall, "should have called list_project_entries");
+  assert.equal(listCall.args.showHidden, false);
+});
+
+test("openFolder passes showHidden true when state.showHiddenFiles is true", async () => {
+  const invokeCalls = [];
+  const harness = createFileControllerHarness({
+    stateOverrides: { showHiddenFiles: true },
+    invoke: async (command, args) => {
+      invokeCalls.push({ command, args });
+      if (command === "list_project_entries") {
+        return [];
+      }
+    },
+  });
+
+  await harness.controller.openFolder("/project");
+
+  const listCall = invokeCalls.find(
+    (c) => c.command === "list_project_entries",
+  );
+  assert.ok(listCall, "should have called list_project_entries");
+  assert.equal(listCall.args.showHidden, true);
 });

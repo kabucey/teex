@@ -1,6 +1,8 @@
 use super::*;
 
-pub(super) fn should_traverse(entry: &DirEntry) -> bool {
+const ALWAYS_BLOCKED_DIRS: &[&str] = &[".git", "node_modules", "target", "dist", "build"];
+
+pub(super) fn should_traverse_with_hidden(entry: &DirEntry, show_hidden: bool) -> bool {
     if !entry.file_type().is_dir() {
         return true;
     }
@@ -9,7 +11,11 @@ pub(super) fn should_traverse(entry: &DirEntry) -> bool {
         return false;
     };
 
-    !matches!(name, ".git" | "node_modules" | "target" | "dist" | "build") && !name.starts_with('.')
+    if ALWAYS_BLOCKED_DIRS.contains(&name) {
+        return false;
+    }
+
+    show_hidden || !name.starts_with('.')
 }
 
 pub(super) fn file_kind(path: &Path) -> &'static str {

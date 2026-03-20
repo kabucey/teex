@@ -18,7 +18,7 @@ fn list_project_entries_filters_hidden_binary_and_build_artifacts() {
     temp.write_text(".config/ignored.yaml", "skip");
     temp.write_bytes("image.png", &[0x89, b'P', b'N', b'G']);
 
-    let mut entries = list_project_entries(root.to_string_lossy().to_string())
+    let mut entries = list_project_entries(root.to_string_lossy().to_string(), false)
         .expect("list project entries should succeed");
 
     entries.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
@@ -44,11 +44,65 @@ fn list_project_entries_filters_hidden_binary_and_build_artifacts() {
 }
 
 #[test]
+fn list_project_entries_shows_hidden_when_flag_true() {
+    let temp = TempTestDir::new();
+    let root = temp.path().to_path_buf();
+
+    temp.write_text("visible.md", "# visible");
+    temp.write_text(".hidden.md", "# hidden");
+    temp.write_text(".secret.yaml", "key: val");
+    temp.write_text(".github/workflow.yaml", "on: push");
+    temp.write_text(".git/config.txt", "skip");
+    temp.write_text("node_modules/pkg.js", "skip");
+    temp.write_text("target/debug.rs", "skip");
+
+    let mut entries = list_project_entries(root.to_string_lossy().to_string(), true)
+        .expect("list project entries should succeed");
+
+    entries.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
+    let rel_paths: Vec<String> = entries.iter().map(|e| e.rel_path.clone()).collect();
+
+    let rel_github_workflow = Path::new(".github")
+        .join("workflow.yaml")
+        .to_string_lossy()
+        .to_string();
+
+    assert!(
+        rel_paths.contains(&".hidden.md".to_string()),
+        "should include .hidden.md"
+    );
+    assert!(
+        rel_paths.contains(&".secret.yaml".to_string()),
+        "should include .secret.yaml"
+    );
+    assert!(
+        rel_paths.contains(&rel_github_workflow),
+        "should include .github/workflow.yaml"
+    );
+    assert!(
+        rel_paths.contains(&"visible.md".to_string()),
+        "should include visible.md"
+    );
+    assert!(
+        !rel_paths.iter().any(|p| p.starts_with(".git/")),
+        "should still exclude .git/"
+    );
+    assert!(
+        !rel_paths.iter().any(|p| p.starts_with("node_modules/")),
+        "should still exclude node_modules/"
+    );
+    assert!(
+        !rel_paths.iter().any(|p| p.starts_with("target/")),
+        "should still exclude target/"
+    );
+}
+
+#[test]
 fn list_project_entries_errors_when_root_is_not_directory() {
     let temp = TempTestDir::new();
     let file = temp.write_text("just-a-file.txt", "hi");
 
-    let error = list_project_entries(file.to_string_lossy().to_string()).unwrap_err();
+    let error = list_project_entries(file.to_string_lossy().to_string(), false).unwrap_err();
     assert!(error.contains("not a folder"));
 }
 

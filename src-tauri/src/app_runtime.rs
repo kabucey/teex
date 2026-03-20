@@ -47,6 +47,7 @@ pub(crate) fn run_app() {
             create_window_from_drag,
             trash_file,
             show_sidebar_context_menu,
+            set_show_hidden_files_checked,
             add_recent_file,
             add_recent_folder,
             git_status
@@ -170,6 +171,14 @@ pub(crate) fn build_app_menu(
         true,
         Some("CmdOrCtrl+/"),
     )?;
+    let show_hidden_files_item = CheckMenuItem::with_id(
+        app,
+        MENU_SHOW_HIDDEN_FILES,
+        "Show Hidden Files",
+        true,
+        true,
+        Some("CmdOrCtrl+Shift+."),
+    )?;
 
     let theme_system_item =
         CheckMenuItem::with_id(app, MENU_THEME_SYSTEM, "System", true, true, None::<&str>)?;
@@ -220,6 +229,7 @@ pub(crate) fn build_app_menu(
         .items(&[
             &toggle_sidebar_item,
             &toggle_status_bar_item,
+            &show_hidden_files_item,
             &PredefinedMenuItem::separator(app)?,
             &toggle_markdown_mode_item,
             &PredefinedMenuItem::separator(app)?,

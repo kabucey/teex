@@ -80,6 +80,7 @@ export function createFileController({
       try {
         const entries = await invoke("list_project_entries", {
           root: state.rootPath,
+          showHidden: state.showHiddenFiles,
         });
         const nextGitStatus = await fetchGitStatus(invoke, state.rootPath);
         const entriesChanged = didProjectEntriesChange(state.entries, entries);
@@ -176,7 +177,10 @@ export function createFileController({
     await clearProjectFolderWatch();
 
     try {
-      const entries = await invoke("list_project_entries", { root: path });
+      const entries = await invoke("list_project_entries", {
+        root: path,
+        showHidden: state.showHiddenFiles,
+      });
       state.mode = "folder";
       state.rootPath = path;
       state.entries = entries;
