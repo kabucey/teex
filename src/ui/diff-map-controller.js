@@ -3,8 +3,8 @@ import { buildDiffTicks, tickTop } from "./diff-map-math.js";
 const TICK_HEIGHT = 3;
 
 export function createDiffMapController({ el, codeEditorController }) {
-  let currentAnnotations = [];
-  let currentTotalLines = 0;
+  let tickEntries = [];
+  let cachedScroller = null;
   let rafId = null;
 
   const container = document.createElement("div");
@@ -22,57 +22,64 @@ export function createDiffMapController({ el, codeEditorController }) {
     if (rafId) return;
     rafId = requestAnimationFrame(() => {
       rafId = null;
-      render();
+      reposition();
     });
   });
 
-  function getScroller() {
-    return el.codeEditor.querySelector(".cm-scroller");
-  }
-
-  function render() {
-    container.textContent = "";
-
-    const scroller = getScroller();
-    if (!scroller) return;
-
-    const trackHeight = scroller.clientHeight;
+  function reposition() {
+    if (!cachedScroller) return;
+    const trackHeight = cachedScroller.clientHeight;
     if (trackHeight <= 0) return;
 
-    const ticks = buildDiffTicks(currentAnnotations, currentTotalLines);
+    for (const { el: tickEl, fraction, height } of tickEntries) {
+      const h = Math.max(TICK_HEIGHT, height * 2);
+      tickEl.style.top = `${tickTop(fraction, trackHeight, h)}px`;
+      tickEl.style.height = `${h}px`;
+    }
+  }
+
+  function build(ticks) {
+    container.textContent = "";
+    tickEntries = [];
 
     for (const tick of ticks) {
       const tickEl = document.createElement("div");
       tickEl.classList.add("diff-map-tick", `diff-map-tick--${tick.diffType}`);
-      const h = Math.max(TICK_HEIGHT, tick.height * 2);
-      tickEl.style.top = `${tickTop(tick.fraction, trackHeight, h)}px`;
-      tickEl.style.height = `${h}px`;
       tickEl.setAttribute("data-line", String(tick.line));
       container.appendChild(tickEl);
+      tickEntries.push({
+        el: tickEl,
+        fraction: tick.fraction,
+        height: tick.height,
+      });
     }
   }
 
   function update(annotations, totalLines) {
-    currentAnnotations = annotations;
-    currentTotalLines = totalLines;
     container.classList.remove("hidden");
-    render();
-    const scroller = getScroller();
-    if (scroller) {
+    cachedScroller = el.codeEditor.querySelector(".cm-scroller");
+    build(buildDiffTicks(annotations, totalLines));
+    reposition();
+    if (cachedScroller) {
       observer.disconnect();
-      observer.observe(scroller);
+      observer.observe(cachedScroller);
     }
   }
 
   function hide() {
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = null;
+    }
     container.classList.add("hidden");
     container.textContent = "";
+    tickEntries = [];
+    cachedScroller = null;
     observer.disconnect();
   }
 
   function destroy() {
     hide();
-    if (rafId) cancelAnimationFrame(rafId);
     el.editorState.removeChild(container);
   }
 

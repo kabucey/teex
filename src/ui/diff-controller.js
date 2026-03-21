@@ -6,12 +6,16 @@ export function createDiffController({
 }) {
   let debounceTimer = null;
 
+  function clearDiff() {
+    codeEditorController.clearDiffDecorations();
+    diffMapController?.hide();
+  }
+
   async function refresh() {
     const path = state.activePath;
 
     if (!path || state.activeKind !== "code") {
-      codeEditorController.clearDiffDecorations();
-      diffMapController?.hide();
+      clearDiff();
       return;
     }
 
@@ -26,8 +30,7 @@ export function createDiffController({
         );
       }
     } catch {
-      codeEditorController.clearDiffDecorations();
-      diffMapController?.hide();
+      clearDiff();
     }
   }
 
@@ -38,8 +41,7 @@ export function createDiffController({
 
   function clear() {
     clearTimeout(debounceTimer);
-    codeEditorController.clearDiffDecorations();
-    diffMapController?.hide();
+    clearDiff();
   }
 
   return { refresh, scheduleRefresh, clear };
