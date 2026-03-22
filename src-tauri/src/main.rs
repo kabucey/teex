@@ -6,7 +6,7 @@ use std::{env, fs, io::IsTerminal, path::PathBuf, process};
 const SKILL_CONTENT: &str = include_str!("../../skills/teex.md");
 const CODEX_SKILL_FRONTMATTER: &str = r#"---
 name: teex
-description: Companion text editor for AI workflows. Use when the user should review or edit files, when previewing markdown, or when presenting plans/proposals in a focused editor with tabs, markdown preview, and auto-save.
+description: Companion review tool for AI workflows. Use when the user should review or edit Markdown, code, and Git-backed changes in a focused UI with tabs, syntax highlighting, markdown preview, and auto-save.
 ---
 
 "#;
@@ -157,7 +157,7 @@ fn print_help_stderr() {
 }
 
 fn help_text() -> &'static str {
-    r#"teex - Companion text editor for AI workflows
+    r#"teex - Companion review tool for AI workflows
 
 Usage:
   teex [--wait] [FILES...]
@@ -181,6 +181,7 @@ Examples:
 Notes:
   By default, teex launches the UI and returns immediately.
   Multiple files open in a single window with tabs.
+  teex supports Markdown preview, syntax-highlighted code review, and Git-aware inspection.
 "#
 }
 

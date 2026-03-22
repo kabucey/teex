@@ -1,15 +1,17 @@
 # teex
 
-teex is a companion text editor for AI workflows. When you produce files for human review or editing, use teex to open them in a clean, focused interface.
+teex is a companion review tool for AI workflows. It supports Markdown review, code/config file review with syntax highlighting, and Git-aware inspection, giving humans a clean focused interface for reviewing and editing work produced by agents.
 
 ## When to use teex
 
 Use teex when you want the user to:
 - Read files you've created or modified
 - Edit files in a focused environment
-- Review multiple related files side-by-side (with tabs)
+- Review multiple related files in one session (with tabs)
 - Review a generated plan/proposal before implementation
 - Preview Markdown content you want the user to see/edit
+- Inspect code or config files with syntax highlighting
+- Review Git status or diffs as part of an agentic workflow
 
 ## Required usage rules
 
@@ -62,7 +64,9 @@ For plan/spec review:
 - **Tabs**: When 2+ file paths are given, teex opens a single window with tabs. Click a tab to switch, × to close.
 - **Auto-save**: Changes save automatically after a short delay and on Cmd+S (or Ctrl+S on Windows/Linux).
 - **Markdown preview**: `.md` files open in preview mode. Press Cmd+E to toggle between edit and preview.
-- **Folder mode**: Opening a folder path shows a sidebar with all text-like files for navigation.
+- **Syntax highlighting**: Code and config files render with language-aware highlighting for easier review.
+- **Git review**: teex can surface Git status and diffs, which is useful when reviewing agent-generated changes.
+- **Folder mode**: Opening a folder path shows a sidebar with project files for navigation.
 - **Dirty indicator**: A `●` dot appears on the tab label when a file has unsaved changes.
 
 ## Example usage
