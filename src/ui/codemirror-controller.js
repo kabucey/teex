@@ -272,7 +272,8 @@ export function createCodeMirrorController({
     const paddingTop = content
       ? Number.parseFloat(window.getComputedStyle(content).paddingTop) || 0
       : 0;
-    const targetTop = Math.max(0, block.top - paddingTop);
+    const viewportHeight = view.scrollDOM.clientHeight;
+    const targetTop = Math.max(0, block.top - paddingTop - viewportHeight / 3 + block.height / 2);
 
     view.scrollDOM.scrollTop = targetTop;
   }
