@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-teex is a lightweight Tauri 2 desktop app for previewing and editing Markdown and text files during agentic workflows. It serves as a companion to AI tools like Claude Code — agents open files in teex for human review and editing. Built with a Rust backend and vanilla JS/HTML/CSS frontend (no bundler, no package.json).
+teex is a Tauri 2 desktop review tool for agentic workflows. It provides a focused review workspace for Markdown files, code files with syntax highlighting, and Git status/diff inspection. Agents open files in teex for human review and editing. Built with a Rust backend and vanilla JS/HTML/CSS frontend (no bundler, no package.json).
 
 ## Build & Development Commands
 

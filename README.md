@@ -1,12 +1,14 @@
-# teex
+# Teex
 
-A lightweight desktop app for previewing and editing Markdown and text files during agentic workflows. Designed as a companion to AI tools like Claude Code — agents open files in teex so you can review, edit, and approve without leaving your flow.
+Teex is a desktop review workspace for agentic workflows, built for reviewing Markdown, code, and Git-backed changes in a focused UI.
 
 ## What it does
 
-- **Markdown preview** — renders `.md` files with a toggle between preview and raw edit mode (`Cmd+E`)
-- **Tabbed editing** — open multiple files in one window, switch between tabs, close individually
-- **Folder mode** — open a directory to browse and navigate all text files via a sidebar
+- **Markdown review** — renders `.md` files with a toggle between preview and raw edit mode (`Cmd+E`)
+- **Code review with syntax highlighting** — open code and config files with language-aware highlighting for fast inspection and editing
+- **Git status + diff review** — inspect changed files and diffs without leaving the app
+- **Tabbed review sessions** — open multiple files in one window, switch between tabs, close individually
+- **Folder mode** — open a directory to browse and navigate project files via a sidebar
 - **Auto-save** — changes save automatically after a short delay and on `Cmd+S`
 - **CLI-first** — designed to be launched by agents or scripts, not just humans
 
@@ -28,9 +30,9 @@ teex install-skill
 
 ## Agent integration
 
-teex ships with a skill file (`skills/teex.md`) that teaches Claude Code and Codex when and how to use it. Run `teex install-skill` to copy the skill into your agent's skill directory so it gets picked up automatically.
+Teex ships with a skill file (`skills/teex.md`) that teaches Claude Code and Codex when and how to use it. Run `teex install-skill` to copy the skill into your agent's skill directory so it gets picked up automatically.
 
-Once installed, agents will open plans, drafts, and generated files in teex before asking for your review — giving you a focused editing environment instead of inline chat output.
+Once installed, agents will open plans, drafts, code files, and other generated artifacts in Teex before asking for your review — giving you a focused review environment with Markdown preview, syntax highlighting, and Git-aware inspection instead of inline chat output.
 
 ## Development
 
