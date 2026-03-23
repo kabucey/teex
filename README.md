@@ -1,6 +1,6 @@
 # Teex
 
-A desktop review workspace for agentic workflows. Teex started as a Markdown viewer, but it has evolved into a broader reviewing tool for Markdown, code, and Git-backed changes — so agents can hand work to a human in a focused UI instead of dumping everything into chat.
+Teex is a desktop review workspace for agentic workflows, built for reviewing Markdown, code, and Git-backed changes in a focused UI instead of dumping everything into chat.
 
 ## What it does
 
