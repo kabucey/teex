@@ -44,6 +44,7 @@ fn emit_path_event(
     emit_to_window(app, label, event_name, path_to_string(&path));
 }
 
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub(super) fn emit_os_open_paths(app: &tauri::AppHandle, paths: Vec<PathBuf>) {
     if paths.is_empty() {
         return;

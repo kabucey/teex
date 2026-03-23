@@ -12,7 +12,7 @@ echo "Running Rust lints (clippy)..."
 echo "Running JS/CSS lints (biome)..."
 (
   cd "$repo_root"
-  biome check src/ tests/
+  npm exec -- biome check src/ tests/
 )
 
 echo "All lints passed."

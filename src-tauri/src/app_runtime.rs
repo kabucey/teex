@@ -65,8 +65,8 @@ pub(crate) fn run_app() {
         {
             let paths = macos::apple_events::take_paths();
             if !paths.is_empty() {
-                queue_open_paths(app_handle, &paths);
-                emit_os_open_paths(app_handle, paths);
+                launch::queue_open_paths(app_handle, &paths);
+                menu_events::emit_os_open_paths(app_handle, paths);
             }
         }
 
@@ -76,8 +76,8 @@ pub(crate) fn run_app() {
                 .into_iter()
                 .filter_map(|url| url.to_file_path().ok())
                 .collect();
-            queue_open_paths(app_handle, &paths);
-            emit_os_open_paths(app_handle, paths);
+            launch::queue_open_paths(app_handle, &paths);
+            menu_events::emit_os_open_paths(app_handle, paths);
         }
     });
 }
@@ -242,8 +242,6 @@ pub(crate) fn build_app_menu(
         .items(&[&merge_all_windows_item])
         .build()?;
 
-    let mut top_level_items: Vec<&dyn tauri::menu::IsMenuItem<_>> = Vec::new();
-
     #[cfg(target_os = "macos")]
     let app_submenu = SubmenuBuilder::new(app, app.package_info().name.clone())
         .items(&[
@@ -262,12 +260,17 @@ pub(crate) fn build_app_menu(
         .build()?;
 
     #[cfg(target_os = "macos")]
-    top_level_items.push(&app_submenu);
+    let top_level_items: Vec<&dyn tauri::menu::IsMenuItem<_>> = vec![
+        &app_submenu,
+        &file_submenu,
+        &edit_submenu,
+        &view_submenu,
+        &window_submenu,
+    ];
 
-    top_level_items.push(&file_submenu);
-    top_level_items.push(&edit_submenu);
-    top_level_items.push(&view_submenu);
-    top_level_items.push(&window_submenu);
+    #[cfg(not(target_os = "macos"))]
+    let top_level_items: Vec<&dyn tauri::menu::IsMenuItem<_>> =
+        vec![&file_submenu, &edit_submenu, &view_submenu, &window_submenu];
 
     let menu = MenuBuilder::new(app).items(&top_level_items).build()?;
     let theme_state = ThemeMenuState {
@@ -347,7 +350,7 @@ fn handle_mac_service_request(app: &tauri::AppHandle, request: macos::services::
 
     match request.action {
         macos::services::ServiceAction::NewFileTabHere => {
-            if let Some(window) = target_window(app) {
+            if let Some(window) = menu_events::target_window(app) {
                 emit_to_window(
                     app,
                     window.label(),

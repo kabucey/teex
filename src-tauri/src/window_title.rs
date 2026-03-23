@@ -1,4 +1,5 @@
-use super::*;
+#[cfg(target_os = "macos")]
+use std::ffi::{c_char, c_void, CString};
 
 #[cfg(target_os = "macos")]
 fn set_macos_window_represented_path(

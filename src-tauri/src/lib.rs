@@ -44,12 +44,10 @@ use files::{
 use git_diff::git_diff;
 use git_status::git_status;
 use launch::{
-    categorize_paths, get_launch_context, open_paths_in_new_window, queue_open_paths,
-    queue_open_paths_for_window, take_pending_open_paths,
+    categorize_paths, get_launch_context, open_paths_in_new_window, queue_open_paths_for_window,
+    take_pending_open_paths,
 };
-use menu_events::{
-    emit_os_open_paths, emit_to_window, handle_app_menu_event, set_menu_item_enabled, target_window,
-};
+use menu_events::{emit_to_window, handle_app_menu_event, set_menu_item_enabled};
 #[cfg(test)]
 use menu_events::{next_transfer_request_id, window_event};
 use path_utils::{file_kind, is_text_like, path_to_string, should_traverse_with_hidden};
@@ -68,6 +66,7 @@ use window_title::set_window_title;
 
 const EVENT_OPEN_FILE_SELECTED: &str = "teex://open-file-selected";
 const EVENT_OPEN_FOLDER_SELECTED: &str = "teex://open-folder-selected";
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 const EVENT_OS_OPEN_PATHS: &str = "teex://os-open-paths";
 const EVENT_PROJECT_FOLDER_CHANGED: &str = "teex://project-folder-changed";
 const EVENT_PROJECT_FILE_CHANGED: &str = "teex://project-file-changed";
@@ -81,7 +80,9 @@ const EVENT_TAB_TRANSFER_RESULT: &str = "teex://tab-transfer-result";
 const EVENT_CONTEXT_MENU_DELETE: &str = "teex://context-menu-delete";
 const EVENT_CROSS_WINDOW_DRAG_ENTER: &str = "teex://cross-window-drag-enter";
 const EVENT_CROSS_WINDOW_DRAG_LEAVE: &str = "teex://cross-window-drag-leave";
+#[cfg(target_os = "macos")]
 const EVENT_MOUSE_NAV_BACK: &str = "teex://mouse-nav-back";
+#[cfg(target_os = "macos")]
 const EVENT_MOUSE_NAV_FORWARD: &str = "teex://mouse-nav-forward";
 
 const MENU_OPEN_FILE: &str = "open_file";

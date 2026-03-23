@@ -8,6 +8,7 @@ pub(crate) struct LaunchContext {
     pub(crate) paths: Vec<String>,
 }
 
+#[cfg(any(target_os = "macos", target_os = "ios"))]
 pub(crate) fn queue_open_paths(app: &tauri::AppHandle, paths: &[PathBuf]) {
     let pending = app.state::<PendingOpenPaths>();
     if let Ok(mut queued) = pending.global_paths.lock() {

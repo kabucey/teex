@@ -4,7 +4,6 @@ use super::macos::cli_install::{
 };
 use super::path_utils::{is_code, is_markdown};
 use super::*;
-use std::sync::Mutex;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 #[cfg(target_os = "macos")]

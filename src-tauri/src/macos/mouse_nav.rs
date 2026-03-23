@@ -74,7 +74,10 @@ pub(crate) fn install(app: &tauri::AppHandle) {
     }
 
     unsafe {
-        TYPE_SEL.store(sel_registerName(c"type".as_ptr()) as usize, Ordering::Relaxed);
+        TYPE_SEL.store(
+            sel_registerName(c"type".as_ptr()) as usize,
+            Ordering::Relaxed,
+        );
 
         let cls = objc_getClass(c"NSApplication".as_ptr());
         if cls.is_null() {
