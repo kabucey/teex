@@ -1,6 +1,6 @@
-# teex
+# Teex
 
-A desktop review workspace for agentic workflows. teex started as a Markdown viewer, but it has evolved into a broader reviewing tool for Markdown, code, and Git-backed changes — so agents can hand work to a human in a focused UI instead of dumping everything into chat.
+A desktop review workspace for agentic workflows. Teex started as a Markdown viewer, but it has evolved into a broader reviewing tool for Markdown, code, and Git-backed changes — so agents can hand work to a human in a focused UI instead of dumping everything into chat.
 
 ## What it does
 
@@ -30,9 +30,9 @@ teex install-skill
 
 ## Agent integration
 
-teex ships with a skill file (`skills/teex.md`) that teaches Claude Code and Codex when and how to use it. Run `teex install-skill` to copy the skill into your agent's skill directory so it gets picked up automatically.
+Teex ships with a skill file (`skills/teex.md`) that teaches Claude Code and Codex when and how to use it. Run `teex install-skill` to copy the skill into your agent's skill directory so it gets picked up automatically.
 
-Once installed, agents will open plans, drafts, code files, and other generated artifacts in teex before asking for your review — giving you a focused review environment with Markdown preview, syntax highlighting, and Git-aware inspection instead of inline chat output.
+Once installed, agents will open plans, drafts, code files, and other generated artifacts in Teex before asking for your review — giving you a focused review environment with Markdown preview, syntax highlighting, and Git-aware inspection instead of inline chat output.
 
 ## Development
 
