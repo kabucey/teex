@@ -64,6 +64,17 @@ export function isAllCollapsed(entries, collapsedFolders) {
   return true;
 }
 
+export function collectSubfolderPaths(folderPath, entries) {
+  const all = collectFolderPaths(entries);
+  const result = new Set();
+  for (const p of all) {
+    if (p === folderPath || p.startsWith(`${folderPath}/`)) {
+      result.add(p);
+    }
+  }
+  return result;
+}
+
 export function buildCollapsedFoldersFromExpanded(entries, expandedFolders) {
   const allFolders = collectFolderPaths(entries);
   if (!(expandedFolders instanceof Set) || expandedFolders.size === 0) {

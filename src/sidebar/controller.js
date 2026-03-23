@@ -14,6 +14,7 @@ import {
 import {
   buildEntryTree,
   collectFolderPaths,
+  collectSubfolderPaths,
   hasFoldersInEntries,
   isAllCollapsed,
   renderTreeHtml,
@@ -263,13 +264,24 @@ export function createSidebarController({
         }
       });
 
-      button.addEventListener("click", () => {
+      button.addEventListener("click", (event) => {
         const { folderPath } = button.dataset;
         if (!folderPath) {
           return;
         }
 
-        if (state.collapsedFolders.has(folderPath)) {
+        if (event.altKey) {
+          const subfolders = collectSubfolderPaths(folderPath, state.entries);
+          if (state.collapsedFolders.has(folderPath)) {
+            for (const p of subfolders) {
+              state.collapsedFolders.delete(p);
+            }
+          } else {
+            for (const p of subfolders) {
+              state.collapsedFolders.add(p);
+            }
+          }
+        } else if (state.collapsedFolders.has(folderPath)) {
           state.collapsedFolders.delete(folderPath);
         } else {
           state.collapsedFolders.add(folderPath);

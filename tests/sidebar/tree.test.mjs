@@ -5,6 +5,7 @@ import {
   buildCollapsedFoldersFromExpanded,
   buildEntryTree,
   collectFolderPaths,
+  collectSubfolderPaths,
   hasFoldersInEntries,
   isAllCollapsed,
   parentFolderPaths,
@@ -48,6 +49,29 @@ test("renderTreeHtml renders folders/files and respects collapsed set", () => {
   const collapsedHtml = renderTreeHtml(tree, 0, new Set(["docs"]));
   assert.match(collapsedHtml, /aria-expanded="false"/);
   assert.doesNotMatch(collapsedHtml, /guide\.md/);
+});
+
+test("collectSubfolderPaths returns the folder itself and all nested subfolders", () => {
+  const entries = [
+    { relPath: "docs/guide.md" },
+    { relPath: "docs/api/ref.md" },
+    { relPath: "src/index.js" },
+    { relPath: "a.md" },
+  ];
+
+  const result = collectSubfolderPaths("docs", entries);
+  assert.deepEqual([...result].sort(), ["docs", "docs/api"]);
+});
+
+test("collectSubfolderPaths does not include unrelated folders", () => {
+  const entries = [
+    { relPath: "docs/guide.md" },
+    { relPath: "src/index.js" },
+  ];
+
+  const result = collectSubfolderPaths("docs", entries);
+  assert.deepEqual([...result].sort(), ["docs"]);
+  assert.equal(result.has("src"), false);
 });
 
 test("hasFoldersInEntries returns false for flat entries", () => {
