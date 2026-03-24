@@ -1,8 +1,6 @@
 import {
   bracketMatching,
   Compartment,
-  findNext as cmFindNext,
-  findPrevious as cmFindPrevious,
   Decoration,
   defaultKeymap,
   drawSelection,
@@ -17,17 +15,15 @@ import {
   keymap,
   lineNumbers,
   RangeSet,
-  SearchQuery,
   StateEffect,
   StateField,
-  search as searchExtension,
-  setSearchQuery,
   syntaxHighlighting,
   tags,
 } from "/vendor/codemirror.js";
 import { languageForExtension } from "./codemirror-languages.js";
 
 const setDiffEffect = StateEffect.define();
+const setSearchDecorationsEffect = StateEffect.define();
 
 const diffField = StateField.define({
   create() {
@@ -43,10 +39,27 @@ const diffField = StateField.define({
 });
 
 const diffAdded = Decoration.line({ class: "cm-diff-added" });
+const searchMatchMark = Decoration.mark({ class: "cm-custom-search-match" });
+const activeSearchMatchMark = Decoration.mark({
+  class: "cm-custom-search-match cm-custom-search-match-active",
+});
 
 const DIFF_TYPES = {
   added: diffAdded,
 };
+
+const searchField = StateField.define({
+  create() {
+    return Decoration.none;
+  },
+  update(decos, tr) {
+    for (const effect of tr.effects) {
+      if (effect.is(setSearchDecorationsEffect)) return effect.value;
+    }
+    return decos;
+  },
+  provide: (f) => EditorView.decorations.from(f),
+});
 
 const DARK_COLORS = {
   comment: "#5c6370",
@@ -120,6 +133,24 @@ function buildHighlightStyle(c) {
   ]);
 }
 
+function escapeForRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function findSearchMatches(content, query) {
+  if (!query) return [];
+  const regex = new RegExp(escapeForRegExp(query), "gi");
+  const matches = [];
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    matches.push({ from: match.index, to: match.index + match[0].length });
+    if (match[0].length === 0) {
+      regex.lastIndex += 1;
+    }
+  }
+  return matches;
+}
+
 export function createCodeMirrorController({
   el,
   state,
@@ -129,6 +160,8 @@ export function createCodeMirrorController({
   let view = null;
   let currentLanguage = null;
   let isSyncing = false;
+  let searchMatches = [];
+  let activeSearchIndex = -1;
   const langCompartment = new Compartment();
   const highlightCompartment = new Compartment();
 
@@ -182,27 +215,21 @@ export function createCodeMirrorController({
           keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
           langCompartment.of(lang ? lang : []),
           highlightCompartment.of(currentHighlightExt()),
-          searchExtension({
-            createPanel: () => ({ dom: document.createElement("span") }),
-          }),
           EditorView.theme({
             ".cm-selectionBackground": {
               background: "rgba(100, 150, 255, 0.2)",
             },
-            ".cm-searchMatch": {
+            ".cm-custom-search-match": {
               background: "rgba(255, 200, 50, 0.35)",
               borderRadius: "2px",
               outline: "1px solid rgba(255, 200, 50, 0.45)",
-              textDecoration: "underline 2px rgba(255, 200, 50, 0.9)",
-              textUnderlineOffset: "2px",
             },
-            ".cm-searchMatch.cm-searchMatch-selected": {
+            ".cm-custom-search-match-active": {
               background: "rgba(255, 165, 0, 0.7)",
               outline: "1px solid rgba(255, 165, 0, 0.9)",
-              textDecoration: "underline 2px rgba(255, 165, 0, 1)",
-              textUnderlineOffset: "2px",
             },
           }),
+          searchField,
           diffField,
           updateListener,
           scrollListener,
@@ -310,30 +337,59 @@ export function createCodeMirrorController({
     return view ? view.state.doc.lines : 0;
   }
 
+  function applySearchDecorations() {
+    if (!view) return;
+    const decos = [];
+    for (let i = 0; i < searchMatches.length; i += 1) {
+      const match = searchMatches[i];
+      const deco =
+        i === activeSearchIndex ? activeSearchMatchMark : searchMatchMark;
+      decos.push(deco.range(match.from, match.to));
+    }
+    view.dispatch({
+      effects: setSearchDecorationsEffect.of(RangeSet.of(decos, true)),
+    });
+  }
+
+  function selectActiveSearchMatch() {
+    if (!view || activeSearchIndex < 0 || activeSearchIndex >= searchMatches.length) {
+      return;
+    }
+    const match = searchMatches[activeSearchIndex];
+    view.dispatch({
+      selection: { anchor: match.from, head: match.to },
+      scrollIntoView: true,
+    });
+  }
+
   function search(query) {
     if (!view) return;
-    const sq = new SearchQuery({ search: query, caseSensitive: false });
-    view.dispatch({
-      effects: setSearchQuery.of(sq),
-      selection: { anchor: 0 },
-    });
-    cmFindNext(view);
+    searchMatches = findSearchMatches(view.state.doc.toString(), query);
+    activeSearchIndex = searchMatches.length ? 0 : -1;
+    applySearchDecorations();
+    selectActiveSearchMatch();
   }
 
   function searchNext() {
-    if (!view) return;
-    cmFindNext(view);
+    if (!view || !searchMatches.length) return;
+    activeSearchIndex = (activeSearchIndex + 1) % searchMatches.length;
+    applySearchDecorations();
+    selectActiveSearchMatch();
   }
 
   function searchPrev() {
-    if (!view) return;
-    cmFindPrevious(view);
+    if (!view || !searchMatches.length) return;
+    activeSearchIndex =
+      (activeSearchIndex - 1 + searchMatches.length) % searchMatches.length;
+    applySearchDecorations();
+    selectActiveSearchMatch();
   }
 
   function clearSearch() {
     if (!view) return;
-    const sq = new SearchQuery({ search: "" });
-    view.dispatch({ effects: setSearchQuery.of(sq) });
+    searchMatches = [];
+    activeSearchIndex = -1;
+    applySearchDecorations();
   }
 
   return {
