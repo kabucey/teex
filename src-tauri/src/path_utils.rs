@@ -1,6 +1,7 @@
 use super::*;
 
 const ALWAYS_BLOCKED_DIRS: &[&str] = &[".git", "node_modules", "target", "dist", "build"];
+const ALWAYS_EXCLUDED_FILES: &[&str] = &[".DS_Store"];
 
 pub(super) fn should_traverse_with_hidden(entry: &DirEntry, show_hidden: bool) -> bool {
     if !entry.file_type().is_dir() {
@@ -22,6 +23,9 @@ pub(super) fn is_dotfile_config(path: &Path) -> bool {
     let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
         return false;
     };
+    if ALWAYS_EXCLUDED_FILES.contains(&name) {
+        return false;
+    }
     name.starts_with('.') && path.extension().is_none()
 }
 

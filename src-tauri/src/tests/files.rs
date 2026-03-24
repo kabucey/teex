@@ -134,6 +134,28 @@ fn list_project_entries_excludes_extensionless_dotfiles_when_hidden_off() {
 }
 
 #[test]
+fn list_project_entries_excludes_ds_store_even_when_show_hidden_true() {
+    let temp = TempTestDir::new();
+
+    temp.write_text("visible.md", "# hi");
+    temp.write_text(".gitignore", "*.log");
+    temp.write_bytes(".DS_Store", &[0x00, 0x01, 0x02]);
+
+    let entries = list_project_entries(temp.path().to_string_lossy().to_string(), true)
+        .expect("list project entries should succeed");
+    let rel_paths: Vec<String> = entries.iter().map(|e| e.rel_path.clone()).collect();
+
+    assert!(
+        !rel_paths.contains(&".DS_Store".to_string()),
+        "should exclude .DS_Store even when show_hidden is true"
+    );
+    assert!(
+        rel_paths.contains(&"visible.md".to_string()),
+        "should include visible.md"
+    );
+}
+
+#[test]
 fn list_project_entries_errors_when_root_is_not_directory() {
     let temp = TempTestDir::new();
     let file = temp.write_text("just-a-file.txt", "hi");
