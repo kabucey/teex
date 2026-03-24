@@ -32,7 +32,7 @@ export function createDiffMapController({ el, codeEditorController }) {
     if (trackHeight <= 0) return;
 
     for (const { el: tickEl, fraction, height } of tickEntries) {
-      const h = Math.max(TICK_HEIGHT, height * 2);
+      const h = Math.max(TICK_HEIGHT, height * 3);
       tickEl.style.top = `${tickTop(fraction, trackHeight, h)}px`;
       tickEl.style.height = `${h}px`;
     }

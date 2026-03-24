@@ -72,8 +72,7 @@ describe("buildDiffTicks", () => {
     assert.ok(result[1].fraction < result[2].fraction);
   });
 
-  it("merges adjacent same-type ticks within threshold", () => {
-    // Lines 1,2,3 in a 1000-line file are within 0.002 of each other
+  it("merges back-to-back same-type lines into one hunk", () => {
     const result = buildDiffTicks(
       [
         { line: 1, diff_type: "added" },
@@ -84,7 +83,19 @@ describe("buildDiffTicks", () => {
     );
     assert.equal(result.length, 1);
     assert.equal(result[0].line, 1);
+    assert.equal(result[0].endLine, 3);
     assert.equal(result[0].height, 3);
+  });
+
+  it("does not merge same-type lines when there is a gap", () => {
+    const result = buildDiffTicks(
+      [
+        { line: 10, diff_type: "added" },
+        { line: 12, diff_type: "added" },
+      ],
+      1000,
+    );
+    assert.equal(result.length, 2);
   });
 
   it("does not merge different diff types", () => {
@@ -107,6 +118,20 @@ describe("buildDiffTicks", () => {
       1000,
     );
     assert.equal(result.length, 2);
+  });
+
+  it("preserves the first line as the click target for a merged hunk", () => {
+    const result = buildDiffTicks(
+      [
+        { line: 20, diff_type: "modified" },
+        { line: 21, diff_type: "modified" },
+        { line: 22, diff_type: "modified" },
+      ],
+      100,
+    );
+    assert.equal(result.length, 1);
+    assert.equal(result[0].line, 20);
+    assert.equal(result[0].endLine, 22);
   });
 });
 

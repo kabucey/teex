@@ -1,5 +1,3 @@
-const MERGE_THRESHOLD = 0.004;
-
 export function buildDiffTicks(annotations, totalLines) {
   if (totalLines < 1) return [];
 
@@ -17,14 +15,16 @@ export function buildDiffTicks(annotations, totalLines) {
     if (
       prev &&
       prev.diffType === ann.diff_type &&
-      fraction - prev.fraction < MERGE_THRESHOLD
+      ann.line === prev.endLine + 1
     ) {
+      prev.endLine = ann.line;
       prev.height += 1;
     } else {
       ticks.push({
         fraction,
         diffType: ann.diff_type,
         line: ann.line,
+        endLine: ann.line,
         height: 1,
       });
     }
