@@ -7,7 +7,7 @@ import {
   EditorState,
   EditorView,
   HighlightStyle,
-  highlightSelectionMatches,
+
   highlightSpecialChars,
   history,
   historyKeymap,
@@ -173,7 +173,7 @@ export function createCodeMirrorController({
           highlightSpecialChars(),
           indentOnInput(),
           bracketMatching(),
-          highlightSelectionMatches(),
+
           history(),
           keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
           langCompartment.of(lang ? lang : []),
