@@ -744,18 +744,8 @@ input[type="text"] {
 }
 
 .code-editor .cm-content {
-  position: relative;
-  z-index: 1;
   padding: 18px 18px 18px 8px;
   caret-color: var(--ink);
-}
-
-.code-editor .cm-selectionLayer {
-  z-index: 0;
-}
-
-.code-editor .cm-cursorLayer {
-  z-index: 2;
 }
 
 .code-editor .cm-gutters {
@@ -778,19 +768,7 @@ input[type="text"] {
 }
 
 .code-editor .cm-selectionBackground {
-  background: rgba(100, 150, 255, 0.22) !important;
-}
-
-.code-editor .cm-searchMatch {
-  background: rgba(255, 200, 50, 0.35) !important;
-  border-radius: 2px;
-  box-shadow: 0 0 0 1px rgba(255, 200, 50, 0.2);
-}
-
-.code-editor .cm-searchMatch.cm-searchMatch-selected {
-  background: rgba(255, 165, 0, 0.7) !important;
-  outline: 1px solid rgba(255, 165, 0, 0.9);
-  box-shadow: 0 0 0 1px rgba(255, 165, 0, 0.35);
+  background: rgba(100, 150, 255, 0.2) !important;
 }
 
 .code-editor .cm-cursor {

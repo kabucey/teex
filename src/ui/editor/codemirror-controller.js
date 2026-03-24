@@ -186,13 +186,21 @@ export function createCodeMirrorController({
             createPanel: () => ({ dom: document.createElement("span") }),
           }),
           EditorView.theme({
+            ".cm-selectionBackground": {
+              background: "rgba(100, 150, 255, 0.2)",
+            },
             ".cm-searchMatch": {
               background: "rgba(255, 200, 50, 0.35)",
               borderRadius: "2px",
+              outline: "1px solid rgba(255, 200, 50, 0.45)",
+              textDecoration: "underline 2px rgba(255, 200, 50, 0.9)",
+              textUnderlineOffset: "2px",
             },
             ".cm-searchMatch.cm-searchMatch-selected": {
               background: "rgba(255, 165, 0, 0.7)",
               outline: "1px solid rgba(255, 165, 0, 0.9)",
+              textDecoration: "underline 2px rgba(255, 165, 0, 1)",
+              textUnderlineOffset: "2px",
             },
           }),
           diffField,
