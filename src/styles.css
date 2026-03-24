@@ -759,6 +759,8 @@ input[type="text"] {
 
 .code-editor .cm-lineNumbers .cm-gutterElement {
   line-height: 1.6;
+  position: relative;
+  top: -1px;
 }
 
 .code-editor .cm-activeLineGutter {
