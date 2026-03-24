@@ -186,7 +186,7 @@ pub(crate) fn build_recent_submenu(
 }
 
 fn rebuild_menu(app: &tauri::AppHandle) {
-    let Ok((menu, theme_state)) = app_runtime::build_app_menu(app) else {
+    let Ok((menu, theme_state)) = crate::menu::build_app_menu(app) else {
         return;
     };
     let _ = app.set_menu(menu);

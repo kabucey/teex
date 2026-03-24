@@ -1,5 +1,5 @@
 use super::common::TempTestDir;
-use crate::git_status::{git_status, parse_porcelain_line};
+use crate::git::{git_status, parse_porcelain_line};
 
 #[test]
 fn parse_modified_worktree() {

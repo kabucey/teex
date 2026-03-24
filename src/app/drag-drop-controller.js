@@ -1,5 +1,5 @@
-import { extractDragDropPaths } from "../utils/path-input.js";
 import { shouldSuppressDropOverlayForSelfHover } from "../ui/behavior.js";
+import { extractDragDropPaths } from "../utils/path-input.js";
 
 export function createDragDropController({
   state,

@@ -1,7 +1,7 @@
+import { escapeAttr, escapeHtml } from "../ui/html-utils.js";
 import { baseName, isCursorOutsideWindow } from "../utils/app-utils.js";
 import { canGoBack, canGoForward } from "./navigation.js";
 import { buildTabDisambiguations } from "./tab-disambiguation.js";
-import { escapeAttr, escapeHtml } from "../ui/html-utils.js";
 
 export function buildTabBarHtml(state) {
   const disambiguations = buildTabDisambiguations(state.openFiles);

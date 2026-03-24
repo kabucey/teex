@@ -68,7 +68,7 @@ fn simplify_status(x: u8, y: u8) -> String {
 }
 
 fn is_git_repo(root: &Path) -> bool {
-    crate::git_diff::find_git_root(root).is_some()
+    super::diff::find_git_root(root).is_some()
 }
 
 #[tauri::command]

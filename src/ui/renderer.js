@@ -1,13 +1,9 @@
 import {
-  baseName,
-  dirName,
-  fileExtension,
-} from "../utils/app-utils.js";
-import {
+  bindTabBarEvents,
   buildTabBarHtml,
   updateNavButtons,
-  bindTabBarEvents,
 } from "../tabs/tab-bar.js";
+import { baseName, dirName, fileExtension } from "../utils/app-utils.js";
 import { hasActiveContent, isUntitledTab } from "./behavior.js";
 import { rewritePreviewImages } from "./image-paths.js";
 import { renderMarkdown, renderMermaidDiagrams } from "./markdown-renderer.js";

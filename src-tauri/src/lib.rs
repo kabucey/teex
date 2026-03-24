@@ -11,10 +11,9 @@ use std::{
     collections::HashMap,
     env, fs,
     path::{Path, PathBuf},
-    process::Command,
-    sync::atomic::{AtomicUsize, Ordering},
+    sync::atomic::Ordering,
     sync::{Arc, Mutex},
-    time::{Duration, Instant},
+    time::Instant,
 };
 use tauri::{Emitter, Manager};
 use tauri_plugin_dialog::DialogExt;
@@ -23,26 +22,28 @@ use tauri_plugin_dialog::MessageDialogKind;
 use walkdir::{DirEntry, WalkDir};
 
 mod app_runtime;
-mod context_menu;
+mod constants;
 mod files;
-mod git_diff;
-mod git_status;
+mod git;
 mod launch;
 #[cfg(target_os = "macos")]
 mod macos;
+mod menu;
 mod menu_events;
 mod path_utils;
 mod recent_files;
 mod tabs;
 mod watchers;
-mod window_title;
+mod window;
 
-use context_menu::show_sidebar_context_menu;
+use constants::*;
+
+use window::{open_in_file_manager, show_sidebar_context_menu};
 use files::{
     format_structured_text, list_project_entries, read_text_file, trash_file, write_text_file,
 };
-use git_diff::git_diff;
-use git_status::git_status;
+use git::git_diff;
+use git::git_status;
 use launch::{
     categorize_paths, get_launch_context, open_paths_in_new_window, queue_open_paths,
     queue_open_paths_for_window, take_pending_open_paths,
@@ -62,63 +63,7 @@ use watchers::{
     clear_project_file_watch_for_label, clear_project_folder_watch_for_label,
     install_project_file_watch, install_project_folder_watch,
 };
-use window_title::set_window_title;
-
-const EVENT_OPEN_FILE_SELECTED: &str = "teex://open-file-selected";
-const EVENT_OPEN_FOLDER_SELECTED: &str = "teex://open-folder-selected";
-#[cfg(any(target_os = "macos", target_os = "ios"))]
-const EVENT_OS_OPEN_PATHS: &str = "teex://os-open-paths";
-const EVENT_PROJECT_FOLDER_CHANGED: &str = "teex://project-folder-changed";
-const EVENT_PROJECT_FILE_CHANGED: &str = "teex://project-file-changed";
-const EVENT_TOGGLE_SIDEBAR: &str = "teex://toggle-sidebar";
-const EVENT_TOGGLE_MARKDOWN_MODE: &str = "teex://toggle-markdown-mode";
-const EVENT_CLOSE_ACTIVE_FILE: &str = "teex://close-active-file";
-const EVENT_NEW_TAB: &str = "teex://new-tab";
-const EVENT_REQUEST_EXPORT_ALL_TABS: &str = "teex://request-export-all-tabs";
-const EVENT_RECEIVE_TRANSFERRED_TABS: &str = "teex://receive-transferred-tabs";
-const EVENT_TAB_TRANSFER_RESULT: &str = "teex://tab-transfer-result";
-const EVENT_CONTEXT_MENU_DELETE: &str = "teex://context-menu-delete";
-const EVENT_CROSS_WINDOW_DRAG_ENTER: &str = "teex://cross-window-drag-enter";
-const EVENT_CROSS_WINDOW_DRAG_LEAVE: &str = "teex://cross-window-drag-leave";
-#[cfg(target_os = "macos")]
-const EVENT_MOUSE_NAV_BACK: &str = "teex://mouse-nav-back";
-#[cfg(target_os = "macos")]
-const EVENT_MOUSE_NAV_FORWARD: &str = "teex://mouse-nav-forward";
-
-const MENU_OPEN_FILE: &str = "open_file";
-const MENU_OPEN_FOLDER: &str = "open_folder";
-const MENU_NEW_WINDOW: &str = "new_window";
-const MENU_MERGE_ALL_WINDOWS_INTO_THIS_WINDOW: &str = "merge_all_windows_into_this_window";
-const MENU_INSTALL_CLI: &str = "install_cli";
-const MENU_SET_DEFAULT_MARKDOWN: &str = "set_default_markdown";
-const MENU_CLOSE_ACTIVE_FILE: &str = "close_active_file";
-const MENU_CLOSE_WINDOW: &str = "close_window";
-const MENU_TOGGLE_SIDEBAR: &str = "toggle_sidebar";
-const MENU_NEW_TAB: &str = "new_tab";
-const MENU_TOGGLE_MARKDOWN_MODE: &str = "toggle_markdown_mode";
-const MENU_TOGGLE_STATUS_BAR: &str = "toggle_status_bar";
-const EVENT_TOGGLE_STATUS_BAR: &str = "teex://toggle-status-bar";
-const MENU_SHOW_HIDDEN_FILES: &str = "show_hidden_files";
-const EVENT_TOGGLE_HIDDEN_FILES: &str = "teex://toggle-hidden-files";
-const MENU_SHOW_MODIFIED_ONLY: &str = "show_modified_only";
-const EVENT_TOGGLE_MODIFIED_ONLY: &str = "teex://toggle-modified-only";
-const MENU_FIND: &str = "find";
-const EVENT_FIND: &str = "teex://find";
-const MENU_THEME_SYSTEM: &str = "theme_system";
-const MENU_THEME_LIGHT: &str = "theme_light";
-const MENU_THEME_DARK: &str = "theme_dark";
-const EVENT_SET_THEME: &str = "teex://set-theme";
-const MENU_RESTORE_SESSION: &str = "restore_session";
-const EVENT_RESTORE_SESSION: &str = "teex://restore-session";
-const MENU_CLEAR_RECENTS: &str = "clear_recents";
-const MENU_RECENT_FILE_PREFIX: &str = "recent_file:";
-const MENU_RECENT_FOLDER_PREFIX: &str = "recent_folder:";
-const EVENT_OPEN_RECENT_FILE: &str = "teex://open-recent-file";
-const EVENT_OPEN_RECENT_FOLDER: &str = "teex://open-recent-folder";
-static NEXT_WINDOW_ID: AtomicUsize = AtomicUsize::new(1);
-static NEXT_TRANSFER_REQUEST_ID: AtomicUsize = AtomicUsize::new(1);
-const FOLDER_WATCH_DEBOUNCE: Duration = Duration::from_millis(250);
-const FILE_WATCH_DEBOUNCE: Duration = Duration::from_millis(250);
+use window::set_window_title;
 
 struct FocusTracker {
     label: Mutex<Option<String>>,
@@ -308,47 +253,6 @@ fn close_current_window(window: tauri::Window) -> Result<(), String> {
     window
         .close()
         .map_err(|e| format!("Unable to close window: {e}"))
-}
-
-#[tauri::command]
-fn open_in_file_manager(path: String) -> Result<(), String> {
-    let path_buf = PathBuf::from(&path);
-    if !path_buf.exists() {
-        return Err(format!("Path does not exist: {path}"));
-    }
-
-    #[cfg(target_os = "macos")]
-    let mut command = {
-        let mut cmd = Command::new("open");
-        cmd.arg(&path_buf);
-        cmd
-    };
-
-    #[cfg(target_os = "windows")]
-    let mut command = {
-        let mut cmd = Command::new("explorer");
-        cmd.arg(&path_buf);
-        cmd
-    };
-
-    #[cfg(all(unix, not(target_os = "macos")))]
-    let mut command = {
-        let mut cmd = Command::new("xdg-open");
-        cmd.arg(&path_buf);
-        cmd
-    };
-
-    let status = command
-        .status()
-        .map_err(|e| format!("Unable to open file manager: {e}"))?;
-    if status.success() {
-        Ok(())
-    } else {
-        Err(format!(
-            "File manager command exited with status {}",
-            status
-        ))
-    }
 }
 
 #[cfg(test)]

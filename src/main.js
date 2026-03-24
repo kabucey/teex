@@ -20,7 +20,6 @@ import {
   saveWindowSession,
 } from "./app/session-persistence.js";
 import { createSessionRestoreController } from "./app/session-restore.js";
-import { baseName } from "./utils/app-utils.js";
 import { createFindController } from "./search/find-controller.js";
 import { buildCollapsedFoldersFromExpanded } from "./sidebar/tree.js";
 import { recordNavigation } from "./tabs/navigation.js";
@@ -39,14 +38,15 @@ import {
   bindElements as bindElementsImported,
   bindUiEvents as bindUiEventsImported,
 } from "./ui/bindings-controller.js";
-import { createCodeMirrorController } from "./ui/editor/codemirror-controller.js";
 import { createDiffController } from "./ui/diff/controller.js";
 import { createDiffMapController } from "./ui/diff/map-controller.js";
+import { createCodeMirrorController } from "./ui/editor/codemirror-controller.js";
 import {
   confirmDelete,
   confirmReloadExternalChange,
 } from "./ui/native-dialog.js";
 import { createScrollSyncController } from "./ui/scroll/sync.js";
+import { baseName } from "./utils/app-utils.js";
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;

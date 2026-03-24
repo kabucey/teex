@@ -64,10 +64,7 @@ test("collectSubfolderPaths returns the folder itself and all nested subfolders"
 });
 
 test("collectSubfolderPaths does not include unrelated folders", () => {
-  const entries = [
-    { relPath: "docs/guide.md" },
-    { relPath: "src/index.js" },
-  ];
+  const entries = [{ relPath: "docs/guide.md" }, { relPath: "src/index.js" }];
 
   const result = collectSubfolderPaths("docs", entries);
   assert.deepEqual([...result].sort(), ["docs"]);

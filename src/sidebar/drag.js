@@ -1,4 +1,3 @@
-import { baseName, isCursorOutsideWindow } from "../utils/app-utils.js";
 import {
   flushStateToActiveTabInState,
   hasTabSession,
@@ -6,6 +5,7 @@ import {
   snapshotActiveFileAsTransferTab,
   syncActiveTabToStateFromTabs,
 } from "../tabs/session.js";
+import { baseName, isCursorOutsideWindow } from "../utils/app-utils.js";
 
 const DRAG_THRESHOLD = 5;
 

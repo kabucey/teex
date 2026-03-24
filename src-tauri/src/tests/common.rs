@@ -1,4 +1,5 @@
 use super::*;
+use std::sync::atomic::AtomicUsize;
 
 pub(super) static TEST_COUNTER: AtomicUsize = AtomicUsize::new(1);
 #[cfg(target_os = "macos")]
