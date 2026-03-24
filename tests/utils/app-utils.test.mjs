@@ -6,7 +6,7 @@ import {
   clamp,
   dirName,
   isCursorOutsideWindow,
-} from "../src/app-utils.js";
+} from "../../src/utils/app-utils.js";
 
 globalThis.window = { innerWidth: 800, innerHeight: 600 };
 

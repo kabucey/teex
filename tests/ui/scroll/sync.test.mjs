@@ -5,15 +5,15 @@ import {
   computePreviewScrollTopFromSourceLine,
   getScrollRatio,
   scrollTopFromRatio,
-} from "../../src/ui/scroll-math.js";
-import { createScrollSyncController } from "../../src/ui/scroll-sync.js";
+} from "../../../src/ui/scroll/math.js";
+import { createScrollSyncController } from "../../../src/ui/scroll/sync.js";
 import {
   findPreviewBlockBySnippet,
   findSourceIndexBySnippet,
   findSourceLineBySnippet,
   normalizeSearchText,
   sourceIndexToLineNumber,
-} from "../../src/ui/scroll-text-anchor.js";
+} from "../../../src/ui/scroll/text-anchor.js";
 
 function withFakeRaf(fn) {
   const originalRaf = globalThis.requestAnimationFrame;

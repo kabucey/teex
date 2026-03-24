@@ -1,4 +1,4 @@
-import { normalizeIncomingPaths } from "../path-input.js";
+import { normalizeIncomingPaths } from "../utils/path-input.js";
 
 export function shouldSkipDuplicateOsOpenForDeduper(
   deduper,

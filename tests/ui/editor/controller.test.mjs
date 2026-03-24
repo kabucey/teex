@@ -7,7 +7,7 @@ import {
   fileKindFromExtension,
   isEditableState,
   shouldAutosaveOnToggle,
-} from "../../src/ui/editor-controller.js";
+} from "../../../src/ui/editor/controller.js";
 
 test("isEditableState depends on active file and markdown mode", () => {
   assert.equal(isEditableState({ activePath: null }), false);

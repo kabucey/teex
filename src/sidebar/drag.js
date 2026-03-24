@@ -1,4 +1,4 @@
-import { baseName, isCursorOutsideWindow } from "../app-utils.js";
+import { baseName, isCursorOutsideWindow } from "../utils/app-utils.js";
 import {
   flushStateToActiveTabInState,
   hasTabSession,

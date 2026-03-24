@@ -1,12 +1,12 @@
 import { saveSidebarWidth } from "../app/sidebar-width-persistence.js";
-import { clamp, selectAllContents } from "../app-utils.js";
-import { hasFileDragData } from "../path-input.js";
+import { clamp, selectAllContents } from "../utils/app-utils.js";
+import { hasFileDragData } from "../utils/path-input.js";
 import { renderMarkdown } from "./markdown-renderer.js";
 import {
   detectStructuredPasteKind,
   formatStructuredPasteText,
-} from "./paste-format.js";
-import { insertFormattedPaste } from "./paste-insert.js";
+} from "./paste/format.js";
+import { insertFormattedPaste } from "./paste/insert.js";
 import { showToast } from "./toast.js";
 
 export function bindElements(el) {

@@ -1,4 +1,4 @@
-import { hasActiveContent } from "./behavior.js";
+import { hasActiveContent } from "../behavior.js";
 
 const CODE_EXTENSIONS = new Set([
   "json",

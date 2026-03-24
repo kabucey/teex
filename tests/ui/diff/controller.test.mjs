@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it, mock } from "node:test";
 
-import { createDiffController } from "../../src/ui/diff-controller.js";
+import { createDiffController } from "../../../src/ui/diff/controller.js";
 
 function makeMocks(overrides = {}) {
   const state = {

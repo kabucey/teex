@@ -1,5 +1,17 @@
 import { setupControllers } from "./app/controller-setup.js";
 import { createExternalFileWatchController } from "./app/external-file-watch-controller.js";
+import {
+  applySavedModifiedOnly,
+  applySavedShowHiddenFiles,
+  applySavedSidebarWidth,
+  applySavedStatusBar,
+  applySavedTheme,
+  listenForThemeEvents,
+  syncSavedPreferencesToBackend,
+  toggleHiddenFiles as toggleHiddenFilesPref,
+  toggleModifiedOnly as toggleModifiedOnlyPref,
+  toggleStatusBar as toggleStatusBarPref,
+} from "./app/preferences.js";
 import { createRuntimeState, EVENTS } from "./app/runtime-state.js";
 import {
   clearAllSessions,
@@ -8,8 +20,7 @@ import {
   saveWindowSession,
 } from "./app/session-persistence.js";
 import { createSessionRestoreController } from "./app/session-restore.js";
-import { loadSidebarWidth } from "./app/sidebar-width-persistence.js";
-import { baseName } from "./app-utils.js";
+import { baseName } from "./utils/app-utils.js";
 import { createFindController } from "./search/find-controller.js";
 import { buildCollapsedFoldersFromExpanded } from "./sidebar/tree.js";
 import { recordNavigation } from "./tabs/navigation.js";
@@ -28,14 +39,14 @@ import {
   bindElements as bindElementsImported,
   bindUiEvents as bindUiEventsImported,
 } from "./ui/bindings-controller.js";
-import { createCodeMirrorController } from "./ui/codemirror-controller.js";
-import { createDiffController } from "./ui/diff-controller.js";
-import { createDiffMapController } from "./ui/diff-map-controller.js";
+import { createCodeMirrorController } from "./ui/editor/codemirror-controller.js";
+import { createDiffController } from "./ui/diff/controller.js";
+import { createDiffMapController } from "./ui/diff/map-controller.js";
 import {
   confirmDelete,
   confirmReloadExternalChange,
 } from "./ui/native-dialog.js";
-import { createScrollSyncController } from "./ui/scroll-sync.js";
+import { createScrollSyncController } from "./ui/scroll/sync.js";
 
 const { invoke } = window.__TAURI__.core;
 const { listen } = window.__TAURI__.event;
@@ -56,7 +67,6 @@ let tabController;
 let fileController;
 let editorController;
 let openPathsController;
-let dragDropController;
 let appEventsController;
 let scrollSyncController;
 let externalFileWatchController;
@@ -81,7 +91,6 @@ const codeJarController = createCodeMirrorController({
   tabController,
   fileController,
   openPathsController,
-  dragDropController,
   appEventsController,
 } = setupControllers({
   state,
@@ -145,37 +154,6 @@ const codeJarController = createCodeMirrorController({
   },
 }));
 
-function openFind() {
-  findController?.open();
-}
-
-function applySavedTheme() {
-  const saved = localStorage.getItem("teex-theme");
-  if (saved === "light" || saved === "dark") {
-    document.documentElement.setAttribute("data-theme", saved);
-  } else {
-    document.documentElement.removeAttribute("data-theme");
-  }
-}
-
-function applySavedSidebarWidth() {
-  state.sidebarWidth = loadSidebarWidth();
-}
-
-function applySavedStatusBar() {
-  state.statusBarVisible = localStorage.getItem("teex-status-bar") === "true";
-}
-
-function applySavedShowHiddenFiles() {
-  const saved = localStorage.getItem("teex-show-hidden-files");
-  state.showHiddenFiles = saved === null ? true : saved === "true";
-}
-
-function applySavedModifiedOnly() {
-  state.filterModifiedOnly =
-    localStorage.getItem("teex-filter-modified-only") === "true";
-}
-
 sessionRestoreController = createSessionRestoreController({
   state,
   invoke,
@@ -207,11 +185,11 @@ externalFileWatchController = createExternalFileWatchController({
 
 window.addEventListener("DOMContentLoaded", async () => {
   applySavedTheme();
-  applySavedSidebarWidth();
-  applySavedStatusBar();
-  applySavedShowHiddenFiles();
-  applySavedModifiedOnly();
-  bindElements();
+  applySavedSidebarWidth(state);
+  applySavedStatusBar(state);
+  applySavedShowHiddenFiles(state);
+  applySavedModifiedOnly(state);
+  bindElementsImported(el);
   findController = createFindController({ state, el });
   diffMapController = createDiffMapController({
     el,
@@ -225,46 +203,17 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   scrollSyncController = createScrollSyncController({ state, el });
   bindUiEvents();
-  await bindAppEvents();
-  await bootstrap();
+  await appEventsController.bindAppEvents();
+  await openPathsController.bootstrap();
   sessionSaveEnabled = true;
-  startPendingOpenPathPoller();
+  openPathsController.startPendingOpenPathPoller();
 
-  const savedTheme = localStorage.getItem("teex-theme");
-  if (savedTheme) {
-    invoke("set_theme", { theme: savedTheme }).catch(() => {});
-  }
+  syncSavedPreferencesToBackend(state, invoke);
+  listenForThemeEvents(listen);
 
-  invoke("set_show_hidden_files_checked", {
-    checked: state.showHiddenFiles,
-  }).catch(() => {});
-
-  invoke("set_show_modified_only_checked", {
-    checked: state.filterModifiedOnly,
-  }).catch(() => {});
-
-  listen("teex://set-theme", (event) => {
-    const theme = event.payload;
-    localStorage.setItem("teex-theme", theme);
-    if (theme === "light" || theme === "dark") {
-      document.documentElement.setAttribute("data-theme", theme);
-    } else {
-      document.documentElement.removeAttribute("data-theme");
-    }
-  });
-
-  listen("teex://toggle-hidden-files", () => {
-    toggleHiddenFiles();
-  });
-
-  listen("teex://toggle-modified-only", () => {
-    toggleModifiedOnly();
-  });
+  listen("teex://toggle-hidden-files", () => toggleHiddenFiles());
+  listen("teex://toggle-modified-only", () => toggleModifiedOnly());
 });
-
-function bindElements() {
-  return bindElementsImported(el);
-}
 
 function bindUiEvents() {
   return bindUiEventsImported({
@@ -291,24 +240,12 @@ function bindUiEvents() {
   });
 }
 
+function openFind() {
+  findController?.open();
+}
+
 function markSidebarTreeDirty() {
   sidebarController.markTreeDirty();
-}
-
-async function bindAppEvents() {
-  await appEventsController.bindAppEvents();
-}
-
-async function _bindWindowDragDropEvents() {
-  return dragDropController.bindWindowDragDropEvents();
-}
-
-async function bootstrap() {
-  await openPathsController.bootstrap();
-}
-
-async function _drainPendingOpenPaths() {
-  return openPathsController.drainPendingOpenPaths();
 }
 
 async function handleOsOpenFiles(paths) {
@@ -331,13 +268,8 @@ function setDropOverlayVisible(visible) {
   if (!el.dropOverlay || state.dropOverlayVisible === visible) {
     return;
   }
-
   state.dropOverlayVisible = visible;
   el.dropOverlay.classList.toggle("hidden", !visible);
-}
-
-function startPendingOpenPathPoller() {
-  openPathsController.startPendingOpenPathPoller();
 }
 
 async function openFile(path) {
@@ -436,10 +368,6 @@ async function openFileAsTab(path) {
   invoke("add_recent_file", { path }).catch(() => {});
 }
 
-async function _openFileInTabs(path) {
-  await tabController.openFileInTabs(path);
-}
-
 function navigateBack() {
   tabController.navigateBack();
 }
@@ -466,12 +394,13 @@ async function closeTab(index) {
 
 async function closeTabByPath(path) {
   if (hasTabSession()) {
-    const index = findOpenTabIndexByPath(path);
+    const index = state.openFiles.findIndex((t) => t.path === path);
     if (index !== -1) {
       await closeTab(index);
     }
   } else if (state.activePath === path) {
-    await closeSingleActiveFile();
+    await tabController.closeSingleActiveFile();
+    scrollSyncController?.afterContextCleared();
   }
 }
 
@@ -487,11 +416,6 @@ async function handleContextMenuDelete(path) {
   } catch (err) {
     console.error("Failed to move file to trash:", err);
   }
-}
-
-async function closeSingleActiveFile() {
-  await tabController.closeSingleActiveFile();
-  scrollSyncController?.afterContextCleared();
 }
 
 async function closeActiveFileOrWindow() {
@@ -515,37 +439,17 @@ function onAfterToggleMarkdownMode() {
 }
 
 function toggleStatusBar() {
-  state.statusBarVisible = !state.statusBarVisible;
-  localStorage.setItem(
-    "teex-status-bar",
-    state.statusBarVisible ? "true" : "false",
-  );
-  render();
+  toggleStatusBarPref(state, render);
 }
 
 function toggleHiddenFiles() {
-  state.showHiddenFiles = !state.showHiddenFiles;
-  localStorage.setItem(
-    "teex-show-hidden-files",
-    state.showHiddenFiles ? "true" : "false",
+  toggleHiddenFilesPref(state, invoke, () =>
+    fileController.refreshOpenFolderEntries(),
   );
-  invoke("set_show_hidden_files_checked", {
-    checked: state.showHiddenFiles,
-  }).catch(() => {});
-  fileController.refreshOpenFolderEntries();
 }
 
 function toggleModifiedOnly() {
-  state.filterModifiedOnly = !state.filterModifiedOnly;
-  localStorage.setItem(
-    "teex-filter-modified-only",
-    state.filterModifiedOnly ? "true" : "false",
-  );
-  invoke("set_show_modified_only_checked", {
-    checked: state.filterModifiedOnly,
-  }).catch(() => {});
-  sidebarController.markTreeDirty();
-  render();
+  toggleModifiedOnlyPref(state, invoke, markSidebarTreeDirty, render);
 }
 
 function toggleSidebarVisibility() {
@@ -554,10 +458,6 @@ function toggleSidebarVisibility() {
 
 async function saveNow() {
   await editorController.saveNow();
-}
-
-function _isEditable() {
-  return editorController.isEditable();
 }
 
 function hasTabSession() {

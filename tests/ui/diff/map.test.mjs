@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { before, describe, it, mock } from "node:test";
 
-import { buildDiffTicks, tickTop } from "../../src/ui/diff-map-math.js";
+import { buildDiffTicks, tickTop } from "../../../src/ui/diff/map-math.js";
 
 describe("buildDiffTicks", () => {
   it("returns empty array for empty annotations", () => {
@@ -222,7 +222,7 @@ before(() => {
 });
 
 const { createDiffMapController } = await import(
-  "../../src/ui/diff-map-controller.js"
+  "../../../src/ui/diff/map-controller.js"
 );
 
 function makeControllerMocks() {

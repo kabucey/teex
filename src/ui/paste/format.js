@@ -1,4 +1,4 @@
-import { fileExtension } from "../app-utils.js";
+import { fileExtension } from "../../utils/app-utils.js";
 
 const JSON_EXTENSIONS = new Set(["json", "jsonc", "geojson"]);
 const YAML_EXTENSIONS = new Set(["yaml", "yml"]);

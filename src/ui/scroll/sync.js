@@ -8,7 +8,7 @@ import {
   getPreviewBlocks,
   getScrollRatio,
   scrollTopFromRatio,
-} from "./scroll-math.js";
+} from "./math.js";
 import {
   findPreviewBlockBySnippet,
   findSourceIndexBySnippet,
@@ -16,7 +16,7 @@ import {
   getEditorTopTextSnippet,
   getPreviewTopTextSnippet,
   sourceIndexToLineNumber,
-} from "./scroll-text-anchor.js";
+} from "./text-anchor.js";
 
 function isNonTabFileMemoryMode(state) {
   return !Array.isArray(state.openFiles) || state.openFiles.length === 0;

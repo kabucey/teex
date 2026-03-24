@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
-import { insertFormattedPaste } from "../../src/ui/paste-insert.js";
+import { insertFormattedPaste } from "../../../src/ui/paste/insert.js";
 
 let execCommandCalls;
 

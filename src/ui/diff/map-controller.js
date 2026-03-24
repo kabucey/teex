@@ -1,4 +1,4 @@
-import { buildDiffTicks, tickTop } from "./diff-map-math.js";
+import { buildDiffTicks, tickTop } from "./map-math.js";
 
 const TICK_HEIGHT = 3;
 

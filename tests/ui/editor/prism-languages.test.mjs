@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { prismLanguageForExtension } from "../../src/ui/prism-languages.js";
+import { prismLanguageForExtension } from "../../../src/ui/editor/prism-languages.js";
 
 test("maps JavaScript extensions to 'javascript'", () => {
   assert.equal(prismLanguageForExtension("js"), "javascript");

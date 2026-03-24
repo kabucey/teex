@@ -4,7 +4,7 @@ import test from "node:test";
 import {
   detectStructuredPasteKind,
   formatStructuredPasteText,
-} from "../../src/ui/paste-format.js";
+} from "../../../src/ui/paste/format.js";
 
 test("detects JSON by extension", () => {
   assert.equal(

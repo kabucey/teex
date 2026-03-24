@@ -1,4 +1,4 @@
-import { getPreviewBlocks } from "./scroll-math.js";
+import { getPreviewBlocks } from "./math.js";
 
 export function normalizeSearchText(value) {
   return String(value || "")

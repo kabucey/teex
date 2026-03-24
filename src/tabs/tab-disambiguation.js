@@ -1,4 +1,4 @@
-import { baseName, dirName } from "../app-utils.js";
+import { baseName, dirName } from "../utils/app-utils.js";
 
 /**
  * Returns a Map<number, string> — tab index → folder suffix to display.

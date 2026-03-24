@@ -3,7 +3,7 @@ import { createSidebarController } from "../sidebar/controller.js";
 import { createTabController } from "../tabs/controller.js";
 import { createCrossWindowDragController } from "../tabs/cross-window-drag-controller.js";
 import { createTabTransferController } from "../tabs/transfer-controller.js";
-import { createEditorController } from "../ui/editor-controller.js";
+import { createEditorController } from "../ui/editor/controller.js";
 import { createUiRenderer } from "../ui/renderer.js";
 import { createDragDropController } from "./drag-drop-controller.js";
 import { createAppEventsController } from "./events-controller.js";

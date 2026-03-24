@@ -5,7 +5,7 @@ import {
   extractDragDropPaths,
   hasFileDragData,
   normalizeIncomingPaths,
-} from "../src/path-input.js";
+} from "../../src/utils/path-input.js";
 
 test("normalizeIncomingPaths filters blanks, non-strings, and duplicates", () => {
   assert.deepEqual(normalizeIncomingPaths(["/a", "", " ", "/a", 123, "/b"]), [
