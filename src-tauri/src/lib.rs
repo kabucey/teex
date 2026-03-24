@@ -38,22 +38,23 @@ mod window;
 
 use constants::*;
 
-use window::{open_in_file_manager, show_sidebar_context_menu};
 use files::{
     format_structured_text, list_project_entries, read_text_file, trash_file, write_text_file,
 };
 use git::git_diff;
 use git::git_status;
-use launch::{
-    categorize_paths, get_launch_context, open_paths_in_new_window,
-    queue_open_paths_for_window, take_pending_open_paths,
-};
 #[cfg(target_os = "macos")]
 use launch::queue_open_paths;
+use launch::{
+    categorize_paths, get_launch_context, open_paths_in_new_window, queue_open_paths_for_window,
+    take_pending_open_paths,
+};
 use menu_events::{emit_to_window, handle_app_menu_event, set_menu_item_enabled};
 #[cfg(test)]
 use menu_events::{next_transfer_request_id, window_event};
-use path_utils::{file_kind, is_dotfile_config, is_text_like, path_to_string, should_traverse_with_hidden};
+use path_utils::{
+    file_kind, is_dotfile_config, is_text_like, path_to_string, should_traverse_with_hidden,
+};
 use recent_files::{add_recent_file, add_recent_folder};
 use tabs::{
     cancel_cross_window_drag_hover, cleanup_drag_entries_for_window, create_window_from_drag,
@@ -66,6 +67,7 @@ use watchers::{
     install_project_file_watch, install_project_folder_watch,
 };
 use window::set_window_title;
+use window::{open_in_file_manager, show_sidebar_context_menu};
 
 struct FocusTracker {
     label: Mutex<Option<String>>,

@@ -35,7 +35,8 @@ pub(crate) const EVENT_OPEN_RECENT_FOLDER: &str = "teex://open-recent-folder";
 pub(crate) const MENU_OPEN_FILE: &str = "open_file";
 pub(crate) const MENU_OPEN_FOLDER: &str = "open_folder";
 pub(crate) const MENU_NEW_WINDOW: &str = "new_window";
-pub(crate) const MENU_MERGE_ALL_WINDOWS_INTO_THIS_WINDOW: &str = "merge_all_windows_into_this_window";
+pub(crate) const MENU_MERGE_ALL_WINDOWS_INTO_THIS_WINDOW: &str =
+    "merge_all_windows_into_this_window";
 pub(crate) const MENU_INSTALL_CLI: &str = "install_cli";
 pub(crate) const MENU_SET_DEFAULT_MARKDOWN: &str = "set_default_markdown";
 pub(crate) const MENU_CLOSE_ACTIVE_FILE: &str = "close_active_file";

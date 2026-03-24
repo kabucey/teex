@@ -1,7 +1,7 @@
-use crate::menu_events::emit_to_window;
 use crate::constants::EVENT_CONTEXT_MENU_DELETE;
-use tauri::Manager;
+use crate::menu_events::emit_to_window;
 use tauri::menu::{MenuBuilder, MenuItem, PredefinedMenuItem};
+use tauri::Manager;
 use tauri_plugin_opener::OpenerExt;
 
 #[tauri::command]
