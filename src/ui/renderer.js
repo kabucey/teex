@@ -87,7 +87,10 @@ export function createUiRenderer({
       return;
     }
 
-    if (state.activeKind === "code") {
+    if (
+      state.activeKind === "code" ||
+      (state.activeKind === "markdown" && state.markdownViewMode === "edit")
+    ) {
       el.editor.classList.add("hidden");
       el.preview.classList.add("hidden");
       const ext = fileExtension(state.activePath) || null;

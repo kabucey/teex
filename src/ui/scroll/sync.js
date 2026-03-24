@@ -166,9 +166,10 @@ export function createScrollSyncController({ state, el }) {
       return;
     }
 
-    const maxScrollTop = getMaxScrollTop(el.editor);
-    const lineHeight = getEditorLineHeight(el.editor);
-    const editorScrollTop = el.editor?.scrollTop || 0;
+    const editorEl = activeEditorElement();
+    const maxScrollTop = getMaxScrollTop(editorEl);
+    const lineHeight = getEditorLineHeight(editorEl);
+    const editorScrollTop = editorEl?.scrollTop || 0;
     const lineValue = lineHeight > 0 ? editorScrollTop / lineHeight : 0;
     pendingToggleAnchor = {
       fromMode: "edit",
@@ -233,8 +234,9 @@ export function createScrollSyncController({ state, el }) {
   }
 
   function alignEditToPreviewAnchor(anchor) {
-    const maxScrollTop = getMaxScrollTop(el.editor);
-    const lineHeight = getEditorLineHeight(el.editor);
+    const editorEl = activeEditorElement();
+    const maxScrollTop = getMaxScrollTop(editorEl);
+    const lineHeight = getEditorLineHeight(editorEl);
     const rawMatchedIndex = findSourceIndexBySnippet(
       state.content,
       anchor.textSnippet,

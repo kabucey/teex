@@ -14,7 +14,7 @@ export function createDiffController({
   async function refresh() {
     const path = state.activePath;
 
-    if (!path || state.activeKind !== "code") {
+    if (!path || !codeEditorController.isAttached()) {
       clearDiff();
       return;
     }

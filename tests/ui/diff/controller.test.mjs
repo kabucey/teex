@@ -24,9 +24,12 @@ function makeMocks(overrides = {}) {
   const setDiffDecorations = mock.fn();
   const clearDiffDecorations = mock.fn();
 
+  const isAttached = overrides.isAttached ?? true;
+
   const codeEditorController = {
     setDiffDecorations,
     clearDiffDecorations,
+    isAttached: () => isAttached,
   };
 
   return {
@@ -81,17 +84,42 @@ describe("createDiffController", () => {
     assert.equal(clearDiffDecorations.mock.calls.length, 1);
   });
 
-  it("refresh clears decorations when activeKind is not code", async () => {
+  it("refresh clears decorations when code editor is not attached", async () => {
     const { state, invoke, codeEditorController, clearDiffDecorations } =
       makeMocks({
         state: { activePath: "/repo/file.md", activeKind: "markdown" },
       });
+    codeEditorController.isAttached = () => false;
     const ctrl = createDiffController({ state, invoke, codeEditorController });
 
     await ctrl.refresh();
 
     assert.equal(invoke.mock.calls.length, 0);
     assert.equal(clearDiffDecorations.mock.calls.length, 1);
+  });
+
+  it("refresh fetches diffs for markdown when code editor is attached", async () => {
+    const annotations = [{ line: 3, diff_type: "added" }];
+    const { state, invoke, codeEditorController, setDiffDecorations } =
+      makeMocks({
+        state: { activePath: "/repo/readme.md", activeKind: "markdown" },
+        invokeResults: [annotations],
+      });
+    codeEditorController.isAttached = () => true;
+    const ctrl = createDiffController({ state, invoke, codeEditorController });
+
+    await ctrl.refresh();
+
+    assert.equal(invoke.mock.calls.length, 1);
+    assert.deepEqual(invoke.mock.calls[0].arguments, [
+      "git_diff",
+      { path: "/repo/readme.md" },
+    ]);
+    assert.equal(setDiffDecorations.mock.calls.length, 1);
+    assert.deepEqual(
+      setDiffDecorations.mock.calls[0].arguments[0],
+      annotations,
+    );
   });
 
   it("refresh discards stale results when path changes", async () => {

@@ -7,7 +7,6 @@ import {
   EditorState,
   EditorView,
   HighlightStyle,
-
   highlightSpecialChars,
   history,
   historyKeymap,
