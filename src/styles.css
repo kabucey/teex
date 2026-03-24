@@ -768,11 +768,10 @@ input[type="text"] {
 }
 
 .code-editor .cm-selectionBackground {
-  background: rgba(255, 200, 50, 0.35) !important;
+  background: rgba(100, 150, 255, 0.2) !important;
 }
 
-.code-editor .cm-searchMatch.cm-searchMatch-selected,
-.code-editor .cm-selectionBackground {
+.code-editor .cm-searchMatch.cm-searchMatch-selected {
   outline: 1px solid rgba(255, 165, 0, 0.9);
 }
 
