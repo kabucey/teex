@@ -1,10 +1,11 @@
-import { buildDiffTicks, tickTop } from "./map-math.js";
+import { buildDiffTicks, tickHeight, tickTop } from "./map-math.js";
 
-const TICK_HEIGHT = 3;
+const MIN_TICK_HEIGHT = 3;
 
 export function createDiffMapController({ el, codeEditorController }) {
   let tickEntries = [];
   let cachedScroller = null;
+  let cachedTotalLines = 0;
   let rafId = null;
 
   const container = document.createElement("div");
@@ -27,13 +28,18 @@ export function createDiffMapController({ el, codeEditorController }) {
   });
 
   function reposition() {
-    if (!cachedScroller) return;
+    if (!cachedScroller || cachedTotalLines < 1) return;
     const trackHeight = cachedScroller.clientHeight;
     if (trackHeight <= 0) return;
 
     for (const { el: tickEl, fraction, height } of tickEntries) {
-      const h = Math.max(TICK_HEIGHT, height * 3);
-      tickEl.style.top = `${tickTop(fraction, trackHeight, h)}px`;
+      const h = tickHeight(
+        height,
+        cachedTotalLines,
+        trackHeight,
+        MIN_TICK_HEIGHT,
+      );
+      tickEl.style.top = `${tickTop(fraction, trackHeight)}px`;
       tickEl.style.height = `${h}px`;
     }
   }
@@ -58,6 +64,7 @@ export function createDiffMapController({ el, codeEditorController }) {
   function update(annotations, totalLines) {
     container.classList.remove("hidden");
     cachedScroller = el.codeEditor.querySelector(".cm-scroller");
+    cachedTotalLines = totalLines;
     build(buildDiffTicks(annotations, totalLines));
     reposition();
     if (cachedScroller) {
@@ -75,6 +82,7 @@ export function createDiffMapController({ el, codeEditorController }) {
     container.textContent = "";
     tickEntries = [];
     cachedScroller = null;
+    cachedTotalLines = 0;
     observer.disconnect();
   }
 

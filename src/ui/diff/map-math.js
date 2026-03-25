@@ -5,11 +5,10 @@ export function buildDiffTicks(annotations, totalLines) {
     .filter((a) => a.line >= 1 && a.line <= totalLines)
     .sort((a, b) => a.line - b.line);
 
-  const divisor = Math.max(1, totalLines - 1);
   const ticks = [];
 
   for (const ann of valid) {
-    const fraction = (ann.line - 1) / divisor;
+    const fraction = (ann.line - 1) / totalLines;
     const prev = ticks[ticks.length - 1];
 
     if (
@@ -33,7 +32,12 @@ export function buildDiffTicks(annotations, totalLines) {
   return ticks;
 }
 
-export function tickTop(fraction, trackHeight, tickHeight) {
+export function tickTop(fraction, trackHeight) {
   const clamped = Math.max(0, Math.min(1, fraction));
-  return clamped * (trackHeight - tickHeight);
+  return clamped * trackHeight;
+}
+
+export function tickHeight(lineCount, totalLines, trackHeight, minHeight) {
+  if (totalLines < 1) return minHeight;
+  return Math.max(minHeight, (lineCount / totalLines) * trackHeight);
 }

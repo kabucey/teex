@@ -62,11 +62,7 @@ pub(crate) fn get_system_folder_icon() -> Option<String> {
         }
 
         let path = ns_string("/System")?;
-        let icon = msg1_ptr(
-            workspace,
-            sel_registerName(c"iconForFile:".as_ptr()),
-            path,
-        );
+        let icon = msg1_ptr(workspace, sel_registerName(c"iconForFile:".as_ptr()), path);
         if icon.is_null() {
             return None;
         }

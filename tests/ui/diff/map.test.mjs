@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { before, describe, it, mock } from "node:test";
 
-import { buildDiffTicks, tickTop } from "../../../src/ui/diff/map-math.js";
+import {
+  buildDiffTicks,
+  tickHeight,
+  tickTop,
+} from "../../../src/ui/diff/map-math.js";
 
 describe("buildDiffTicks", () => {
   it("returns empty array for empty annotations", () => {
@@ -16,14 +20,14 @@ describe("buildDiffTicks", () => {
     assert.equal(result[0].line, 1);
   });
 
-  it("returns fraction 1 for last line", () => {
+  it("returns fraction (N-1)/N for last line", () => {
     const result = buildDiffTicks([{ line: 100, diff_type: "added" }], 100);
-    assert.equal(result[0].fraction, 1);
+    assert.equal(result[0].fraction, 0.99);
   });
 
   it("computes correct fraction for middle line", () => {
-    const result = buildDiffTicks([{ line: 51, diff_type: "added" }], 101);
-    assert.ok(Math.abs(result[0].fraction - 0.5) < 0.001);
+    const result = buildDiffTicks([{ line: 51, diff_type: "added" }], 100);
+    assert.equal(result[0].fraction, 0.5);
   });
 
   it("filters lines below 1", () => {
@@ -137,23 +141,41 @@ describe("buildDiffTicks", () => {
 
 describe("tickTop", () => {
   it("returns 0 for fraction 0", () => {
-    assert.equal(tickTop(0, 500, 3), 0);
+    assert.equal(tickTop(0, 500), 0);
   });
 
-  it("returns trackHeight - tickHeight for fraction 1", () => {
-    assert.equal(tickTop(1, 500, 3), 497);
+  it("returns trackHeight for fraction 1", () => {
+    assert.equal(tickTop(1, 500), 500);
   });
 
   it("returns proportional value for mid fraction", () => {
-    assert.equal(tickTop(0.5, 500, 3), 248.5);
+    assert.equal(tickTop(0.5, 500), 250);
   });
 
   it("clamps negative fraction to 0", () => {
-    assert.equal(tickTop(-0.1, 500, 3), 0);
+    assert.equal(tickTop(-0.1, 500), 0);
   });
 
-  it("clamps fraction above 1", () => {
-    assert.equal(tickTop(1.5, 500, 3), 497);
+  it("clamps fraction above 1 to trackHeight", () => {
+    assert.equal(tickTop(1.5, 500), 500);
+  });
+});
+
+describe("tickHeight", () => {
+  it("returns proportional height for multi-line hunk", () => {
+    assert.equal(tickHeight(60, 1000, 600, 3), 36);
+  });
+
+  it("returns minHeight when proportional height is smaller", () => {
+    assert.equal(tickHeight(1, 1000, 600, 3), 3);
+  });
+
+  it("returns full trackHeight when hunk spans entire file", () => {
+    assert.equal(tickHeight(100, 100, 500, 3), 500);
+  });
+
+  it("returns minHeight for totalLines of 0", () => {
+    assert.equal(tickHeight(1, 0, 500, 3), 3);
   });
 });
 
@@ -333,6 +355,19 @@ describe("createDiffMapController", () => {
     // Click on container itself (no data-line)
     map._fire("click", { target: map });
     assert.equal(scrollToLine.mock.calls.length, 0);
+  });
+
+  it("positions ticks proportionally to totalLines", () => {
+    const { el, codeEditorController, scroller } = makeControllerMocks();
+    scroller.clientHeight = 600;
+    const ctrl = createDiffMapController({ el, codeEditorController });
+    ctrl.update([{ line: 1, diff_type: "added" }], 100);
+    const map = el.editorState.children[0];
+    const tick = map.children[0];
+    // line 1 of 100: fraction=0/100=0, top=0*600=0
+    assert.equal(tick.style.top, "0px");
+    // height = max(3, 1/100*600) = max(3, 6) = 6
+    assert.equal(tick.style.height, "6px");
   });
 
   it("destroy removes the element", () => {
