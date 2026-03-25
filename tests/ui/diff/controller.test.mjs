@@ -165,4 +165,75 @@ describe("createDiffController", () => {
 
     assert.equal(clearDiffDecorations.mock.calls.length, 1);
   });
+
+  it("refreshNow calls invoke immediately without debounce", async () => {
+    const { state, invoke, codeEditorController } = makeMocks();
+    const ctrl = createDiffController({ state, invoke, codeEditorController });
+
+    const promise = ctrl.refreshNow();
+
+    // invoke called synchronously (no 300ms wait)
+    assert.equal(invoke.mock.calls.length, 1);
+    await promise;
+  });
+
+  it("refreshNow applies cached annotations before fetch completes", async () => {
+    const annotations = [{ line: 2, diff_type: "added" }];
+    const { state, invoke, codeEditorController, setDiffDecorations } =
+      makeMocks({ invokeResults: [annotations, annotations] });
+    const ctrl = createDiffController({ state, invoke, codeEditorController });
+
+    // First refresh populates the cache
+    await ctrl.refresh();
+    assert.equal(setDiffDecorations.mock.calls.length, 1);
+
+    // refreshNow should apply cached annotations immediately
+    const promise = ctrl.refreshNow();
+    // Cache applied synchronously before await
+    assert.equal(setDiffDecorations.mock.calls.length, 2);
+    assert.deepEqual(
+      setDiffDecorations.mock.calls[1].arguments[0],
+      annotations,
+    );
+    await promise;
+  });
+
+  it("refresh stores results in cache for later use", async () => {
+    const ann1 = [{ line: 1, diff_type: "added" }];
+    const ann2 = [{ line: 1, diff_type: "added" }];
+    const { state, invoke, codeEditorController, setDiffDecorations } =
+      makeMocks({ invokeResults: [ann1, ann2] });
+    const ctrl = createDiffController({ state, invoke, codeEditorController });
+
+    await ctrl.refresh();
+    assert.equal(setDiffDecorations.mock.calls.length, 1);
+
+    // Switch to same file again — refreshNow uses cache
+    const promise = ctrl.refreshNow();
+    assert.equal(setDiffDecorations.mock.calls.length, 2);
+    assert.deepEqual(setDiffDecorations.mock.calls[1].arguments[0], ann1);
+    await promise;
+  });
+
+  it("invalidate clears cached annotations for a path", async () => {
+    const annotations = [{ line: 1, diff_type: "added" }];
+    const { state, invoke, codeEditorController, setDiffDecorations } =
+      makeMocks({ invokeResults: [annotations, annotations] });
+    const ctrl = createDiffController({ state, invoke, codeEditorController });
+
+    // Populate cache
+    await ctrl.refresh();
+    assert.equal(setDiffDecorations.mock.calls.length, 1);
+
+    // Invalidate
+    ctrl.invalidate("/repo/file.js");
+
+    // refreshNow should NOT apply cached annotations (cache was cleared)
+    const promise = ctrl.refreshNow();
+    // Only the invoke call happens, no immediate cache application
+    assert.equal(setDiffDecorations.mock.calls.length, 1);
+    await promise;
+    // After await, the fresh fetch result is applied
+    assert.equal(setDiffDecorations.mock.calls.length, 2);
+  });
 });

@@ -70,19 +70,28 @@ pub(crate) fn find_git_root(path: &Path) -> Option<std::path::PathBuf> {
     }
 }
 
-fn is_untracked(git_root: &Path, rel_path: &str) -> bool {
+fn is_tracked(git_root: &Path, rel_path: &str) -> bool {
     let output = Command::new("git")
-        .args(["status", "--porcelain", "--", rel_path])
+        .args(["ls-files", "--", rel_path])
         .current_dir(git_root)
         .output();
 
     match output {
-        Ok(o) => {
-            let stdout = String::from_utf8_lossy(&o.stdout);
-            stdout.lines().any(|l| l.starts_with("??"))
-        }
+        Ok(o) => !String::from_utf8_lossy(&o.stdout).trim().is_empty(),
         Err(_) => false,
     }
+}
+
+fn all_lines_added(file_path: &Path) -> Result<Vec<LineDiff>, String> {
+    let content =
+        std::fs::read_to_string(file_path).map_err(|e| format!("Unable to read file: {e}"))?;
+    let line_count = content.lines().count().max(1);
+    Ok((1..=line_count)
+        .map(|line| LineDiff {
+            line,
+            diff_type: "added".to_string(),
+        })
+        .collect())
 }
 
 #[tauri::command]
@@ -104,30 +113,24 @@ pub(crate) fn git_diff(path: String) -> Result<Vec<LineDiff>, String> {
         .to_string_lossy()
         .to_string();
 
-    // Untracked files: every line is "added"
-    if is_untracked(&git_root, &rel_path) {
-        let content =
-            std::fs::read_to_string(file_path).map_err(|e| format!("Unable to read file: {e}"))?;
-        let line_count = content.lines().count().max(1);
-        let result: Vec<LineDiff> = (1..=line_count)
-            .map(|line| LineDiff {
-                line,
-                diff_type: "added".to_string(),
-            })
-            .collect();
-        return Ok(result);
-    }
-
+    // Try diff first — handles the common case (tracked + modified) in one spawn
     let output = Command::new("git")
         .args(["diff", "HEAD", "--unified=0", "--", &rel_path])
         .current_dir(&git_root)
         .output()
         .map_err(|e| format!("Failed to run git diff: {e}"))?;
 
-    if !output.status.success() {
-        return Ok(Vec::new());
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if !stdout.is_empty() {
+            return Ok(parse_unified_diff(&stdout));
+        }
     }
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(parse_unified_diff(&stdout))
+    // Diff was empty — check if untracked (only case needing a second spawn)
+    if !is_tracked(&git_root, &rel_path) {
+        return all_lines_added(file_path);
+    }
+
+    Ok(Vec::new())
 }
