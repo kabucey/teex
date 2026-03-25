@@ -59,6 +59,7 @@ export function createRuntimeState() {
       showHiddenFiles: true,
       filterModifiedOnly: false,
       gitStatusMap: {},
+      folderIconUrl: null,
     },
     el: {},
     sidebarRenderState: {

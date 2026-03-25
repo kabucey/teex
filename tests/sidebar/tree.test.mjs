@@ -275,3 +275,51 @@ test("renderTreeHtml works without gitStatusMap argument (backward compat)", () 
   assert.match(html, /project-item/);
   assert.doesNotMatch(html, /git-badge/);
 });
+
+test("renderTreeHtml renders img.folder-icon when folderIconUrl is provided", () => {
+  const tree = buildEntryTree([
+    { path: "/root/docs/guide.md", relPath: "docs/guide.md" },
+  ]);
+  const html = renderTreeHtml(
+    tree,
+    0,
+    new Set(),
+    {},
+    "data:image/png;base64,AAAA",
+  );
+
+  assert.match(html, /<img class="folder-icon"/);
+  assert.match(html, /src="data:image\/png;base64,AAAA"/);
+  assert.doesNotMatch(html, /<span class="folder-icon"/);
+});
+
+test("renderTreeHtml renders span.folder-icon fallback when folderIconUrl is null", () => {
+  const tree = buildEntryTree([
+    { path: "/root/docs/guide.md", relPath: "docs/guide.md" },
+  ]);
+  const html = renderTreeHtml(tree, 0, new Set(), {}, null);
+
+  assert.match(html, /<span class="folder-icon"/);
+  assert.doesNotMatch(html, /<img class="folder-icon"/);
+});
+
+test("renderTreeHtml passes folderIconUrl to nested folders", () => {
+  const tree = buildEntryTree([
+    { path: "/root/docs/api/ref.md", relPath: "docs/api/ref.md" },
+  ]);
+  const html = renderTreeHtml(
+    tree,
+    0,
+    new Set(),
+    {},
+    "data:image/png;base64,TEST",
+  );
+
+  const imgCount = (html.match(/<img class="folder-icon"/g) || []).length;
+  assert.equal(
+    imgCount,
+    2,
+    "both docs and docs/api folders should use img icon",
+  );
+  assert.doesNotMatch(html, /<span class="folder-icon"/);
+});

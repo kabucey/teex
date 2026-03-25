@@ -150,6 +150,7 @@ export function createSidebarController({
         0,
         state.collapsedFolders,
         augmentedGitMap,
+        state.folderIconUrl,
       );
       bindSidebarItemEvents({
         el,

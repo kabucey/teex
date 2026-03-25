@@ -106,6 +106,7 @@ export function renderTreeHtml(
   depth,
   collapsedFolders,
   gitStatusMap = {},
+  folderIconUrl = null,
 ) {
   const folders = [...node.folders.values()].sort((a, b) =>
     a.name.localeCompare(b.name),
@@ -121,10 +122,19 @@ export function renderTreeHtml(
     const folderGitClass = folderStatus
       ? ` ${gitStatusClass(folderStatus)}`
       : "";
-    html += `<button class="folder-toggle${folderGitClass}" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}"><span class="disclosure" aria-hidden="true"></span><span class="folder-icon" aria-hidden="true"></span><span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
+    const iconEl = folderIconUrl
+      ? `<img class="folder-icon" src="${escapeAttr(folderIconUrl)}" aria-hidden="true" draggable="false">`
+      : `<span class="folder-icon" aria-hidden="true"></span>`;
+    html += `<button class="folder-toggle${folderGitClass}" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}"><span class="disclosure" aria-hidden="true"></span>${iconEl}<span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
     if (!isCollapsed) {
       html += `<div class="folder-children" style="--indent:${depth};">`;
-      html += renderTreeHtml(folder, depth + 1, collapsedFolders, gitStatusMap);
+      html += renderTreeHtml(
+        folder,
+        depth + 1,
+        collapsedFolders,
+        gitStatusMap,
+        folderIconUrl,
+      );
       html += `</div>`;
     }
   }

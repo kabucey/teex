@@ -26,6 +26,8 @@ mod constants;
 mod files;
 mod git;
 mod launch;
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(target_os = "macos")]
 mod macos;
 mod menu;
@@ -257,6 +259,26 @@ fn close_current_window(window: tauri::Window) -> Result<(), String> {
     window
         .close()
         .map_err(|e| format!("Unable to close window: {e}"))
+}
+
+#[tauri::command]
+fn get_folder_icon() -> Option<String> {
+    get_folder_icon_impl()
+}
+
+#[cfg(target_os = "macos")]
+fn get_folder_icon_impl() -> Option<String> {
+    macos::icons::get_system_folder_icon()
+}
+
+#[cfg(target_os = "linux")]
+fn get_folder_icon_impl() -> Option<String> {
+    linux::icons::get_system_folder_icon()
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn get_folder_icon_impl() -> Option<String> {
+    None
 }
 
 #[cfg(test)]

@@ -192,6 +192,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   applySavedShowHiddenFiles(state);
   applySavedModifiedOnly(state);
   bindElementsImported(el);
+  invoke("get_folder_icon")
+    .then((url) => {
+      if (url) state.folderIconUrl = url;
+    })
+    .catch(() => {});
   findController = createFindController({
     state,
     el,
