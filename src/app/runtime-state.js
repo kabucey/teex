@@ -20,6 +20,7 @@ export const EVENTS = {
   toggleStatusBar: "teex://toggle-status-bar",
   toggleHiddenFiles: "teex://toggle-hidden-files",
   toggleModifiedOnly: "teex://toggle-modified-only",
+  toggleCollapseAllFolders: "teex://toggle-collapse-all-folders",
   find: "teex://find",
   mouseNavBack: "teex://mouse-nav-back",
   mouseNavForward: "teex://mouse-nav-forward",

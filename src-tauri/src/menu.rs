@@ -110,6 +110,13 @@ pub(crate) fn build_app_menu(
         false,
         Some("CmdOrCtrl+Shift+M"),
     )?;
+    let toggle_collapse_all_folders_item = MenuItem::with_id(
+        app,
+        MENU_TOGGLE_COLLAPSE_ALL_FOLDERS,
+        "Expand/Collapse All Folders",
+        true,
+        Some("CmdOrCtrl+Shift+E"),
+    )?;
 
     let theme_system_item =
         CheckMenuItem::with_id(app, MENU_THEME_SYSTEM, "System", true, true, None::<&str>)?;
@@ -162,6 +169,7 @@ pub(crate) fn build_app_menu(
             &toggle_status_bar_item,
             &show_hidden_files_item,
             &show_modified_only_item,
+            &toggle_collapse_all_folders_item,
             &PredefinedMenuItem::separator(app)?,
             &toggle_markdown_mode_item,
             &PredefinedMenuItem::separator(app)?,
