@@ -47,7 +47,6 @@ export function bindUiEvents({
   toggleStatusBar,
   toggleModifiedOnly,
   toggleCollapseAllFolders,
-  expandAllFolders,
   saveNow,
   hasTabSession,
   switchTab,
@@ -164,7 +163,7 @@ export function bindUiEvents({
       }
     }
 
-    if (event.metaKey && event.key.toLowerCase() === "e") {
+    if (event.metaKey && !event.shiftKey && event.key.toLowerCase() === "e") {
       event.preventDefault();
       toggleMarkdownMode();
     }
@@ -180,7 +179,7 @@ export function bindUiEvents({
       return;
     }
 
-    if (event.metaKey && event.shiftKey && event.code === "Backslash") {
+    if (event.metaKey && event.shiftKey && event.key.toLowerCase() === "e") {
       event.preventDefault();
       toggleCollapseAllFolders();
       return;
@@ -262,37 +261,9 @@ export function bindUiEvents({
     link.setAttribute("rel", "noreferrer noopener");
   });
 
-  {
-    const LONG_PRESS_MS = 400;
-    let pressTimer = null;
-    let didLongPress = false;
-
-    el.collapseToggleBtn.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) return;
-      didLongPress = false;
-      pressTimer = setTimeout(() => {
-        didLongPress = true;
-        pressTimer = null;
-        expandAllFolders();
-      }, LONG_PRESS_MS);
-    });
-
-    const cancelPress = () => {
-      if (pressTimer) {
-        clearTimeout(pressTimer);
-        pressTimer = null;
-      }
-    };
-
-    el.collapseToggleBtn.addEventListener("pointerup", cancelPress);
-    el.collapseToggleBtn.addEventListener("pointerleave", cancelPress);
-    el.collapseToggleBtn.addEventListener("pointercancel", cancelPress);
-
-    el.collapseToggleBtn.addEventListener("click", () => {
-      if (didLongPress) return;
-      toggleCollapseAllFolders();
-    });
-  }
+  el.collapseToggleBtn.addEventListener("click", () => {
+    toggleCollapseAllFolders();
+  });
 
   el.navBack.addEventListener("click", () => {
     if (typeof navigateBack === "function") {

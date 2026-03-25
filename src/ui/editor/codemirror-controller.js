@@ -141,12 +141,13 @@ function findSearchMatches(content, query) {
   if (!query) return [];
   const regex = new RegExp(escapeForRegExp(query), "gi");
   const matches = [];
-  let match;
-  while ((match = regex.exec(content)) !== null) {
+  let match = regex.exec(content);
+  while (match !== null) {
     matches.push({ from: match.index, to: match.index + match[0].length });
     if (match[0].length === 0) {
       regex.lastIndex += 1;
     }
+    match = regex.exec(content);
   }
   return matches;
 }
@@ -352,7 +353,11 @@ export function createCodeMirrorController({
   }
 
   function selectActiveSearchMatch() {
-    if (!view || activeSearchIndex < 0 || activeSearchIndex >= searchMatches.length) {
+    if (
+      !view ||
+      activeSearchIndex < 0 ||
+      activeSearchIndex >= searchMatches.length
+    ) {
       return;
     }
     const match = searchMatches[activeSearchIndex];

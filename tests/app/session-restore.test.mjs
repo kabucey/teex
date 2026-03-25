@@ -88,7 +88,6 @@ test("restoreLastSession restores folder expansion and tabs for folder sessions"
   const state = {
     entries: [{ path: "/project/a.md", relPath: "docs/a.md" }],
     collapsedFolders: new Set(),
-    savedCollapsedFolders: new Set(["x"]),
     openFiles: [{ path: "/project/a.md" }, { path: "/project/b.md" }],
   };
   const openedTabs = [];
@@ -146,7 +145,6 @@ test("restoreLastSession restores folder expansion and tabs for folder sessions"
 
   assert.deepEqual(openedTabs, ["/project/a.md", "/project/b.md"]);
   assert.deepEqual([...state.collapsedFolders], ["other"]);
-  assert.equal(state.savedCollapsedFolders, null);
   assert.equal(markedTreeDirty, 1);
   assert.equal(switchedTo, 1);
   assert.equal(renderCalls, 1);

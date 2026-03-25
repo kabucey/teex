@@ -18,7 +18,6 @@ function restoreFolderExpansionState({
     state.entries,
     expandedFolders,
   );
-  state.savedCollapsedFolders = null;
   markSidebarTreeDirty();
 }
 

@@ -72,20 +72,10 @@ export function createSidebarController({
     if (state.mode !== "folder") return;
     const allCollapsed = isAllCollapsed(state.entries, state.collapsedFolders);
     if (allCollapsed) {
-      state.collapsedFolders = state.savedCollapsedFolders ?? new Set();
-      state.savedCollapsedFolders = null;
+      state.collapsedFolders = new Set();
     } else {
-      state.savedCollapsedFolders = new Set(state.collapsedFolders);
       state.collapsedFolders = collectFolderPaths(state.entries);
     }
-    markTreeDirty();
-    renderSidebar();
-  }
-
-  function expandAllFolders() {
-    if (state.mode !== "folder") return;
-    state.collapsedFolders = new Set();
-    state.savedCollapsedFolders = null;
     markTreeDirty();
     renderSidebar();
   }
@@ -102,8 +92,8 @@ export function createSidebarController({
       );
       el.collapseToggleBtn.classList.toggle("expand", allCollapsed);
       const label = allCollapsed
-        ? "Expand folders (long press to expand all)"
-        : "Collapse all folders";
+        ? "Expand all folders (⇧⌘E)"
+        : "Collapse all folders (⇧⌘E)";
       el.collapseToggleBtn.title = label;
       el.collapseToggleBtn.setAttribute("aria-label", label);
     }
@@ -192,6 +182,5 @@ export function createSidebarController({
     markTreeDirty,
     renderSidebar,
     toggleCollapseAllFolders,
-    expandAllFolders,
   };
 }

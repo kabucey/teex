@@ -22,6 +22,7 @@ export function createAppEventsController({
   handleContextMenuDelete,
   openRecentFolder,
   toggleStatusBar,
+  toggleCollapseAllFolders,
   openFind,
   navigateBack,
   navigateForward,
@@ -86,6 +87,9 @@ export function createAppEventsController({
       }),
       listen(`${events.toggleStatusBar}/${label}`, () => {
         toggleStatusBar();
+      }),
+      listen(`${events.toggleCollapseAllFolders}/${label}`, () => {
+        toggleCollapseAllFolders();
       }),
       listen(`${events.find}/${label}`, () => {
         openFind();

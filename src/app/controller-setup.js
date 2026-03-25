@@ -182,6 +182,7 @@ export function setupControllers({
     handleContextMenuDelete: callbacks.handleContextMenuDelete,
     openRecentFolder: callbacks.openFolder,
     toggleStatusBar: callbacks.toggleStatusBar,
+    toggleCollapseAllFolders: callbacks.toggleCollapseAllFolders,
     openFind: callbacks.openFind,
     navigateBack: callbacks.navigateBack,
     navigateForward: callbacks.navigateForward,
