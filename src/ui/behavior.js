@@ -79,6 +79,10 @@ export function shouldCollapseHiddenSingleTabForSidebarOpen({
   return mode === "folder" && Number(openFilesCount) === 1;
 }
 
+export function isActiveDiffTab({ openFiles, activeTabIndex }) {
+  return openFiles?.[activeTabIndex]?.kind === "diff";
+}
+
 export function sidebarClickModifierAction(event) {
   const accel = event.metaKey || event.ctrlKey;
   if (!accel) {

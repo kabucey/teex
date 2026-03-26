@@ -1,4 +1,5 @@
 import {
+  isActiveDiffTab,
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
   shouldSidebarSingleClickIgnoreSamePath,
@@ -134,6 +135,16 @@ export function bindSidebarItemEvents({
 
         if (shouldCapturePreviousSingleTab) {
           rememberSidebarPreviousSingleTab(snapshotActiveFileAsTransferTab());
+        }
+
+        if (
+          isActiveDiffTab({
+            openFiles: state.openFiles,
+            activeTabIndex: state.activeTabIndex,
+          })
+        ) {
+          await openFolderEntryInTabs(path);
+          return;
         }
 
         if (

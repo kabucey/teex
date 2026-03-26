@@ -5,6 +5,7 @@ import {
   getSidebarSelectedPath,
   getSingleFileUiOpenMode,
   hasActiveContent,
+  isActiveDiffTab,
   isTextInputActive,
   isUntitledTab,
   shouldCapturePreviousSingleFolderFile,
@@ -468,6 +469,35 @@ test("hasActiveContent returns false for folder with no file open", () => {
     }),
     false,
   );
+});
+
+test("isActiveDiffTab returns true when active tab is a diff", () => {
+  assert.equal(
+    isActiveDiffTab({
+      openFiles: [{ kind: "markdown" }, { kind: "diff" }],
+      activeTabIndex: 1,
+    }),
+    true,
+  );
+});
+
+test("isActiveDiffTab returns false when active tab is a regular file", () => {
+  assert.equal(
+    isActiveDiffTab({
+      openFiles: [{ kind: "diff" }, { kind: "code" }],
+      activeTabIndex: 1,
+    }),
+    false,
+  );
+});
+
+test("isActiveDiffTab returns false when no tabs are open", () => {
+  assert.equal(isActiveDiffTab({ openFiles: [], activeTabIndex: 0 }), false);
+});
+
+test("isActiveDiffTab returns false for missing openFiles", () => {
+  assert.equal(isActiveDiffTab({ activeTabIndex: 0 }), false);
+  assert.equal(isActiveDiffTab({}), false);
 });
 
 test("isTextInputActive returns true for an input element", () => {
