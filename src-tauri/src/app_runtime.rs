@@ -53,6 +53,7 @@ pub(crate) fn run_app() {
             add_recent_folder,
             git_status,
             git_diff,
+            git_diff_all,
             get_folder_icon
         ])
         .build(tauri::generate_context!())

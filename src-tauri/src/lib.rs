@@ -44,6 +44,7 @@ use files::{
     format_structured_text, list_project_entries, read_text_file, trash_file, write_text_file,
 };
 use git::git_diff;
+use git::git_diff_all;
 use git::git_status;
 #[cfg(target_os = "macos")]
 use launch::queue_open_paths;

@@ -30,6 +30,22 @@ export function buildUntitledTab() {
   };
 }
 
+export function buildDiffTab() {
+  return {
+    path: null,
+    content: "",
+    savedContent: "",
+    kind: "diff",
+    writable: false,
+    isDirty: false,
+    markdownViewMode: "edit",
+    scrollState: {
+      editorScrollTop: 0,
+      previewScrollTop: 0,
+    },
+  };
+}
+
 export function snapshotActiveStateAsTab(state) {
   if (!state?.activeKind) {
     return null;

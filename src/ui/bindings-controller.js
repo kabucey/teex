@@ -35,6 +35,8 @@ export function bindElements(el) {
   el.findPrev = document.querySelector("#find-prev");
   el.findNext = document.querySelector("#find-next");
   el.findClose = document.querySelector("#find-close");
+  el.unifiedDiff = document.querySelector("#unified-diff");
+  el.unifiedDiffBtn = document.querySelector("#unified-diff-btn");
 }
 
 export function bindUiEvents({
@@ -47,6 +49,7 @@ export function bindUiEvents({
   toggleStatusBar,
   toggleModifiedOnly,
   toggleCollapseAllFolders,
+  toggleUnifiedDiff,
   saveNow,
   hasTabSession,
   switchTab,
@@ -179,6 +182,14 @@ export function bindUiEvents({
       return;
     }
 
+    if (event.metaKey && event.shiftKey && event.key.toLowerCase() === "g") {
+      event.preventDefault();
+      if (typeof toggleUnifiedDiff === "function") {
+        toggleUnifiedDiff();
+      }
+      return;
+    }
+
     if (event.metaKey && event.shiftKey && event.key.toLowerCase() === "e") {
       event.preventDefault();
       toggleCollapseAllFolders();
@@ -222,6 +233,12 @@ export function bindUiEvents({
 
   el.modifiedToggleBtn?.addEventListener("click", () => {
     toggleModifiedOnly();
+  });
+
+  el.unifiedDiffBtn?.addEventListener("click", () => {
+    if (typeof toggleUnifiedDiff === "function") {
+      toggleUnifiedDiff();
+    }
   });
 
   el.preview.addEventListener("click", (event) => {

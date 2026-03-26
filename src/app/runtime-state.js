@@ -21,6 +21,7 @@ export const EVENTS = {
   toggleHiddenFiles: "teex://toggle-hidden-files",
   toggleModifiedOnly: "teex://toggle-modified-only",
   toggleCollapseAllFolders: "teex://toggle-collapse-all-folders",
+  toggleUnifiedDiff: "teex://toggle-unified-diff",
   find: "teex://find",
   mouseNavBack: "teex://mouse-nav-back",
   mouseNavForward: "teex://mouse-nav-forward",

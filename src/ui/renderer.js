@@ -63,6 +63,17 @@ export function createUiRenderer({
   function renderMainPane(options = {}) {
     const shouldFocusEditor = options.focusEditor !== false;
 
+    if (el.unifiedDiff) {
+      el.unifiedDiff.classList.toggle("hidden", state.activeKind !== "diff");
+    }
+
+    if (state.activeKind === "diff") {
+      el.editor.classList.add("hidden");
+      el.preview.classList.add("hidden");
+      codeJarController.detach();
+      return;
+    }
+
     if (!hasActiveContent(state)) {
       el.editor.classList.add("hidden");
       el.preview.classList.add("hidden");
@@ -118,7 +129,10 @@ export function createUiRenderer({
   }
 
   function renderStatusBar() {
-    const visible = state.statusBarVisible && hasActiveContent(state);
+    const visible =
+      state.statusBarVisible &&
+      hasActiveContent(state) &&
+      state.activeKind !== "diff";
     el.statusBar.classList.toggle("hidden", !visible);
     if (visible) {
       const lines = state.content.split("\n").length;

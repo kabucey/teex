@@ -24,8 +24,12 @@ export function buildTabBarHtml(state) {
     const tab = state.openFiles[i];
     const isActive = i === state.activeTabIndex;
     const isDirty = isActive ? state.isDirty : tab.isDirty;
-    const label = tab.path ? baseName(tab.path) : "Untitled";
-    const tooltip = tab.path || "Untitled";
+    const label = tab.path
+      ? baseName(tab.path)
+      : tab.kind === "diff"
+        ? "Changes"
+        : "Untitled";
+    const tooltip = tab.path || label;
     html += `<div class="tab${isActive ? " tab-active" : ""}" data-index="${i}">`;
     html += `<button class="tab-close" data-index="${i}" title="Close" aria-label="Close ${escapeAttr(label)}">×</button>`;
     const folder = disambiguations.get(i);
