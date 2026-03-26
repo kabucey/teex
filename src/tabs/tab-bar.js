@@ -63,6 +63,7 @@ export function updateNavButtons(state, el) {
 export function bindTabBarEvents({
   el,
   state,
+  invoke,
   switchTab,
   moveTab,
   closeTab,
@@ -262,6 +263,12 @@ export function bindTabBarEvents({
       };
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", onMouseUp);
+    });
+
+    tabEl.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      const index = parseInt(tabEl.dataset.index, 10);
+      invoke("show_tab_context_menu", { index });
     });
   });
 }

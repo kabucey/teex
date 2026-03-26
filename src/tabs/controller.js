@@ -173,6 +173,7 @@ export function createTabController({
     switchTab,
     moveTab,
     closeTab: closeController.closeTab,
+    closeOtherTabs: closeController.closeOtherTabs,
     closeSingleActiveFile: closeController.closeSingleActiveFile,
     closeActiveFileOrWindow: closeController.closeActiveFileOrWindow,
     navigateBack,

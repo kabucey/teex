@@ -70,7 +70,7 @@ use watchers::{
     install_project_file_watch, install_project_folder_watch,
 };
 use window::set_window_title;
-use window::{open_in_file_manager, show_sidebar_context_menu};
+use window::{open_in_file_manager, show_sidebar_context_menu, show_tab_context_menu};
 
 struct FocusTracker {
     label: Mutex<Option<String>>,

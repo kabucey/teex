@@ -47,6 +47,7 @@ pub(crate) fn run_app() {
             create_window_from_drag,
             trash_file,
             show_sidebar_context_menu,
+            show_tab_context_menu,
             set_show_hidden_files_checked,
             set_show_modified_only_checked,
             add_recent_file,

@@ -180,6 +180,8 @@ export function setupControllers({
     handleCrossWindowDragLeave: () =>
       crossWindowDragController.handleDragLeave(),
     handleContextMenuDelete: callbacks.handleContextMenuDelete,
+    handleTabContextMenuClose: callbacks.handleTabContextMenuClose,
+    handleTabContextMenuCloseOthers: callbacks.handleTabContextMenuCloseOthers,
     openRecentFolder: callbacks.openFolder,
     toggleStatusBar: callbacks.toggleStatusBar,
     toggleCollapseAllFolders: callbacks.toggleCollapseAllFolders,

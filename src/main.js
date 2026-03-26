@@ -148,6 +148,8 @@ const codeJarController = createCodeMirrorController({
     handleTabTransferResult,
     restoreLastSession,
     handleContextMenuDelete,
+    handleTabContextMenuClose,
+    handleTabContextMenuCloseOthers,
     onFileSaved,
     onBeforeToggleMarkdownMode,
     onAfterToggleMarkdownMode,
@@ -449,6 +451,14 @@ async function handleContextMenuDelete(path) {
   } catch (err) {
     console.error("Failed to move to trash:", err);
   }
+}
+
+async function handleTabContextMenuClose(index) {
+  await closeTab(index);
+}
+
+async function handleTabContextMenuCloseOthers(index) {
+  await tabController.closeOtherTabs(index);
 }
 
 async function closeActiveFileOrWindow() {

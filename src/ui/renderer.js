@@ -52,6 +52,7 @@ export function createUiRenderer({
     bindTabBarEvents({
       el,
       state,
+      invoke,
       switchTab,
       moveTab,
       closeTab,

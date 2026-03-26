@@ -20,6 +20,8 @@ export function createAppEventsController({
   handleCrossWindowDragEnter,
   handleCrossWindowDragLeave,
   handleContextMenuDelete,
+  handleTabContextMenuClose,
+  handleTabContextMenuCloseOthers,
   openRecentFolder,
   toggleStatusBar,
   toggleCollapseAllFolders,
@@ -78,6 +80,12 @@ export function createAppEventsController({
       }),
       listen(`${events.contextMenuDelete}/${label}`, async (event) => {
         await handleContextMenuDelete(event.payload);
+      }),
+      listen(`${events.tabContextMenuClose}/${label}`, async (event) => {
+        await handleTabContextMenuClose(event.payload);
+      }),
+      listen(`${events.tabContextMenuCloseOthers}/${label}`, async (event) => {
+        await handleTabContextMenuCloseOthers(event.payload);
       }),
       listen(`${events.openRecentFile}/${label}`, async (event) => {
         await openSingleFileFromUi(event.payload);

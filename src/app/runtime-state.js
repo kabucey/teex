@@ -15,6 +15,8 @@ export const EVENTS = {
   crossWindowDragEnter: "teex://cross-window-drag-enter",
   crossWindowDragLeave: "teex://cross-window-drag-leave",
   contextMenuDelete: "teex://context-menu-delete",
+  tabContextMenuClose: "teex://tab-context-menu-close",
+  tabContextMenuCloseOthers: "teex://tab-context-menu-close-others",
   openRecentFile: "teex://open-recent-file",
   openRecentFolder: "teex://open-recent-folder",
   toggleStatusBar: "teex://toggle-status-bar",
