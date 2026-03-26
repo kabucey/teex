@@ -514,6 +514,7 @@ function render(options = {}) {
   scrollSyncController?.scheduleRestoreAfterRender();
   externalFileWatchController.syncWatchedProjectFiles();
   if (state.activeKind === "diff") {
+    diffController?.clear();
     unifiedDiffController?.scheduleRefresh();
   } else {
     diffController?.refreshNow();

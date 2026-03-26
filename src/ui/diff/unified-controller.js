@@ -72,19 +72,19 @@ export function createUnifiedDiffController({ state, el, invoke }) {
       return;
     }
     const rootPath = state.rootPath;
+    cleanupScrollspy?.();
+    cleanupScrollspy = null;
+    el.unifiedDiff.innerHTML = "";
     try {
       const fileDiffs = await invoke("git_diff_all", { root: rootPath });
       if (state.activeKind === "diff" && state.rootPath === rootPath) {
-        cleanupScrollspy?.();
         el.unifiedDiff.innerHTML = buildUnifiedDiffHtml(fileDiffs);
         cleanupScrollspy = bindScrollspy(el.unifiedDiff);
       }
     } catch (err) {
       console.error("Failed to fetch unified diff:", err);
       if (state.activeKind === "diff") {
-        cleanupScrollspy?.();
         el.unifiedDiff.innerHTML = buildUnifiedDiffHtml([]);
-        cleanupScrollspy = null;
       }
     }
   }
