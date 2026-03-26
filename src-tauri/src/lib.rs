@@ -136,10 +136,20 @@ fn focused_window_position(app: &tauri::AppHandle) -> Option<(f64, f64)> {
     Some((pos.x as f64 / scale, pos.y as f64 / scale))
 }
 
+fn focused_window_size(app: &tauri::AppHandle) -> Option<(f64, f64)> {
+    let tracker = app.state::<FocusTracker>();
+    let label = tracker.label.lock().ok()?.clone()?;
+    let window = app.webview_windows().get(&label)?.clone();
+    let size = window.inner_size().ok()?;
+    let scale = window.scale_factor().ok()?;
+    Some((size.width as f64 / scale, size.height as f64 / scale))
+}
+
 fn build_new_window(app: &tauri::AppHandle, label: String) -> Result<tauri::WebviewWindow, String> {
+    let (width, height) = focused_window_size(app).unwrap_or((800.0, 600.0));
     let mut builder = tauri::WebviewWindowBuilder::new(app, label, tauri::WebviewUrl::default())
         .title("Teex")
-        .inner_size(800.0, 600.0);
+        .inner_size(width, height);
 
     // Cascade: offset from the focused window so new windows don't stack exactly on top
     if let Some(pos) = focused_window_position(app) {
