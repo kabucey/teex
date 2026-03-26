@@ -29,9 +29,14 @@ function bindScrollspy(container) {
     if (id === activeId) return;
     activeId = id;
     for (const item of tocItems) {
-      item.classList.toggle("udiff-toc-active", item.dataset.target === activeId);
+      item.classList.toggle(
+        "udiff-toc-active",
+        item.dataset.target === activeId,
+      );
     }
-    tocMap.get(activeId)?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    tocMap
+      .get(activeId)
+      ?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
   }
 
   function update() {

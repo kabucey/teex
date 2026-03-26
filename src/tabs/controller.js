@@ -25,6 +25,7 @@ export function createTabController({
   flushStateToActiveTab,
   syncActiveTabToState,
   promptCloseDirty,
+  confirmDelete,
 }) {
   function openDiffTab() {
     flushStateToActiveTab();
@@ -112,6 +113,7 @@ export function createTabController({
     flushStateToActiveTab,
     syncActiveTabToState,
     promptCloseDirty,
+    confirmDelete,
   });
 
   function switchTab(index) {
@@ -176,6 +178,7 @@ export function createTabController({
     closeOtherTabs: closeController.closeOtherTabs,
     closeSingleActiveFile: closeController.closeSingleActiveFile,
     closeActiveFileOrWindow: closeController.closeActiveFileOrWindow,
+    deleteAndCloseTabs: closeController.deleteAndCloseTabs,
     navigateBack,
     navigateForward,
   };

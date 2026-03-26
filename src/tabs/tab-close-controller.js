@@ -14,6 +14,7 @@ export function createTabCloseController({
   flushStateToActiveTab,
   syncActiveTabToState,
   promptCloseDirty = promptToSaveBeforeClose,
+  confirmDelete,
 }) {
   let closeInProgress = false;
 
@@ -197,10 +198,43 @@ export function createTabCloseController({
     }
   }
 
+  async function deleteAndCloseTabs(path, { onAllClosed } = {}) {
+    const name = baseName(path);
+    const confirmed = await confirmDelete(name);
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await invoke("trash_file", { path });
+      const pathPrefix = `${path}/`;
+      if (hasTabSession()) {
+        const indices = state.openFiles
+          .map((_t, i) => i)
+          .filter((i) => {
+            const p = state.openFiles[i].path;
+            return p === path || p.startsWith(pathPrefix);
+          })
+          .reverse();
+        for (const i of indices) {
+          await closeTab(i);
+        }
+      } else if (
+        state.activePath === path ||
+        state.activePath?.startsWith(pathPrefix)
+      ) {
+        await closeSingleActiveFile();
+        onAllClosed?.();
+      }
+    } catch (err) {
+      console.error("Failed to move to trash:", err);
+    }
+  }
+
   return {
     closeActiveFileOrWindow,
     closeSingleActiveFile,
     closeTab,
     closeOtherTabs,
+    deleteAndCloseTabs,
   };
 }

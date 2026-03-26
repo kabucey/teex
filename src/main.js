@@ -42,10 +42,7 @@ import { createDiffController } from "./ui/diff/controller.js";
 import { createDiffMapController } from "./ui/diff/map-controller.js";
 import { createUnifiedDiffController } from "./ui/diff/unified-controller.js";
 import { createCodeMirrorController } from "./ui/editor/codemirror-controller.js";
-import {
-  confirmDelete,
-  confirmReloadExternalChange,
-} from "./ui/native-dialog.js";
+import { confirmReloadExternalChange } from "./ui/native-dialog.js";
 import { createScrollSyncController } from "./ui/scroll/sync.js";
 import { baseName } from "./utils/app-utils.js";
 
@@ -147,9 +144,13 @@ const codeJarController = createCodeMirrorController({
     handleReceiveTransferredTabs,
     handleTabTransferResult,
     restoreLastSession,
-    handleContextMenuDelete,
-    handleTabContextMenuClose,
-    handleTabContextMenuCloseOthers,
+    handleContextMenuDelete: (path) =>
+      tabController.deleteAndCloseTabs(path, {
+        onAllClosed: () => scrollSyncController?.afterContextCleared(),
+      }),
+    handleTabContextMenuClose: closeTab,
+    handleTabContextMenuCloseOthers: (index) =>
+      tabController.closeOtherTabs(index),
     onFileSaved,
     onBeforeToggleMarkdownMode,
     onAfterToggleMarkdownMode,
@@ -419,46 +420,6 @@ async function closeTabByPath(path) {
     await tabController.closeSingleActiveFile();
     scrollSyncController?.afterContextCleared();
   }
-}
-
-async function handleContextMenuDelete(path) {
-  const name = baseName(path);
-  const confirmed = await confirmDelete(name);
-  if (!confirmed) {
-    return;
-  }
-  try {
-    await invoke("trash_file", { path });
-    const pathPrefix = `${path}/`;
-    if (hasTabSession()) {
-      const indices = state.openFiles
-        .map((_t, i) => i)
-        .filter((i) => {
-          const p = state.openFiles[i].path;
-          return p === path || p.startsWith(pathPrefix);
-        })
-        .reverse();
-      for (const i of indices) {
-        await closeTab(i);
-      }
-    } else if (
-      state.activePath === path ||
-      state.activePath?.startsWith(pathPrefix)
-    ) {
-      await tabController.closeSingleActiveFile();
-      scrollSyncController?.afterContextCleared();
-    }
-  } catch (err) {
-    console.error("Failed to move to trash:", err);
-  }
-}
-
-async function handleTabContextMenuClose(index) {
-  await closeTab(index);
-}
-
-async function handleTabContextMenuCloseOthers(index) {
-  await tabController.closeOtherTabs(index);
 }
 
 async function closeActiveFileOrWindow() {

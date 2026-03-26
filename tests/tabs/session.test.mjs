@@ -112,7 +112,11 @@ test("normalizeTransferTab sanitizes invalid and partial tab records", () => {
 
   // "code" kind must be preserved (not collapsed to "text")
   assert.deepEqual(
-    normalizeTransferTab({ path: "/a.js", kind: "code", content: "const x = 1;" }),
+    normalizeTransferTab({
+      path: "/a.js",
+      kind: "code",
+      content: "const x = 1;",
+    }),
     {
       path: "/a.js",
       kind: "code",
