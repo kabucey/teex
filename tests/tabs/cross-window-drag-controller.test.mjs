@@ -541,7 +541,7 @@ test("completeDrop in path mode transfers with sidebar-drag kind", async () => {
 });
 
 test("completeDrop in path mode uses file extension to set kind", async () => {
-  const { state, controller, calls } = createHarness({
+  const { controller, calls } = createHarness({
     invokeResults: { report_drag_position: "teex-window-2" },
   });
 

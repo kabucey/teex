@@ -1,6 +1,6 @@
+import { fileKindFromExtension } from "../ui/editor/controller.js";
 import { createCrossWindowDragSession } from "./cross-window-drag-session.js";
 import { createCrossWindowDropZone } from "./cross-window-drop-zone.js";
-import { fileKindFromExtension } from "../ui/editor/controller.js";
 import {
   clearActiveFileInState,
   flushStateToActiveTabInState,

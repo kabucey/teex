@@ -16,6 +16,3 @@ echo "Running JS/CSS lints (biome)..."
 )
 
 echo "All lints passed."
-
-testing this
-

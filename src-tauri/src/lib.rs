@@ -145,8 +145,33 @@ fn focused_window_size(app: &tauri::AppHandle) -> Option<(f64, f64)> {
     Some((size.width as f64 / scale, size.height as f64 / scale))
 }
 
+fn window_size_path(app: &tauri::AppHandle) -> Option<PathBuf> {
+    app.path()
+        .app_data_dir()
+        .ok()
+        .map(|d| d.join("window-size.json"))
+}
+
+pub(crate) fn save_window_size(app: &tauri::AppHandle, width: f64, height: f64) {
+    if let Some(path) = window_size_path(app) {
+        let json = format!("{{\"width\":{width},\"height\":{height}}}");
+        let _ = fs::write(path, json);
+    }
+}
+
+pub(crate) fn load_window_size(app: &tauri::AppHandle) -> Option<(f64, f64)> {
+    let path = window_size_path(app)?;
+    let data = fs::read_to_string(&path).ok()?;
+    let v: serde_json::Value = serde_json::from_str(&data).ok()?;
+    let w = v["width"].as_f64()?;
+    let h = v["height"].as_f64()?;
+    Some((w, h))
+}
+
 fn build_new_window(app: &tauri::AppHandle, label: String) -> Result<tauri::WebviewWindow, String> {
-    let (width, height) = focused_window_size(app).unwrap_or((800.0, 600.0));
+    let (width, height) = focused_window_size(app)
+        .or_else(|| load_window_size(app))
+        .unwrap_or((800.0, 600.0));
     let mut builder = tauri::WebviewWindowBuilder::new(app, label, tauri::WebviewUrl::default())
         .title("Teex")
         .inner_size(width, height);
