@@ -323,3 +323,63 @@ test("renderTreeHtml passes folderIconUrl to nested folders", () => {
   );
   assert.doesNotMatch(html, /<span class="folder-icon"/);
 });
+
+test("buildEntryTree creates folder node for top-level isDir entry", () => {
+  const tree = buildEntryTree([
+    { path: "/root/a.md", relPath: "a.md" },
+    { path: "/root/empty", relPath: "empty", isDir: true },
+  ]);
+
+  assert.equal(tree.folders.has("empty"), true);
+  assert.equal(tree.folders.get("empty").files.length, 0);
+  assert.equal(tree.folders.get("empty").folders.size, 0);
+  assert.equal(tree.files.length, 1);
+});
+
+test("buildEntryTree creates nested empty folder node from isDir entry", () => {
+  const tree = buildEntryTree([
+    { path: "/root/src/a.js", relPath: "src/a.js" },
+    { path: "/root/src/empty", relPath: "src/empty", isDir: true },
+  ]);
+
+  assert.equal(tree.folders.has("src"), true);
+  assert.equal(tree.folders.get("src").folders.has("empty"), true);
+  assert.equal(tree.folders.get("src").folders.get("empty").files.length, 0);
+});
+
+test("collectFolderPaths includes top-level isDir entry", () => {
+  const folders = collectFolderPaths([
+    { relPath: "a.md" },
+    { relPath: "empty", isDir: true },
+  ]);
+
+  assert.deepEqual([...folders].sort(), ["empty"]);
+});
+
+test("collectFolderPaths includes isDir entry and its ancestors", () => {
+  const folders = collectFolderPaths([
+    { relPath: "src/empty_sub", isDir: true },
+  ]);
+
+  assert.deepEqual([...folders].sort(), ["src", "src/empty_sub"]);
+});
+
+test("hasFoldersInEntries returns true for isDir entries", () => {
+  assert.equal(
+    hasFoldersInEntries([
+      { relPath: "a.md" },
+      { relPath: "empty", isDir: true },
+    ]),
+    true,
+  );
+});
+
+test("renderTreeHtml renders empty folder from isDir entry", () => {
+  const tree = buildEntryTree([
+    { path: "/root/empty", relPath: "empty", isDir: true },
+  ]);
+  const html = renderTreeHtml(tree, 0, new Set());
+
+  assert.match(html, /folder-toggle/);
+  assert.match(html, /empty/);
+});

@@ -205,6 +205,18 @@ export function bindSidebarItemEvents({
   }
 
   el.projectList.querySelectorAll(".folder-toggle").forEach((button) => {
+    button.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      window.getSelection()?.removeAllRanges();
+      const { folderPath } = button.dataset;
+      if (!folderPath || !state.rootPath) {
+        return;
+      }
+      invoke("show_sidebar_context_menu", {
+        path: `${state.rootPath}/${folderPath}`,
+      });
+    });
+
     button.addEventListener("mouseenter", () => {
       const label = button.querySelector(".folder-label");
       if (label && label.scrollWidth > label.clientWidth) {

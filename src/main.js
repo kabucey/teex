@@ -420,16 +420,34 @@ async function closeTabByPath(path) {
 }
 
 async function handleContextMenuDelete(path) {
-  const fileName = baseName(path);
-  const confirmed = await confirmDelete(fileName);
+  const name = baseName(path);
+  const confirmed = await confirmDelete(name);
   if (!confirmed) {
     return;
   }
   try {
     await invoke("trash_file", { path });
-    await closeTabByPath(path);
+    const pathPrefix = `${path}/`;
+    if (hasTabSession()) {
+      const indices = state.openFiles
+        .map((_t, i) => i)
+        .filter((i) => {
+          const p = state.openFiles[i].path;
+          return p === path || p.startsWith(pathPrefix);
+        })
+        .reverse();
+      for (const i of indices) {
+        await closeTab(i);
+      }
+    } else if (
+      state.activePath === path ||
+      state.activePath?.startsWith(pathPrefix)
+    ) {
+      await tabController.closeSingleActiveFile();
+      scrollSyncController?.afterContextCleared();
+    }
   } catch (err) {
-    console.error("Failed to move file to trash:", err);
+    console.error("Failed to move to trash:", err);
   }
 }
 

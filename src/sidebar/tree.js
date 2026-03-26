@@ -25,11 +25,24 @@ export function buildEntryTree(entries) {
       node = node.folders.get(folderName);
     }
 
-    node.files.push({
-      name: parts[parts.length - 1],
-      path: entry.path,
-      relPath: entry.relPath,
-    });
+    if (entry.isDir) {
+      const folderName = parts[parts.length - 1];
+      const folderPath = node.path ? `${node.path}/${folderName}` : folderName;
+      if (!node.folders.has(folderName)) {
+        node.folders.set(folderName, {
+          path: folderPath,
+          name: folderName,
+          folders: new Map(),
+          files: [],
+        });
+      }
+    } else {
+      node.files.push({
+        name: parts[parts.length - 1],
+        path: entry.path,
+        relPath: entry.relPath,
+      });
+    }
   }
 
   return root;
@@ -40,11 +53,14 @@ export function collectFolderPaths(entries) {
 
   for (const entry of entries) {
     const parts = entry.relPath.split("/").filter(Boolean);
-    if (parts.length <= 1) {
+    // For dirs: include the dir itself and all ancestors
+    // For files: include only ancestor folders (not the file itself)
+    const limit = entry.isDir ? parts.length : parts.length - 1;
+    if (limit === 0) {
       continue;
     }
 
-    for (let i = 0; i < parts.length - 1; i += 1) {
+    for (let i = 0; i < limit; i += 1) {
       folders.add(parts.slice(0, i + 1).join("/"));
     }
   }
@@ -53,7 +69,7 @@ export function collectFolderPaths(entries) {
 }
 
 export function hasFoldersInEntries(entries) {
-  return entries.some((e) => e.relPath.includes("/"));
+  return entries.some((e) => e.relPath.includes("/") || e.isDir);
 }
 
 export function isAllCollapsed(entries, collapsedFolders) {
