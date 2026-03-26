@@ -5,6 +5,8 @@ import {
   getSidebarSelectedPath,
   getSingleFileUiOpenMode,
   hasActiveContent,
+  isActiveDiffTab,
+  isTextInputActive,
   isUntitledTab,
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
@@ -467,4 +469,53 @@ test("hasActiveContent returns false for folder with no file open", () => {
     }),
     false,
   );
+});
+
+test("isActiveDiffTab returns true when active tab is a diff", () => {
+  assert.equal(
+    isActiveDiffTab({
+      openFiles: [{ kind: "markdown" }, { kind: "diff" }],
+      activeTabIndex: 1,
+    }),
+    true,
+  );
+});
+
+test("isActiveDiffTab returns false when active tab is a regular file", () => {
+  assert.equal(
+    isActiveDiffTab({
+      openFiles: [{ kind: "diff" }, { kind: "code" }],
+      activeTabIndex: 1,
+    }),
+    false,
+  );
+});
+
+test("isActiveDiffTab returns false when no tabs are open", () => {
+  assert.equal(isActiveDiffTab({ openFiles: [], activeTabIndex: 0 }), false);
+});
+
+test("isActiveDiffTab returns false for missing openFiles", () => {
+  assert.equal(isActiveDiffTab({ activeTabIndex: 0 }), false);
+  assert.equal(isActiveDiffTab({}), false);
+});
+
+test("isTextInputActive returns true for an input element", () => {
+  assert.equal(isTextInputActive({ tagName: "INPUT" }), true);
+});
+
+test("isTextInputActive returns false for a textarea element", () => {
+  assert.equal(isTextInputActive({ tagName: "TEXTAREA" }), false);
+});
+
+test("isTextInputActive returns false for a div element", () => {
+  assert.equal(isTextInputActive({ tagName: "DIV" }), false);
+});
+
+test("isTextInputActive returns false for null", () => {
+  assert.equal(isTextInputActive(null), false);
+});
+
+test("isTextInputActive returns false for undefined", () => {
+  assert.equal(isTextInputActive(undefined), false);
 });

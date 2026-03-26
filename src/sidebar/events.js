@@ -1,4 +1,5 @@
 import {
+  isActiveDiffTab,
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
   shouldSidebarSingleClickIgnoreSamePath,
@@ -137,6 +138,16 @@ export function bindSidebarItemEvents({
         }
 
         if (
+          isActiveDiffTab({
+            openFiles: state.openFiles,
+            activeTabIndex: state.activeTabIndex,
+          })
+        ) {
+          await openFolderEntryInTabs(path);
+          return;
+        }
+
+        if (
           shouldSidebarSingleClickOpenAsTab({
             mode: state.mode,
             openFilesCount: state.openFiles.length,
@@ -205,6 +216,18 @@ export function bindSidebarItemEvents({
   }
 
   el.projectList.querySelectorAll(".folder-toggle").forEach((button) => {
+    button.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      window.getSelection()?.removeAllRanges();
+      const { folderPath } = button.dataset;
+      if (!folderPath || !state.rootPath) {
+        return;
+      }
+      invoke("show_sidebar_context_menu", {
+        path: `${state.rootPath}/${folderPath}`,
+      });
+    });
+
     button.addEventListener("mouseenter", () => {
       const label = button.querySelector(".folder-label");
       if (label && label.scrollWidth > label.clientWidth) {

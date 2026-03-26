@@ -47,12 +47,14 @@ pub(crate) fn run_app() {
             create_window_from_drag,
             trash_file,
             show_sidebar_context_menu,
+            show_tab_context_menu,
             set_show_hidden_files_checked,
             set_show_modified_only_checked,
             add_recent_file,
             add_recent_folder,
             git_status,
             git_diff,
+            git_diff_all,
             get_folder_icon
         ])
         .build(tauri::generate_context!())
@@ -93,6 +95,16 @@ fn setup_app(app: &mut tauri::App) -> Result<(), Box<dyn std::error::Error>> {
 
     let _ = set_menu_item_enabled(&menu, MENU_TOGGLE_SIDEBAR, false);
     let _ = set_menu_item_enabled(&menu, MENU_TOGGLE_MARKDOWN_MODE, false);
+
+    // Restore last window size before showing the initial window
+    if let Some(window) = app.webview_windows().values().next() {
+        if let Some((w, h)) = load_window_size(app.handle()) {
+            let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize {
+                width: w,
+                height: h,
+            }));
+        }
+    }
 
     let initial_label = app.webview_windows().keys().next().cloned();
     app.manage(FocusTracker {
@@ -161,6 +173,17 @@ fn handle_mac_service_request(app: &tauri::AppHandle, request: macos::services::
 fn handle_window_event(window: &tauri::Window, event: &tauri::WindowEvent) {
     if let tauri::WindowEvent::Focused(true) = event {
         set_tracked_window_label(window.app_handle(), window.label().to_string());
+    }
+    if let tauri::WindowEvent::Resized(size) = event {
+        if !window.label().starts_with("teex-drag-preview") {
+            if let Ok(scale) = window.scale_factor() {
+                save_window_size(
+                    window.app_handle(),
+                    size.width as f64 / scale,
+                    size.height as f64 / scale,
+                );
+            }
+        }
     }
     if let tauri::WindowEvent::Destroyed = event {
         clear_project_folder_watch_for_label(window.app_handle(), window.label());

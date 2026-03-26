@@ -8,6 +8,7 @@ function createHarness({
   promptCloseDirty = async () => "cancel",
   saveNow = async () => {},
   invoke = async () => {},
+  confirmDelete = async () => true,
 } = {}) {
   const state = {
     mode: "files",
@@ -58,6 +59,7 @@ function createHarness({
     flushStateToActiveTab: () => {},
     syncActiveTabToState: () => {},
     promptCloseDirty,
+    confirmDelete,
   });
 
   return {
@@ -75,6 +77,98 @@ function createHarness({
     },
   };
 }
+
+function makeTab(path, { isDirty = false } = {}) {
+  return {
+    path,
+    content: "",
+    kind: "markdown",
+    writable: true,
+    isDirty,
+    markdownViewMode: "preview",
+    scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+  };
+}
+
+test("closeOtherTabs closes all tabs except the target", async () => {
+  const harness = createHarness({
+    stateOverrides: {
+      mode: "files",
+      isDirty: false,
+      openFiles: [
+        makeTab("/tmp/a.md"),
+        makeTab("/tmp/b.md"),
+        makeTab("/tmp/c.md"),
+      ],
+      activeTabIndex: 0,
+    },
+    promptCloseDirty: async () => "discard",
+  });
+
+  await harness.controller.closeOtherTabs(1);
+
+  assert.equal(harness.state.openFiles.length, 1);
+  assert.equal(harness.state.openFiles[0].path, "/tmp/b.md");
+});
+
+test("closeOtherTabs with single tab does nothing", async () => {
+  const harness = createHarness({
+    stateOverrides: {
+      mode: "files",
+      isDirty: false,
+      openFiles: [makeTab("/tmp/a.md")],
+      activeTabIndex: 0,
+    },
+    promptCloseDirty: async () => "discard",
+  });
+
+  await harness.controller.closeOtherTabs(0);
+
+  assert.equal(harness.state.openFiles.length, 1);
+  assert.equal(harness.renderCalls, 0);
+});
+
+test("closeOtherTabs keeps first tab when target is 0", async () => {
+  const harness = createHarness({
+    stateOverrides: {
+      mode: "files",
+      isDirty: false,
+      openFiles: [
+        makeTab("/tmp/a.md"),
+        makeTab("/tmp/b.md"),
+        makeTab("/tmp/c.md"),
+      ],
+      activeTabIndex: 0,
+    },
+    promptCloseDirty: async () => "discard",
+  });
+
+  await harness.controller.closeOtherTabs(0);
+
+  assert.equal(harness.state.openFiles.length, 1);
+  assert.equal(harness.state.openFiles[0].path, "/tmp/a.md");
+});
+
+test("closeOtherTabs keeps last tab when target is last index", async () => {
+  const harness = createHarness({
+    stateOverrides: {
+      mode: "files",
+      isDirty: false,
+      openFiles: [
+        makeTab("/tmp/a.md"),
+        makeTab("/tmp/b.md"),
+        makeTab("/tmp/c.md"),
+      ],
+      activeTabIndex: 2,
+    },
+    promptCloseDirty: async () => "discard",
+  });
+
+  await harness.controller.closeOtherTabs(2);
+
+  assert.equal(harness.state.openFiles.length, 1);
+  assert.equal(harness.state.openFiles[0].path, "/tmp/c.md");
+});
 
 test("closeTab keeps dirty tab open when close prompt is canceled", async () => {
   const harness = createHarness();
@@ -105,4 +199,75 @@ test("closeSingleActiveFile clears non-folder state and reports closure", async 
   assert.deepEqual(harness.statuses, [
     { message: "Closed a.md", isError: false },
   ]);
+});
+
+test("deleteAndCloseTabs trashes file and closes matching tabs", async () => {
+  const trashed = [];
+  const harness = createHarness({
+    stateOverrides: {
+      mode: "files",
+      isDirty: false,
+      openFiles: [makeTab("/tmp/a.md"), makeTab("/tmp/b.md")],
+      activeTabIndex: 0,
+    },
+    invoke: async (cmd, args) => {
+      if (cmd === "trash_file") trashed.push(args.path);
+    },
+    promptCloseDirty: async () => "discard",
+    confirmDelete: async () => true,
+  });
+
+  await harness.controller.deleteAndCloseTabs("/tmp/a.md");
+
+  assert.deepEqual(trashed, ["/tmp/a.md"]);
+  assert.equal(harness.state.openFiles.length, 1);
+  assert.equal(harness.state.openFiles[0].path, "/tmp/b.md");
+});
+
+test("deleteAndCloseTabs does nothing when user cancels confirm", async () => {
+  const trashed = [];
+  const harness = createHarness({
+    stateOverrides: {
+      mode: "files",
+      isDirty: false,
+      openFiles: [makeTab("/tmp/a.md")],
+      activeTabIndex: 0,
+    },
+    invoke: async (cmd, args) => {
+      if (cmd === "trash_file") trashed.push(args.path);
+    },
+    confirmDelete: async () => false,
+  });
+
+  await harness.controller.deleteAndCloseTabs("/tmp/a.md");
+
+  assert.deepEqual(trashed, []);
+  assert.equal(harness.state.openFiles.length, 1);
+});
+
+test("deleteAndCloseTabs closes tabs matching path prefix", async () => {
+  const trashed = [];
+  const harness = createHarness({
+    stateOverrides: {
+      mode: "files",
+      isDirty: false,
+      openFiles: [
+        makeTab("/tmp/dir/a.md"),
+        makeTab("/tmp/dir/b.md"),
+        makeTab("/tmp/other.md"),
+      ],
+      activeTabIndex: 0,
+    },
+    invoke: async (cmd, args) => {
+      if (cmd === "trash_file") trashed.push(args.path);
+    },
+    promptCloseDirty: async () => "discard",
+    confirmDelete: async () => true,
+  });
+
+  await harness.controller.deleteAndCloseTabs("/tmp/dir");
+
+  assert.deepEqual(trashed, ["/tmp/dir"]);
+  assert.equal(harness.state.openFiles.length, 1);
+  assert.equal(harness.state.openFiles[0].path, "/tmp/other.md");
 });

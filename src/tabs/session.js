@@ -104,7 +104,12 @@ export function normalizeTransferTab(rawTab) {
     return null;
   }
 
-  const kind = rawTab.kind === "markdown" ? "markdown" : "text";
+  const kind =
+    rawTab.kind === "markdown"
+      ? "markdown"
+      : rawTab.kind === "code"
+        ? "code"
+        : "text";
   return {
     path: rawTab.path ?? null,
     content: typeof rawTab.content === "string" ? rawTab.content : "",

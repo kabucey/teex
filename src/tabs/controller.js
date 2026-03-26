@@ -1,7 +1,11 @@
 import { goBack, goForward, recordNavigation } from "./navigation.js";
 import { createTabCloseController } from "./tab-close-controller.js";
 import { createTabOpenController } from "./tab-open-controller.js";
-import { buildUntitledTab, snapshotActiveStateAsTab } from "./tab-state.js";
+import {
+  buildDiffTab,
+  buildUntitledTab,
+  snapshotActiveStateAsTab,
+} from "./tab-state.js";
 
 export { buildTabFromPayload } from "./tab-state.js";
 
@@ -21,7 +25,28 @@ export function createTabController({
   flushStateToActiveTab,
   syncActiveTabToState,
   promptCloseDirty,
+  confirmDelete,
 }) {
+  function openDiffTab() {
+    flushStateToActiveTab();
+
+    if (state.activePath && state.openFiles.length === 0) {
+      const currentTab = snapshotActiveStateAsTab(state);
+      if (currentTab) {
+        state.openFiles = [currentTab];
+      }
+    }
+
+    state.openFiles.push(buildDiffTab());
+    state.activeTabIndex = state.openFiles.length - 1;
+    if (state.mode === "file" || state.mode === "empty") {
+      state.mode = "files";
+    }
+    syncActiveTabToState();
+    render();
+    updateMenuState();
+  }
+
   function createNewTab() {
     flushStateToActiveTab();
 
@@ -88,6 +113,7 @@ export function createTabController({
     flushStateToActiveTab,
     syncActiveTabToState,
     promptCloseDirty,
+    confirmDelete,
   });
 
   function switchTab(index) {
@@ -141,6 +167,7 @@ export function createTabController({
 
   return {
     createNewTab,
+    openDiffTab,
     openMultipleFiles: openController.openMultipleFiles,
     openFileAsTab: openController.openFileAsTab,
     openFileInTabs: openController.openFileInTabs,
@@ -148,8 +175,10 @@ export function createTabController({
     switchTab,
     moveTab,
     closeTab: closeController.closeTab,
+    closeOtherTabs: closeController.closeOtherTabs,
     closeSingleActiveFile: closeController.closeSingleActiveFile,
     closeActiveFileOrWindow: closeController.closeActiveFileOrWindow,
+    deleteAndCloseTabs: closeController.deleteAndCloseTabs,
     navigateBack,
     navigateForward,
   };

@@ -14,6 +14,7 @@ export function createTabCloseController({
   flushStateToActiveTab,
   syncActiveTabToState,
   promptCloseDirty = promptToSaveBeforeClose,
+  confirmDelete,
 }) {
   let closeInProgress = false;
 
@@ -89,42 +90,64 @@ export function createTabCloseController({
     return !state.isDirty;
   }
 
+  async function closeTabAtIndex(index) {
+    const tab = state.openFiles[index];
+    if (!tab) {
+      return;
+    }
+
+    if (!(await canCloseDirtyTab(index))) {
+      return;
+    }
+
+    state.openFiles.splice(index, 1);
+
+    if (state.openFiles.length === 0) {
+      state.openFiles = [];
+      state.activeTabIndex = 0;
+      clearActiveFile();
+      if (state.mode !== "folder") {
+        state.mode = "empty";
+        markSidebarTreeDirty();
+      }
+      render();
+      updateMenuState();
+      return;
+    }
+
+    if (state.activeTabIndex >= state.openFiles.length) {
+      state.activeTabIndex = state.openFiles.length - 1;
+    }
+    syncActiveTabToState();
+    render();
+    updateMenuState();
+  }
+
   async function closeTab(index) {
     if (closeInProgress) {
       return;
     }
     closeInProgress = true;
     try {
-      const tab = state.openFiles[index];
-      if (!tab) {
-        return;
-      }
+      await closeTabAtIndex(index);
+    } finally {
+      closeInProgress = false;
+    }
+  }
 
-      if (!(await canCloseDirtyTab(index))) {
-        return;
+  async function closeOtherTabs(targetIndex) {
+    if (closeInProgress) {
+      return;
+    }
+    closeInProgress = true;
+    try {
+      const total = state.openFiles.length;
+      for (let i = total - 1; i > targetIndex; i -= 1) {
+        await closeTabAtIndex(i);
       }
-
-      state.openFiles.splice(index, 1);
-
-      if (state.openFiles.length === 0) {
-        state.openFiles = [];
-        state.activeTabIndex = 0;
-        clearActiveFile();
-        if (state.mode !== "folder") {
-          state.mode = "empty";
-          markSidebarTreeDirty();
-        }
-        render();
-        updateMenuState();
-        return;
+      for (let i = targetIndex - 1; i >= 0; i -= 1) {
+        await closeTabAtIndex(i);
       }
-
-      if (state.activeTabIndex >= state.openFiles.length) {
-        state.activeTabIndex = state.openFiles.length - 1;
-      }
-      syncActiveTabToState();
-      render();
-      updateMenuState();
     } finally {
       closeInProgress = false;
     }
@@ -175,9 +198,43 @@ export function createTabCloseController({
     }
   }
 
+  async function deleteAndCloseTabs(path, { onAllClosed } = {}) {
+    const name = baseName(path);
+    const confirmed = await confirmDelete(name);
+    if (!confirmed) {
+      return;
+    }
+    try {
+      await invoke("trash_file", { path });
+      const pathPrefix = `${path}/`;
+      if (hasTabSession()) {
+        const indices = state.openFiles
+          .map((_t, i) => i)
+          .filter((i) => {
+            const p = state.openFiles[i].path;
+            return p === path || p.startsWith(pathPrefix);
+          })
+          .reverse();
+        for (const i of indices) {
+          await closeTab(i);
+        }
+      } else if (
+        state.activePath === path ||
+        state.activePath?.startsWith(pathPrefix)
+      ) {
+        await closeSingleActiveFile();
+        onAllClosed?.();
+      }
+    } catch (err) {
+      console.error("Failed to move to trash:", err);
+    }
+  }
+
   return {
     closeActiveFileOrWindow,
     closeSingleActiveFile,
     closeTab,
+    closeOtherTabs,
+    deleteAndCloseTabs,
   };
 }

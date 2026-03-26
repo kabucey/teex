@@ -4,6 +4,7 @@ import { createTabController } from "../tabs/controller.js";
 import { createCrossWindowDragController } from "../tabs/cross-window-drag-controller.js";
 import { createTabTransferController } from "../tabs/transfer-controller.js";
 import { createEditorController } from "../ui/editor/controller.js";
+import { confirmDelete } from "../ui/native-dialog.js";
 import { createUiRenderer } from "../ui/renderer.js";
 import { createDragDropController } from "./drag-drop-controller.js";
 import { createAppEventsController } from "./events-controller.js";
@@ -116,6 +117,7 @@ export function setupControllers({
     hasTabSession: callbacks.hasTabSession,
     flushStateToActiveTab: callbacks.flushStateToActiveTab,
     syncActiveTabToState: callbacks.syncActiveTabToState,
+    confirmDelete,
   });
 
   const fileController = createFileController({
@@ -180,6 +182,8 @@ export function setupControllers({
     handleCrossWindowDragLeave: () =>
       crossWindowDragController.handleDragLeave(),
     handleContextMenuDelete: callbacks.handleContextMenuDelete,
+    handleTabContextMenuClose: callbacks.handleTabContextMenuClose,
+    handleTabContextMenuCloseOthers: callbacks.handleTabContextMenuCloseOthers,
     openRecentFolder: callbacks.openFolder,
     toggleStatusBar: callbacks.toggleStatusBar,
     toggleCollapseAllFolders: callbacks.toggleCollapseAllFolders,

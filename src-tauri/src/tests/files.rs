@@ -2,6 +2,47 @@ use super::common::TempTestDir;
 use super::*;
 
 #[test]
+fn list_project_entries_includes_empty_folders() {
+    let temp = TempTestDir::new();
+
+    temp.mkdir("empty_dir");
+    temp.mkdir("also_empty");
+    temp.write_text("has_file/note.md", "# note");
+
+    let mut entries = list_project_entries(temp.path().to_string_lossy().to_string(), false)
+        .expect("list project entries should succeed");
+
+    entries.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));
+
+    let rel_paths: Vec<&str> = entries.iter().map(|e| e.rel_path.as_str()).collect();
+    assert!(
+        rel_paths.contains(&"also_empty"),
+        "should include also_empty folder"
+    );
+    assert!(
+        rel_paths.contains(&"empty_dir"),
+        "should include empty_dir folder"
+    );
+
+    let empty_entry = entries.iter().find(|e| e.rel_path == "also_empty").unwrap();
+    assert!(
+        empty_entry.is_dir,
+        "empty folder entry should have is_dir=true"
+    );
+
+    assert!(
+        !entries.iter().any(|e| e.rel_path == "has_file" && e.is_dir),
+        "has_file should not appear as an empty dir entry"
+    );
+
+    let file_entry = entries
+        .iter()
+        .find(|e| e.rel_path.contains("note.md"))
+        .unwrap();
+    assert!(!file_entry.is_dir, "file entry should have is_dir=false");
+}
+
+#[test]
 fn list_project_entries_filters_hidden_binary_and_build_artifacts() {
     let temp = TempTestDir::new();
     let root = temp.path().to_path_buf();

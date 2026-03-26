@@ -1,6 +1,9 @@
-import { saveSidebarWidth } from "../app/sidebar-width-persistence.js";
-import { clamp, selectAllContents } from "../utils/app-utils.js";
+import { bindSidebarResizer } from "../sidebar/resizer.js";
 import { hasFileDragData } from "../utils/path-input.js";
+import {
+  buildKeyboardShortcuts,
+  handleKeyboardShortcut,
+} from "./keyboard-shortcuts.js";
 import { renderMarkdown } from "./markdown-renderer.js";
 import {
   detectStructuredPasteKind,
@@ -35,6 +38,8 @@ export function bindElements(el) {
   el.findPrev = document.querySelector("#find-prev");
   el.findNext = document.querySelector("#find-next");
   el.findClose = document.querySelector("#find-close");
+  el.unifiedDiff = document.querySelector("#unified-diff");
+  el.unifiedDiffBtn = document.querySelector("#unified-diff-btn");
 }
 
 export function bindUiEvents({
@@ -47,6 +52,7 @@ export function bindUiEvents({
   toggleStatusBar,
   toggleModifiedOnly,
   toggleCollapseAllFolders,
+  toggleUnifiedDiff,
   saveNow,
   hasTabSession,
   switchTab,
@@ -137,91 +143,34 @@ export function bindUiEvents({
     }
   });
 
-  document.addEventListener("keydown", async (event) => {
-    if (event.metaKey && event.key.toLowerCase() === "f") {
-      event.preventDefault();
-      if (typeof openFind === "function") {
-        openFind();
-      }
-      return;
-    }
+  const shortcuts = buildKeyboardShortcuts({
+    openFind,
+    toggleMarkdownMode,
+    toggleStatusBar,
+    toggleModifiedOnly,
+    toggleUnifiedDiff,
+    toggleCollapseAllFolders,
+    toggleSidebarVisibility,
+    saveNow,
+    navigateBack,
+    navigateForward,
+  });
 
-    if (event.metaKey && event.key.toLowerCase() === "a") {
-      const isPreviewVisible = !el.preview.classList.contains("hidden");
-      if (isPreviewVisible) {
-        event.preventDefault();
-        selectAllContents(el.preview);
-        return;
-      }
-
-      const isEditorVisible = !el.editor.classList.contains("hidden");
-      if (isEditorVisible && document.activeElement !== el.editor) {
-        event.preventDefault();
-        el.editor.focus();
-        el.editor.select();
-        return;
-      }
-    }
-
-    if (event.metaKey && !event.shiftKey && event.key.toLowerCase() === "e") {
-      event.preventDefault();
-      toggleMarkdownMode();
-    }
-
-    if (event.metaKey && event.key === "/") {
-      event.preventDefault();
-      toggleStatusBar();
-    }
-
-    if (event.metaKey && event.shiftKey && event.key.toLowerCase() === "m") {
-      event.preventDefault();
-      toggleModifiedOnly();
-      return;
-    }
-
-    if (event.metaKey && event.shiftKey && event.key.toLowerCase() === "e") {
-      event.preventDefault();
-      toggleCollapseAllFolders();
-      return;
-    }
-
-    if (event.metaKey && event.code === "Backslash") {
-      event.preventDefault();
-      toggleSidebarVisibility();
-    }
-
-    if (event.metaKey && event.key.toLowerCase() === "s") {
-      event.preventDefault();
-      await saveNow();
-    }
-
-    if (event.metaKey && event.key === "[") {
-      event.preventDefault();
-      if (typeof navigateBack === "function") {
-        navigateBack();
-      }
-      return;
-    }
-
-    if (event.metaKey && event.key === "]") {
-      event.preventDefault();
-      if (typeof navigateForward === "function") {
-        navigateForward();
-      }
-      return;
-    }
-
-    if (event.metaKey && /^[1-9]$/.test(event.key)) {
-      const index = parseInt(event.key, 10) - 1;
-      if (hasTabSession() && index < state.openFiles.length) {
-        event.preventDefault();
-        switchTab(index);
-      }
-    }
+  document.addEventListener("keydown", (event) => {
+    handleKeyboardShortcut(event, shortcuts, {
+      el,
+      state,
+      hasTabSession,
+      switchTab,
+    });
   });
 
   el.modifiedToggleBtn?.addEventListener("click", () => {
     toggleModifiedOnly();
+  });
+
+  el.unifiedDiffBtn?.addEventListener("click", () => {
+    toggleUnifiedDiff?.();
   });
 
   el.preview.addEventListener("click", (event) => {
@@ -266,15 +215,11 @@ export function bindUiEvents({
   });
 
   el.navBack.addEventListener("click", () => {
-    if (typeof navigateBack === "function") {
-      navigateBack();
-    }
+    navigateBack?.();
   });
 
   el.navForward.addEventListener("click", () => {
-    if (typeof navigateForward === "function") {
-      navigateForward();
-    }
+    navigateForward?.();
   });
 
   el.projectRootLabel.addEventListener("dblclick", async (event) => {
@@ -302,31 +247,5 @@ export function bindUiEvents({
     { capture: true },
   );
 
-  el.sidebarResizer.addEventListener("pointerdown", (event) => {
-    if (state.mode !== "folder" || !state.sidebarVisible) {
-      return;
-    }
-
-    event.preventDefault();
-    const workspaceRect = el.workspace.getBoundingClientRect();
-
-    const onMove = (moveEvent) => {
-      const rawWidth = moveEvent.clientX - workspaceRect.left;
-      const maxWidth = Math.max(220, Math.floor(workspaceRect.width * 0.65));
-      state.sidebarWidth = clamp(rawWidth, 180, maxWidth);
-      el.workspace.style.setProperty(
-        "--sidebar-width",
-        `${state.sidebarWidth}px`,
-      );
-    };
-
-    const onUp = () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      saveSidebarWidth(state.sidebarWidth);
-    };
-
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  });
+  bindSidebarResizer({ el, state });
 }

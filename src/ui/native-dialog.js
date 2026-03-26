@@ -1,7 +1,7 @@
 const { ask } = window.__TAURI__.dialog;
 
 export async function confirmDelete(fileName) {
-  return ask("You can restore this file from the Trash.", {
+  return ask("You can restore it from the Trash.", {
     title: `Are you sure you want to delete '${fileName}'?`,
     kind: "warning",
     okLabel: "Move to Trash",

@@ -105,11 +105,531 @@
       },
       {
         "ext": [
-          "xml"
+          "xml",
+          "xsl",
+          "xslt",
+          "xsd",
+          "wsdl",
+          "rss",
+          "atom",
+          "svg"
         ],
         "name": "XML document",
         "description": "XML document",
         "mimeType": "application/xml",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "sh",
+          "bash",
+          "zsh",
+          "fish",
+          "ksh",
+          "csh",
+          "tcsh",
+          "command",
+          "tool"
+        ],
+        "name": "Shell script",
+        "description": "Shell script",
+        "mimeType": "text/x-shellscript",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "js",
+          "mjs",
+          "cjs"
+        ],
+        "name": "JavaScript file",
+        "description": "JavaScript source file",
+        "mimeType": "text/javascript",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "ts",
+          "mts",
+          "cts",
+          "tsx",
+          "jsx"
+        ],
+        "name": "TypeScript file",
+        "description": "TypeScript source file",
+        "mimeType": "text/x-typescript",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "html",
+          "htm",
+          "xhtml"
+        ],
+        "name": "HTML document",
+        "description": "HTML document",
+        "mimeType": "text/html",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "css",
+          "scss",
+          "sass",
+          "less",
+          "styl"
+        ],
+        "name": "Stylesheet",
+        "description": "CSS stylesheet",
+        "mimeType": "text/css",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "py",
+          "pyw",
+          "pyi",
+          "pyx",
+          "pxd"
+        ],
+        "name": "Python file",
+        "description": "Python source file",
+        "mimeType": "text/x-python",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "rb",
+          "rbw",
+          "rake",
+          "gemspec",
+          "ru"
+        ],
+        "name": "Ruby file",
+        "description": "Ruby source file",
+        "mimeType": "text/x-ruby",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "java",
+          "gradle",
+          "groovy",
+          "gvy",
+          "gy",
+          "gsh"
+        ],
+        "name": "Java/Groovy file",
+        "description": "Java or Groovy source file",
+        "mimeType": "text/x-java",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "kt",
+          "kts"
+        ],
+        "name": "Kotlin file",
+        "description": "Kotlin source file",
+        "mimeType": "text/x-kotlin",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "scala",
+          "sc"
+        ],
+        "name": "Scala file",
+        "description": "Scala source file",
+        "mimeType": "text/x-scala",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "c",
+          "h"
+        ],
+        "name": "C file",
+        "description": "C source file",
+        "mimeType": "text/x-c",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "cpp",
+          "cxx",
+          "cc",
+          "c++",
+          "hpp",
+          "hxx",
+          "hh",
+          "h++"
+        ],
+        "name": "C++ file",
+        "description": "C++ source file",
+        "mimeType": "text/x-c++src",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "cs",
+          "csx"
+        ],
+        "name": "C# file",
+        "description": "C# source file",
+        "mimeType": "text/x-csharp",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "go"
+        ],
+        "name": "Go file",
+        "description": "Go source file",
+        "mimeType": "text/x-go",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "rs"
+        ],
+        "name": "Rust file",
+        "description": "Rust source file",
+        "mimeType": "text/x-rust",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "swift"
+        ],
+        "name": "Swift file",
+        "description": "Swift source file",
+        "mimeType": "text/x-swift",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "php",
+          "php3",
+          "php4",
+          "php5",
+          "php7",
+          "php8",
+          "phtml",
+          "phar"
+        ],
+        "name": "PHP file",
+        "description": "PHP source file",
+        "mimeType": "text/x-php",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "pl",
+          "pm",
+          "pod",
+          "t",
+          "psgi"
+        ],
+        "name": "Perl file",
+        "description": "Perl source file",
+        "mimeType": "text/x-perl",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "lua"
+        ],
+        "name": "Lua file",
+        "description": "Lua source file",
+        "mimeType": "text/x-lua",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "r",
+          "rmd",
+          "rnw"
+        ],
+        "name": "R file",
+        "description": "R source file",
+        "mimeType": "text/x-r",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "dart"
+        ],
+        "name": "Dart file",
+        "description": "Dart source file",
+        "mimeType": "text/x-dart",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "jl"
+        ],
+        "name": "Julia file",
+        "description": "Julia source file",
+        "mimeType": "text/x-julia",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "ex",
+          "exs",
+          "heex",
+          "leex"
+        ],
+        "name": "Elixir file",
+        "description": "Elixir source file",
+        "mimeType": "text/x-elixir",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "erl",
+          "hrl"
+        ],
+        "name": "Erlang file",
+        "description": "Erlang source file",
+        "mimeType": "text/x-erlang",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "hs",
+          "lhs"
+        ],
+        "name": "Haskell file",
+        "description": "Haskell source file",
+        "mimeType": "text/x-haskell",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "clj",
+          "cljs",
+          "cljc",
+          "edn"
+        ],
+        "name": "Clojure file",
+        "description": "Clojure source file",
+        "mimeType": "text/x-clojure",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "ml",
+          "mli"
+        ],
+        "name": "OCaml file",
+        "description": "OCaml source file",
+        "mimeType": "text/x-ocaml",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "fs",
+          "fsi",
+          "fsx",
+          "fsscript"
+        ],
+        "name": "F# file",
+        "description": "F# source file",
+        "mimeType": "text/x-fsharp",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "zig"
+        ],
+        "name": "Zig file",
+        "description": "Zig source file",
+        "mimeType": "text/x-zig",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "nix"
+        ],
+        "name": "Nix file",
+        "description": "Nix expression file",
+        "mimeType": "text/x-nix",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "vim",
+          "vimrc"
+        ],
+        "name": "Vim script",
+        "description": "Vim script file",
+        "mimeType": "text/x-vim",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "tcl",
+          "tk"
+        ],
+        "name": "Tcl script",
+        "description": "Tcl/Tk script file",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "ps1",
+          "psm1",
+          "psd1",
+          "ps1xml"
+        ],
+        "name": "PowerShell script",
+        "description": "PowerShell script",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "bat",
+          "cmd"
+        ],
+        "name": "Batch file",
+        "description": "Windows batch file",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "sql",
+          "ddl",
+          "dml"
+        ],
+        "name": "SQL file",
+        "description": "SQL query file",
+        "mimeType": "text/x-sql",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "graphql",
+          "gql"
+        ],
+        "name": "GraphQL file",
+        "description": "GraphQL schema or query",
+        "mimeType": "application/graphql",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "tf",
+          "tfvars",
+          "hcl"
+        ],
+        "name": "Terraform/HCL file",
+        "description": "Terraform or HCL configuration",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "dockerfile",
+          "containerfile"
+        ],
+        "name": "Dockerfile",
+        "description": "Container build file",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "vue",
+          "svelte",
+          "astro"
+        ],
+        "name": "Web component file",
+        "description": "Web framework component",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "proto"
+        ],
+        "name": "Protobuf file",
+        "description": "Protocol Buffer definition",
+        "mimeType": "text/plain",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "diff",
+          "patch"
+        ],
+        "name": "Diff/patch file",
+        "description": "Unified diff or patch file",
+        "mimeType": "text/x-diff",
+        "role": "Viewer",
+        "rank": "Alternate"
+      },
+      {
+        "ext": [
+          "env",
+          "editorconfig",
+          "gitignore",
+          "gitattributes",
+          "npmrc",
+          "nvmrc",
+          "prettierrc",
+          "eslintrc",
+          "babelrc",
+          "htaccess"
+        ],
+        "name": "Config/dotfile",
+        "description": "Project configuration or dotfile",
+        "mimeType": "text/plain",
         "role": "Viewer",
         "rank": "Alternate"
       }

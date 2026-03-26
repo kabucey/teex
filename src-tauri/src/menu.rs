@@ -117,6 +117,13 @@ pub(crate) fn build_app_menu(
         true,
         Some("CmdOrCtrl+Shift+E"),
     )?;
+    let unified_diff_item = MenuItem::with_id(
+        app,
+        MENU_UNIFIED_DIFF,
+        "Review All Changes",
+        true,
+        Some("CmdOrCtrl+Shift+G"),
+    )?;
 
     let theme_system_item =
         CheckMenuItem::with_id(app, MENU_THEME_SYSTEM, "System", true, true, None::<&str>)?;
@@ -170,6 +177,8 @@ pub(crate) fn build_app_menu(
             &show_hidden_files_item,
             &show_modified_only_item,
             &toggle_collapse_all_folders_item,
+            &PredefinedMenuItem::separator(app)?,
+            &unified_diff_item,
             &PredefinedMenuItem::separator(app)?,
             &toggle_markdown_mode_item,
             &PredefinedMenuItem::separator(app)?,

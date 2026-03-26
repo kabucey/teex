@@ -109,6 +109,25 @@ test("normalizeTransferTab sanitizes invalid and partial tab records", () => {
       previewScrollTop: 0,
     },
   });
+
+  // "code" kind must be preserved (not collapsed to "text")
+  assert.deepEqual(
+    normalizeTransferTab({
+      path: "/a.js",
+      kind: "code",
+      content: "const x = 1;",
+    }),
+    {
+      path: "/a.js",
+      kind: "code",
+      content: "const x = 1;",
+      savedContent: "const x = 1;",
+      writable: true,
+      isDirty: false,
+      markdownViewMode: "edit",
+      scrollState: { editorScrollTop: 0, previewScrollTop: 0 },
+    },
+  );
 });
 
 test("apply/clear file payload updates active state and markdown mode", () => {

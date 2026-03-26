@@ -157,9 +157,10 @@ pub(crate) fn create_window_from_drag(
     let scale = get_scale(&app);
     let (x, y) = full_window_position(physical_x, physical_y, scale);
 
+    let (width, height) = focused_window_size(&app).unwrap_or((FULL_WIDTH, FULL_HEIGHT));
     let new_window = tauri::WebviewWindowBuilder::new(&app, &label, tauri::WebviewUrl::default())
         .title("Teex")
-        .inner_size(FULL_WIDTH, FULL_HEIGHT)
+        .inner_size(width, height)
         .position(x, y)
         .build()
         .map_err(|e| format!("Unable to create window: {e}"))?;

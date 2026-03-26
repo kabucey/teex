@@ -40,11 +40,9 @@ import {
 } from "./ui/bindings-controller.js";
 import { createDiffController } from "./ui/diff/controller.js";
 import { createDiffMapController } from "./ui/diff/map-controller.js";
+import { createUnifiedDiffController } from "./ui/diff/unified-controller.js";
 import { createCodeMirrorController } from "./ui/editor/codemirror-controller.js";
-import {
-  confirmDelete,
-  confirmReloadExternalChange,
-} from "./ui/native-dialog.js";
+import { confirmReloadExternalChange } from "./ui/native-dialog.js";
 import { createScrollSyncController } from "./ui/scroll/sync.js";
 import { baseName } from "./utils/app-utils.js";
 
@@ -74,6 +72,7 @@ let sessionRestoreController;
 let findController;
 let diffController;
 let diffMapController;
+let unifiedDiffController;
 let sessionSaveEnabled = false;
 
 const codeJarController = createCodeMirrorController({
@@ -145,7 +144,13 @@ const codeJarController = createCodeMirrorController({
     handleReceiveTransferredTabs,
     handleTabTransferResult,
     restoreLastSession,
-    handleContextMenuDelete,
+    handleContextMenuDelete: (path) =>
+      tabController.deleteAndCloseTabs(path, {
+        onAllClosed: () => scrollSyncController?.afterContextCleared(),
+      }),
+    handleTabContextMenuClose: closeTab,
+    handleTabContextMenuCloseOthers: (index) =>
+      tabController.closeOtherTabs(index),
     onFileSaved,
     onBeforeToggleMarkdownMode,
     onAfterToggleMarkdownMode,
@@ -212,6 +217,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     codeEditorController: codeJarController,
     diffMapController,
   });
+  unifiedDiffController = createUnifiedDiffController({ state, el, invoke });
   scrollSyncController = createScrollSyncController({ state, el });
   bindUiEvents();
   await appEventsController.bindAppEvents();
@@ -224,6 +230,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   listen("teex://toggle-hidden-files", () => toggleHiddenFiles());
   listen("teex://toggle-modified-only", () => toggleModifiedOnly());
+  listen("teex://toggle-unified-diff", () => toggleUnifiedDiff());
 });
 
 function bindUiEvents() {
@@ -238,6 +245,7 @@ function bindUiEvents() {
     toggleModifiedOnly,
     toggleCollapseAllFolders: () =>
       sidebarController.toggleCollapseAllFolders(),
+    toggleUnifiedDiff,
     saveNow,
     hasTabSession,
     switchTab,
@@ -414,20 +422,6 @@ async function closeTabByPath(path) {
   }
 }
 
-async function handleContextMenuDelete(path) {
-  const fileName = baseName(path);
-  const confirmed = await confirmDelete(fileName);
-  if (!confirmed) {
-    return;
-  }
-  try {
-    await invoke("trash_file", { path });
-    await closeTabByPath(path);
-  } catch (err) {
-    console.error("Failed to move file to trash:", err);
-  }
-}
-
 async function closeActiveFileOrWindow() {
   await tabController.closeActiveFileOrWindow();
 }
@@ -462,6 +456,32 @@ function toggleModifiedOnly() {
   toggleModifiedOnlyPref(state, invoke, markSidebarTreeDirty, render);
 }
 
+function toggleUnifiedDiff() {
+  if (state.mode !== "folder") {
+    return;
+  }
+  const existingIdx = state.openFiles.findIndex((t) => t.kind === "diff");
+  if (existingIdx !== -1) {
+    if (hasTabSession() && state.activeTabIndex === existingIdx) {
+      tabController.closeTab(existingIdx);
+    } else {
+      switchTab(existingIdx);
+      unifiedDiffController?.refreshNow();
+    }
+  } else {
+    tabController.openDiffTab();
+    unifiedDiffController?.refreshNow();
+  }
+}
+
+function updateUnifiedDiffButton() {
+  if (el.unifiedDiffBtn) {
+    const active = state.activeKind === "diff";
+    el.unifiedDiffBtn.setAttribute("aria-pressed", String(active));
+    el.unifiedDiffBtn.classList.toggle("active", active);
+  }
+}
+
 function toggleSidebarVisibility() {
   editorController.toggleSidebarVisibility();
 }
@@ -482,7 +502,13 @@ function render(options = {}) {
   uiRenderer.render(options);
   scrollSyncController?.scheduleRestoreAfterRender();
   externalFileWatchController.syncWatchedProjectFiles();
-  diffController?.refreshNow();
+  if (state.activeKind === "diff") {
+    diffController?.clear();
+    unifiedDiffController?.scheduleRefresh();
+  } else {
+    diffController?.refreshNow();
+  }
+  updateUnifiedDiffButton();
   if (sessionSaveEnabled) {
     flushStateToActiveTab();
     saveWindowSession(state, state.windowLabel);

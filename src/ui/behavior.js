@@ -1,3 +1,7 @@
+export function isTextInputActive(element) {
+  return element?.tagName?.toUpperCase() === "INPUT";
+}
+
 export function isUntitledTab({ activePath, openFiles, activeTabIndex }) {
   const files = openFiles || [];
   return (
@@ -73,6 +77,10 @@ export function shouldCollapseHiddenSingleTabForSidebarOpen({
   openFilesCount,
 }) {
   return mode === "folder" && Number(openFilesCount) === 1;
+}
+
+export function isActiveDiffTab({ openFiles, activeTabIndex }) {
+  return openFiles?.[activeTabIndex]?.kind === "diff";
 }
 
 export function sidebarClickModifierAction(event) {

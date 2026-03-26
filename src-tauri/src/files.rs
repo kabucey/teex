@@ -5,6 +5,7 @@ use super::*;
 pub(crate) struct ProjectEntry {
     pub(crate) path: String,
     pub(crate) rel_path: String,
+    pub(crate) is_dir: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -169,6 +170,7 @@ pub(crate) fn list_project_entries(
     }
 
     let mut entries = Vec::new();
+    let mut all_dirs: Vec<PathBuf> = Vec::new();
 
     for entry in WalkDir::new(&root_path)
         .follow_links(false)
@@ -181,8 +183,16 @@ pub(crate) fn list_project_entries(
         };
 
         let path = entry.path();
+
+        if path.is_dir() {
+            if path != root_path {
+                all_dirs.push(path.to_path_buf());
+            }
+            continue;
+        }
+
         let visible = is_text_like(path) || (show_hidden && is_dotfile_config(path));
-        if !path.is_file() || !visible {
+        if !visible {
             continue;
         }
         if !show_hidden {
@@ -201,7 +211,25 @@ pub(crate) fn list_project_entries(
         entries.push(ProjectEntry {
             path: path_to_string(path),
             rel_path: relative.to_string_lossy().to_string(),
+            is_dir: false,
         });
+    }
+
+    // Include directories that have no visible file descendants
+    for dir in all_dirs {
+        let dir_prefix = format!("{}/", path_to_string(&dir));
+        let has_file_descendants = entries.iter().any(|f| f.path.starts_with(&dir_prefix));
+        if !has_file_descendants {
+            let relative = match dir.strip_prefix(&root_path) {
+                Ok(rel) => rel,
+                Err(_) => continue,
+            };
+            entries.push(ProjectEntry {
+                path: path_to_string(&dir),
+                rel_path: relative.to_string_lossy().to_string(),
+                is_dir: true,
+            });
+        }
     }
 
     entries.sort_by(|a, b| a.rel_path.cmp(&b.rel_path));

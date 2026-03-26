@@ -540,6 +540,23 @@ test("completeDrop in path mode transfers with sidebar-drag kind", async () => {
   assert.equal(state.openFiles.length, originalOpenFiles.length);
 });
 
+test("completeDrop in path mode uses file extension to set kind", async () => {
+  const { controller, calls } = createHarness({
+    invokeResults: { report_drag_position: "teex-window-2" },
+  });
+
+  controller.activateForPath("/tmp/foo.js", {
+    title: "foo.js",
+    content: "const x = 1;",
+  });
+  await controller.reportPosition(400, 300);
+  await controller.completeDrop();
+
+  const transferCalls = calls.filter((c) => c.command === "route_tab_transfer");
+  assert.equal(transferCalls.length, 1);
+  assert.equal(transferCalls[0].args.tabs[0].kind, "code");
+});
+
 test("cancel in path mode cleans up", async () => {
   const { controller, calls } = createHarness();
 

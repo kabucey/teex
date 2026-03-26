@@ -1,3 +1,4 @@
+import { fileKindFromExtension } from "../ui/editor/controller.js";
 import { createCrossWindowDragSession } from "./cross-window-drag-session.js";
 import { createCrossWindowDropZone } from "./cross-window-drop-zone.js";
 import {
@@ -10,10 +11,12 @@ import {
 } from "./session.js";
 
 function buildPathModeTransferTab(dragSession) {
+  const ext = dragSession.dragPath?.split(".").pop();
+  const kind = fileKindFromExtension(ext);
   return {
     path: dragSession.dragPath,
     content: dragSession.dragPreviewInfo?.content ?? "",
-    kind: "text",
+    kind,
     writable: true,
     isDirty: false,
     markdownViewMode: "edit",
