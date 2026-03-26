@@ -1,6 +1,7 @@
 import { saveSidebarWidth } from "../app/sidebar-width-persistence.js";
 import { clamp, selectAllContents } from "../utils/app-utils.js";
 import { hasFileDragData } from "../utils/path-input.js";
+import { isTextInputActive } from "./behavior.js";
 import { renderMarkdown } from "./markdown-renderer.js";
 import {
   detectStructuredPasteKind,
@@ -150,6 +151,10 @@ export function bindUiEvents({
     }
 
     if (event.metaKey && event.key.toLowerCase() === "a") {
+      if (isTextInputActive(document.activeElement)) {
+        return;
+      }
+
       const isPreviewVisible = !el.preview.classList.contains("hidden");
       if (isPreviewVisible) {
         event.preventDefault();

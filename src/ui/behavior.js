@@ -1,3 +1,7 @@
+export function isTextInputActive(element) {
+  return element?.tagName?.toUpperCase() === "INPUT";
+}
+
 export function isUntitledTab({ activePath, openFiles, activeTabIndex }) {
   const files = openFiles || [];
   return (

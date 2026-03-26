@@ -5,6 +5,7 @@ import {
   getSidebarSelectedPath,
   getSingleFileUiOpenMode,
   hasActiveContent,
+  isTextInputActive,
   isUntitledTab,
   shouldCapturePreviousSingleFolderFile,
   shouldCollapseHiddenSingleTabForSidebarOpen,
@@ -467,4 +468,24 @@ test("hasActiveContent returns false for folder with no file open", () => {
     }),
     false,
   );
+});
+
+test("isTextInputActive returns true for an input element", () => {
+  assert.equal(isTextInputActive({ tagName: "INPUT" }), true);
+});
+
+test("isTextInputActive returns false for a textarea element", () => {
+  assert.equal(isTextInputActive({ tagName: "TEXTAREA" }), false);
+});
+
+test("isTextInputActive returns false for a div element", () => {
+  assert.equal(isTextInputActive({ tagName: "DIV" }), false);
+});
+
+test("isTextInputActive returns false for null", () => {
+  assert.equal(isTextInputActive(null), false);
+});
+
+test("isTextInputActive returns false for undefined", () => {
+  assert.equal(isTextInputActive(undefined), false);
 });
