@@ -37,6 +37,7 @@ export function createRuntimeState() {
       sidebarWidth: 280,
       dropOverlayVisible: false,
       collapsedFolders: new Set(),
+      savedCollapsedFolders: null,
       rootPath: null,
       entries: [],
       openFiles: [],
