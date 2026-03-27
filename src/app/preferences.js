@@ -55,6 +55,9 @@ export function toggleModifiedOnly(
   render,
 ) {
   state.filterModifiedOnly = !state.filterModifiedOnly;
+  if (state.filterModifiedOnly) {
+    state.collapsedFolders = new Set();
+  }
   localStorage.setItem(
     "teex-filter-modified-only",
     state.filterModifiedOnly ? "true" : "false",
