@@ -606,24 +606,24 @@ test("replaceActiveTab records initial file so back button works after first swi
     },
     invoke: async (command, payload) => {
       if (command === "read_text_file" && payload?.path === "/tmp/b.md") {
-        return {
-          path: "/tmp/b.md",
-          content: "# b",
-          kind: "markdown",
-          writable: true,
-        };
+        return { path: "/tmp/b.md", content: "# b", kind: "markdown", writable: true };
       }
+      if (command === "read_text_file" && payload?.path === "/tmp/a.md") {
+        return { path: "/tmp/a.md", content: "# a", kind: "markdown", writable: true };
+      }
+    },
+    applyFilePayload: (payload) => {
+      state.activePath = payload.path;
+      state.content = payload.content;
     },
   });
 
-  // Tab has no nav history yet (first file opened without navigation recording)
-  assert.equal(state.openFiles[0].navHistory, undefined);
-
   await controller.replaceActiveTab("/tmp/b.md");
+  assert.equal(state.activePath, "/tmp/b.md");
 
-  // Both files should be in history so back button works
-  assert.deepEqual(state.openFiles[0].navHistory, ["/tmp/a.md", "/tmp/b.md"]);
-  assert.equal(state.openFiles[0].navHistoryCursor, 1);
+  // Back button takes us back to the original file
+  await controller.navigateBack();
+  assert.equal(state.activePath, "/tmp/a.md");
 });
 
 test("replaceActiveTab preserves navigation history for back/forward", async () => {
@@ -651,21 +651,24 @@ test("replaceActiveTab preserves navigation history for back/forward", async () 
     },
     invoke: async (command, payload) => {
       if (command === "read_text_file" && payload?.path === "/tmp/b.md") {
-        return {
-          path: "/tmp/b.md",
-          content: "# b",
-          kind: "markdown",
-          writable: true,
-        };
+        return { path: "/tmp/b.md", content: "# b", kind: "markdown", writable: true };
       }
+      if (command === "read_text_file" && payload?.path === "/tmp/a.md") {
+        return { path: "/tmp/a.md", content: "# a", kind: "markdown", writable: true };
+      }
+    },
+    applyFilePayload: (payload) => {
+      state.activePath = payload.path;
+      state.content = payload.content;
     },
   });
 
   await controller.replaceActiveTab("/tmp/b.md");
-
   assert.equal(state.openFiles[0].path, "/tmp/b.md");
-  assert.deepEqual(state.openFiles[0].navHistory, ["/tmp/a.md", "/tmp/b.md"]);
-  assert.equal(state.openFiles[0].navHistoryCursor, 1);
+
+  // Back button works after replacing tab when history already existed
+  await controller.navigateBack();
+  assert.equal(state.activePath, "/tmp/a.md");
 });
 
 test("navigateBack updates tab title to previous file", async () => {
