@@ -173,7 +173,7 @@ export function bindUiEvents({
     toggleUnifiedDiff?.();
   });
 
-  el.preview.addEventListener("click", (event) => {
+  el.preview.addEventListener("click", async (event) => {
     const checkbox = event.target.closest(
       'input[type="checkbox"], .task-list-item-checkbox',
     );
@@ -197,7 +197,7 @@ export function bindUiEvents({
         if (state.activePath) {
           saveNow();
         }
-        el.preview.innerHTML = renderMarkdown(state.content);
+        el.preview.innerHTML = await renderMarkdown(state.content);
       }
       return;
     }

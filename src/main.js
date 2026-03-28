@@ -220,8 +220,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   unifiedDiffController = createUnifiedDiffController({ state, el, invoke });
   scrollSyncController = createScrollSyncController({ state, el });
   bindUiEvents();
-  await appEventsController.bindAppEvents();
-  await openPathsController.bootstrap();
+  await Promise.all([
+    appEventsController.bindAppEvents(),
+    openPathsController.bootstrap(),
+  ]);
   sessionSaveEnabled = true;
   openPathsController.startPendingOpenPathPoller();
 

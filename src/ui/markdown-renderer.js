@@ -1,3 +1,21 @@
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
+}
+
+async function ensureMarkdownLibsLoaded() {
+  if (typeof globalThis.markdownit === "function") {
+    return;
+  }
+  await loadScript("/vendor/markdown-it.min.js");
+  await loadScript("/vendor/markdown-it-task-lists.min.js");
+}
+
 function getMarkdownParser() {
   if (getMarkdownParser.instance) {
     return getMarkdownParser.instance;
@@ -73,17 +91,32 @@ function getMarkdownParser() {
   return md;
 }
 
-export function renderMarkdown(markdown) {
+export async function renderMarkdown(markdown) {
+  await ensureMarkdownLibsLoaded();
   const source = String(markdown || "").replace(/\r\n/g, "\n");
   return getMarkdownParser().render(source);
 }
 
 let mermaidInitialized = false;
 
+async function ensureMermaidLoaded() {
+  if (globalThis.mermaid) {
+    return;
+  }
+  await loadScript("/vendor/mermaid.min.js");
+}
+
 export async function renderMermaidDiagrams(previewEl) {
   if (!previewEl) {
     return;
   }
+
+  const hasMermaidBlocks = previewEl.querySelector(".mermaid") !== null;
+  if (!hasMermaidBlocks) {
+    return;
+  }
+
+  await ensureMermaidLoaded();
 
   const mermaid = globalThis.mermaid;
   if (!mermaid || typeof mermaid.run !== "function") {
@@ -99,13 +132,8 @@ export async function renderMermaidDiagrams(previewEl) {
     mermaidInitialized = true;
   }
 
-  const nodes = [...previewEl.querySelectorAll(".mermaid")];
-  if (nodes.length === 0) {
-    return;
-  }
-
   await mermaid.run({
-    nodes,
+    nodes: [...previewEl.querySelectorAll(".mermaid")],
     suppressErrors: true,
   });
 }

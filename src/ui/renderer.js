@@ -61,7 +61,7 @@ export function createUiRenderer({
     });
   }
 
-  function renderMainPane(options = {}) {
+  async function renderMainPane(options = {}) {
     const shouldFocusEditor = options.focusEditor !== false;
 
     if (el.unifiedDiff) {
@@ -89,7 +89,7 @@ export function createUiRenderer({
       el.editor.classList.add("hidden");
       el.preview.classList.remove("hidden");
       codeJarController.detach();
-      el.preview.innerHTML = renderMarkdown(state.content);
+      el.preview.innerHTML = await renderMarkdown(state.content);
       if (state.activePath) {
         rewritePreviewImages(el.preview, dirName(state.activePath));
       }

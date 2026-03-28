@@ -8,8 +8,8 @@ globalThis.markdownitTaskLists = markdownitTaskLists;
 
 const { renderMarkdown } = await import("../../src/ui/markdown-renderer.js");
 
-test("renders headings, emphasis, and links", () => {
-  const html = renderMarkdown(
+test("renders headings, emphasis, and links", async () => {
+  const html = await renderMarkdown(
     "# Title\n\nText with **bold** and [link](https://example.com).",
   );
   assert.match(
@@ -20,14 +20,14 @@ test("renders headings, emphasis, and links", () => {
   assert.match(html, /<a href="https:\/\/example\.com"/);
 });
 
-test("escapes raw html while preserving inline markdown", () => {
-  const html = renderMarkdown("<script>alert(1)<\\/script> and `code`");
+test("escapes raw html while preserving inline markdown", async () => {
+  const html = await renderMarkdown("<script>alert(1)<\\/script> and `code`");
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
   assert.match(html, /<code>code<\/code>/);
 });
 
-test("renders fenced code blocks and task lists", () => {
-  const html = renderMarkdown(
+test("renders fenced code blocks and task lists", async () => {
+  const html = await renderMarkdown(
     "```js\nconst x = 1;\n```\n\n- [x] done\n- [ ] todo",
   );
   assert.match(html, /<pre[^>]*><code class="language-js">const x = 1;/);
@@ -37,8 +37,8 @@ test("renders fenced code blocks and task lists", () => {
   assert.match(html, /task-list-item-checkbox" checked/);
 });
 
-test("renders tables and blockquotes", () => {
-  const html = renderMarkdown(
+test("renders tables and blockquotes", async () => {
+  const html = await renderMarkdown(
     "> quoted\n\n| a | b |\n| --- | --- |\n| 1 | 2 |",
   );
   assert.match(
@@ -51,8 +51,8 @@ test("renders tables and blockquotes", () => {
   assert.match(html, /<td>2<\/td>/);
 });
 
-test("renders nested list items as nested lists", () => {
-  const html = renderMarkdown(
+test("renders nested list items as nested lists", async () => {
+  const html = await renderMarkdown(
     "# List\n\n- list 1\n    - sub\n- item 2\n    - sub 2",
   );
   assert.match(
@@ -61,8 +61,8 @@ test("renders nested list items as nested lists", () => {
   );
 });
 
-test("renders mermaid fences as mermaid blocks with source mapping", () => {
-  const html = renderMarkdown("```mermaid\ngraph TD\n  A-->B\n```");
+test("renders mermaid fences as mermaid blocks with source mapping", async () => {
+  const html = await renderMarkdown("```mermaid\ngraph TD\n  A-->B\n```");
   assert.match(
     html,
     /<div class="mermaid" data-src-line-start="1" data-src-line-end="4">/,
@@ -71,8 +71,8 @@ test("renders mermaid fences as mermaid blocks with source mapping", () => {
   assert.match(html, /A--&gt;B/);
 });
 
-test("preserves single newlines as line breaks in paragraphs", () => {
-  const html = renderMarkdown(
+test("preserves single newlines as line breaks in paragraphs", async () => {
+  const html = await renderMarkdown(
     '# March 2026 Monthly Plan\n\n**Period:** March 1-31, 2026 (31 days, ~4.5 weeks)\n**Theme:** "Deliver"\n**Context:** Q1 closes March 31.',
   );
   assert.match(
