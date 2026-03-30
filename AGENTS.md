@@ -88,6 +88,7 @@ Prerequisites: Rust toolchain, Tauri CLI, and platform-specific Tauri/WebView bu
 - Frontend logic that can be isolated into pure helper functions should be extracted and covered with lightweight Node tests (for example `node --test`) before wiring into UI event handlers.
 - Prefer `./test.sh` as the default pre-PR/local verification command so both Rust and frontend helper tests run together.
 - Run `./lint.sh` alongside `./test.sh` before finishing changes so lint regressions are caught too.
+- For any Rust change under `src-tauri/`, run `cargo fmt --manifest-path src-tauri/Cargo.toml --all` before push/PR update. If CI fails on formatting, fix that first before investigating anything deeper.
 - When refactoring `src/main.js`, prefer low-risk extractions into `src/` modules first (pure renderers/helpers/path normalization/state-free logic), then add/expand Node tests for the extracted module in `tests/*.test.mjs`.
 - Continue the folder pattern during `src/main.js` refactors: place sidebar logic in `src/sidebar/`, UI rendering/formatting logic in `src/ui/`, and keep each module under the 200-300 line cap.
 - For large refactors, preserve behavior by splitting into small phases and running `./test.sh` after each phase.

@@ -68,6 +68,7 @@ Node tests mirror `src/` layout: `src/ui/` → `tests/ui/`, `src/sidebar/` → `
 - No JS bundler — frontend is static files served directly by Tauri (`src/index.html` is the entry)
 - **TDD is required**: write or update tests before implementing. For every change, write a failing test first, then make it pass. Run `./test.sh` after each step to confirm.
 - **After completing a feature**, run `./test.sh` and `./lint.sh` to verify everything passes before considering the work done.
+- **Before pushing Rust changes**, run `cargo fmt --manifest-path src-tauri/Cargo.toml --all` (or `cd src-tauri && cargo fmt --all`). CI formatting failures are common and should be fixed before chasing deeper issues.
 - Extract pure helper functions from UI code and cover with Node tests before wiring into event handlers
 - For large refactors, split into small phases and run `./test.sh` after each
 - When changing file-open flows, manually test file types from `tauri.conf.json` (md, txt, json, yaml, toml, csv, xml) across entry paths: app UI, OS "Open With", and drag-drop
