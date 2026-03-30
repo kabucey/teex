@@ -27,6 +27,7 @@ export function bindSidebarItemEvents({
   crossWindowDrag,
   markTreeDirty,
   renderSidebar,
+  applyFolderCollapsedStateToDom,
 }) {
   function rememberSidebarSingleClick(path) {
     sidebarClickState.lastPath = path || null;
@@ -215,8 +216,13 @@ export function bindSidebarItemEvents({
         state.collapsedFolders.add(folderPath);
       }
 
-      markTreeDirty();
-      renderSidebar();
+      if (event.altKey) {
+        markTreeDirty();
+        renderSidebar();
+        return;
+      }
+
+      applyFolderCollapsedStateToDom(folderPath, folder);
     }
   });
 

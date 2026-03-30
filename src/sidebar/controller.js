@@ -86,6 +86,28 @@ export function createSidebarController({
     });
   }
 
+  function applyFolderCollapsedStateToDom(folderPath, folderElement = null) {
+    if (!folderPath) {
+      return;
+    }
+
+    const folder =
+      folderElement ||
+      el.projectList?.querySelector?.(
+        `.folder-toggle[data-folder-path="${CSS.escape(folderPath)}"]`,
+      );
+    if (!folder) {
+      return;
+    }
+
+    const expanded = !state.collapsedFolders.has(folderPath);
+    folder.setAttribute("aria-expanded", String(expanded));
+    const children = folder.nextElementSibling;
+    if (children?.classList?.contains("folder-children")) {
+      children.hidden = !expanded;
+    }
+  }
+
   function syncSidebarActiveItem() {
     const selectedPath = getSidebarSelectedPath({
       mode: state.mode,
@@ -232,6 +254,7 @@ export function createSidebarController({
             crossWindowDrag,
             markTreeDirty,
             renderSidebar,
+            applyFolderCollapsedStateToDom,
           });
           eventsBound = true;
         }
@@ -248,5 +271,6 @@ export function createSidebarController({
     markTreeDirty,
     renderSidebar,
     toggleCollapseAllFolders,
+    applyFolderCollapsedStateToDom,
   };
 }

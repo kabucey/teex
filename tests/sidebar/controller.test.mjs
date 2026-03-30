@@ -172,4 +172,33 @@ describe("sidebar empty state for modified filter", () => {
     assert.equal(folderButton["aria-expanded"], "false");
     assert.equal(children.hidden, true);
   });
+
+  it("updates a single folder collapse state in place", () => {
+    const folderButton = {
+      dataset: { folderPath: "folder" },
+      nextElementSibling: {
+        hidden: false,
+        classList: { contains: (value) => value === "folder-children" },
+      },
+      setAttribute(name, value) {
+        this[name] = value;
+      },
+    };
+
+    const { controller, state } = createHarness({
+      stateOverrides: {
+        entries: [{ path: "/project/folder/a.md", relPath: "folder/a.md" }],
+      },
+    });
+
+    state.collapsedFolders.add("folder");
+    controller.applyFolderCollapsedStateToDom("folder", folderButton);
+    assert.equal(folderButton["aria-expanded"], "false");
+    assert.equal(folderButton.nextElementSibling.hidden, true);
+
+    state.collapsedFolders.delete("folder");
+    controller.applyFolderCollapsedStateToDom("folder", folderButton);
+    assert.equal(folderButton["aria-expanded"], "true");
+    assert.equal(folderButton.nextElementSibling.hidden, false);
+  });
 });
