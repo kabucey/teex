@@ -22,6 +22,16 @@ export function fileExtension(path) {
   return fileName.slice(dotIndex + 1).toLowerCase();
 }
 
+const NAMED_FILE_LANGUAGES = new Map([["Dockerfile", "dockerfile"]]);
+
+export function fileLanguageKey(path) {
+  if (!path) return null;
+  const ext = fileExtension(path);
+  if (ext) return ext;
+  const name = baseName(path);
+  return NAMED_FILE_LANGUAGES.get(name) ?? null;
+}
+
 export function selectAllContents(element) {
   const selection = window.getSelection();
   const range = document.createRange();

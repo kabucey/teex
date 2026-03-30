@@ -5,6 +5,7 @@ import {
   baseName,
   clamp,
   dirName,
+  fileLanguageKey,
   isCursorOutsideWindow,
 } from "../../src/utils/app-utils.js";
 
@@ -29,6 +30,23 @@ test("dirName returns parent directory for unix and windows paths", () => {
 
 test("dirName returns dot for bare filename", () => {
   assert.equal(dirName("file.txt"), ".");
+});
+
+test("fileLanguageKey returns extension for regular files", () => {
+  assert.equal(fileLanguageKey("/path/to/main.rs"), "rs");
+  assert.equal(fileLanguageKey("/path/to/script.py"), "py");
+  assert.equal(fileLanguageKey("index.js"), "js");
+});
+
+test("fileLanguageKey returns 'dockerfile' for Dockerfile", () => {
+  assert.equal(fileLanguageKey("/path/to/Dockerfile"), "dockerfile");
+  assert.equal(fileLanguageKey("Dockerfile"), "dockerfile");
+});
+
+test("fileLanguageKey returns null for unknown extensionless files", () => {
+  assert.equal(fileLanguageKey("/path/to/unknown"), null);
+  assert.equal(fileLanguageKey(""), null);
+  assert.equal(fileLanguageKey(null), null);
 });
 
 test("isCursorOutsideWindow detects out-of-bounds coordinates", () => {

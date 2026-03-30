@@ -64,6 +64,10 @@ test("maps shell extensions", () => {
   assert.equal(prismLanguageForExtension("zsh"), "bash");
 });
 
+test("maps dockerfile to 'docker'", () => {
+  assert.equal(prismLanguageForExtension("dockerfile"), "docker");
+});
+
 test("maps case-insensitively", () => {
   assert.equal(prismLanguageForExtension("JS"), "javascript");
   assert.equal(prismLanguageForExtension("Py"), "python");

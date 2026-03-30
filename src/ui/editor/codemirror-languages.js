@@ -95,6 +95,7 @@ const EXT_TO_LANG = new Map([
   ["zsh", "shell"],
   ["md", "markdown"],
   ["markdown", "markdown"],
+  ["dockerfile", "shell"],
 ]);
 
 export function languageForExtension(ext) {
