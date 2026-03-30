@@ -53,15 +53,16 @@ export function collectFolderPaths(entries) {
 
   for (const entry of entries) {
     const parts = entry.relPath.split("/").filter(Boolean);
-    // For dirs: include the dir itself and all ancestors
-    // For files: include only ancestor folders (not the file itself)
     const limit = entry.isDir ? parts.length : parts.length - 1;
     if (limit === 0) {
       continue;
     }
 
-    for (let i = 0; i < limit; i += 1) {
-      folders.add(parts.slice(0, i + 1).join("/"));
+    let path = parts[0];
+    folders.add(path);
+    for (let i = 1; i < limit; i += 1) {
+      path = `${path}/${parts[i]}`;
+      folders.add(path);
     }
   }
 
@@ -142,17 +143,15 @@ export function renderTreeHtml(
       ? `<img class="folder-icon" src="${escapeAttr(folderIconUrl)}" aria-hidden="true" draggable="false">`
       : `<span class="folder-icon" aria-hidden="true"></span>`;
     html += `<button class="folder-toggle${folderGitClass}" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}"><span class="disclosure" aria-hidden="true"></span>${iconEl}<span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
-    if (!isCollapsed) {
-      html += `<div class="folder-children" style="--indent:${depth};">`;
-      html += renderTreeHtml(
-        folder,
-        depth + 1,
-        collapsedFolders,
-        gitStatusMap,
-        folderIconUrl,
-      );
-      html += `</div>`;
-    }
+    html += `<div class="folder-children" style="--indent:${depth};"${isCollapsed ? " hidden" : ""}>`;
+    html += renderTreeHtml(
+      folder,
+      depth + 1,
+      collapsedFolders,
+      gitStatusMap,
+      folderIconUrl,
+    );
+    html += `</div>`;
   }
 
   for (const file of node.files) {

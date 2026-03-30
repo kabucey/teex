@@ -3,7 +3,10 @@ import { describe, it } from "node:test";
 
 import { createSidebarController } from "../../src/sidebar/controller.js";
 
-function createHarness({ stateOverrides = {} } = {}) {
+function createHarness({
+  stateOverrides = {},
+  addEventListener = () => {},
+} = {}) {
   const state = {
     mode: "folder",
     rootPath: "/project",
@@ -24,6 +27,7 @@ function createHarness({ stateOverrides = {} } = {}) {
       innerHTML: "",
       querySelector: () => null,
       querySelectorAll: () => [],
+      addEventListener,
     },
     projectRootLabel: { textContent: "", removeAttribute() {}, title: "" },
     modifiedToggleBtn: {
@@ -108,5 +112,96 @@ describe("sidebar empty state for modified filter", () => {
 
     assert.doesNotMatch(el.projectList.innerHTML, /sidebar-empty-state/);
     assert.match(el.projectList.innerHTML, /project-item/);
+  });
+
+  it("binds delegated sidebar events only once across rerenders", () => {
+    const registrations = [];
+    const { controller } = createHarness({
+      stateOverrides: {
+        entries: [
+          { path: "/project/folder/a.md", relPath: "folder/a.md" },
+          { path: "/project/folder/b.md", relPath: "folder/b.md" },
+        ],
+      },
+      addEventListener: (...args) => {
+        registrations.push(args[0]);
+      },
+    });
+
+    controller.renderSidebar();
+    controller.markTreeDirty();
+    controller.renderSidebar();
+
+    assert.deepEqual(registrations.sort(), [
+      "click",
+      "contextmenu",
+      "dblclick",
+      "mousedown",
+      "mouseenter",
+    ]);
+  });
+
+  it("updates folder collapse state in place when toggling all folders", () => {
+    const folderButton = {
+      dataset: { folderPath: "folder" },
+      setAttribute(name, value) {
+        this[name] = value;
+      },
+    };
+    const children = {
+      hidden: false,
+      previousElementSibling: folderButton,
+    };
+
+    const { controller, state, el } = createHarness({
+      stateOverrides: {
+        entries: [{ path: "/project/folder/a.md", relPath: "folder/a.md" }],
+      },
+    });
+
+    el.projectList.querySelectorAll = (selector) => {
+      if (selector === ".folder-toggle") return [folderButton];
+      if (selector === ".folder-children") return [children];
+      return [];
+    };
+
+    controller.renderSidebar();
+    state.collapsedFolders = new Set(["folder"]);
+    controller.toggleCollapseAllFolders();
+    assert.equal(folderButton["aria-expanded"], "true");
+    assert.equal(children.hidden, false);
+
+    controller.toggleCollapseAllFolders();
+    assert.equal(folderButton["aria-expanded"], "false");
+    assert.equal(children.hidden, true);
+  });
+
+  it("updates a single folder collapse state in place", () => {
+    const folderButton = {
+      dataset: { folderPath: "folder" },
+      nextElementSibling: {
+        hidden: false,
+        classList: { contains: (value) => value === "folder-children" },
+      },
+      setAttribute(name, value) {
+        this[name] = value;
+      },
+    };
+
+    const { controller, state } = createHarness({
+      stateOverrides: {
+        entries: [{ path: "/project/folder/a.md", relPath: "folder/a.md" }],
+      },
+    });
+
+    state.collapsedFolders.add("folder");
+    controller.applyFolderCollapsedStateToDom("folder", folderButton);
+    assert.equal(folderButton["aria-expanded"], "false");
+    assert.equal(folderButton.nextElementSibling.hidden, true);
+
+    state.collapsedFolders.delete("folder");
+    controller.applyFolderCollapsedStateToDom("folder", folderButton);
+    assert.equal(folderButton["aria-expanded"], "true");
+    assert.equal(folderButton.nextElementSibling.hidden, false);
   });
 });
