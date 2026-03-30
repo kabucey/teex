@@ -24,6 +24,7 @@ function createHarness({ stateOverrides = {} } = {}) {
       innerHTML: "",
       querySelector: () => null,
       querySelectorAll: () => [],
+      addEventListener: () => {},
     },
     projectRootLabel: { textContent: "", removeAttribute() {}, title: "" },
     modifiedToggleBtn: {

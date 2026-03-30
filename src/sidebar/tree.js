@@ -53,15 +53,16 @@ export function collectFolderPaths(entries) {
 
   for (const entry of entries) {
     const parts = entry.relPath.split("/").filter(Boolean);
-    // For dirs: include the dir itself and all ancestors
-    // For files: include only ancestor folders (not the file itself)
     const limit = entry.isDir ? parts.length : parts.length - 1;
     if (limit === 0) {
       continue;
     }
 
-    for (let i = 0; i < limit; i += 1) {
-      folders.add(parts.slice(0, i + 1).join("/"));
+    let path = parts[0];
+    folders.add(path);
+    for (let i = 1; i < limit; i += 1) {
+      path = `${path}/${parts[i]}`;
+      folders.add(path);
     }
   }
 

@@ -71,16 +71,33 @@ export function bindSidebarItemEvents({
     return true;
   }
 
-  el.projectList.querySelectorAll(".project-item").forEach((button) => {
-    button.addEventListener("mouseenter", () => {
+  // --- Event delegation: single listeners on the container ---
+
+  el.projectList.addEventListener("mouseenter", (event) => {
+    const button = event.target.closest(".project-item");
+    if (button) {
       if (button.scrollWidth > button.clientWidth) {
         button.title = button.textContent;
       } else {
         button.removeAttribute("title");
       }
-    });
+      return;
+    }
 
-    button.addEventListener("click", (event) => {
+    const folder = event.target.closest(".folder-toggle");
+    if (folder) {
+      const label = folder.querySelector(".folder-label");
+      if (label && label.scrollWidth > label.clientWidth) {
+        folder.title = label.textContent;
+      } else {
+        folder.removeAttribute("title");
+      }
+    }
+  }, true);
+
+  el.projectList.addEventListener("click", (event) => {
+    const button = event.target.closest(".project-item");
+    if (button) {
       if (event.detail !== 1) {
         return;
       }
@@ -171,74 +188,12 @@ export function bindSidebarItemEvents({
       })();
 
       setSidebarSingleClickOpenPromise(openPromise);
-    });
+      return;
+    }
 
-    button.addEventListener("dblclick", async (event) => {
-      event.preventDefault();
-      const path = button.dataset.path;
-      if (!path) {
-        return;
-      }
-
-      if (sidebarClickState.lastPath === path) {
-        await sidebarClickState.openPromise;
-        if (consumeSidebarDoubleClickPromotion(path)) {
-          return;
-        }
-      }
-
-      await saveNow();
-      await openFolderEntryInTabs(path);
-    });
-
-    button.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      window.getSelection()?.removeAllRanges();
-      const path = button.dataset.path;
-      if (!path) {
-        return;
-      }
-      invoke("show_sidebar_context_menu", { path });
-    });
-  });
-
-  if (crossWindowDrag) {
-    bindSidebarDragEvents({
-      projectList: el.projectList,
-      state,
-      el,
-      invoke,
-      crossWindowDrag,
-      openFolderEntryInTabs,
-      render,
-      updateMenuState,
-    });
-  }
-
-  el.projectList.querySelectorAll(".folder-toggle").forEach((button) => {
-    button.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      window.getSelection()?.removeAllRanges();
-      const { folderPath } = button.dataset;
-      if (!folderPath || !state.rootPath) {
-        return;
-      }
-      invoke("show_sidebar_context_menu", {
-        path: `${state.rootPath}/${folderPath}`,
-      });
-    });
-
-    button.addEventListener("mouseenter", () => {
-      const label = button.querySelector(".folder-label");
-      if (label && label.scrollWidth > label.clientWidth) {
-        button.title = label.textContent;
-      } else {
-        button.removeAttribute("title");
-      }
-    });
-
-    button.addEventListener("click", (event) => {
-      const { folderPath } = button.dataset;
+    const folder = event.target.closest(".folder-toggle");
+    if (folder) {
+      const { folderPath } = folder.dataset;
       if (!folderPath) {
         return;
       }
@@ -262,6 +217,69 @@ export function bindSidebarItemEvents({
 
       markTreeDirty();
       renderSidebar();
-    });
+    }
   });
+
+  el.projectList.addEventListener("dblclick", async (event) => {
+    const button = event.target.closest(".project-item");
+    if (!button) {
+      return;
+    }
+
+    event.preventDefault();
+    const path = button.dataset.path;
+    if (!path) {
+      return;
+    }
+
+    if (sidebarClickState.lastPath === path) {
+      await sidebarClickState.openPromise;
+      if (consumeSidebarDoubleClickPromotion(path)) {
+        return;
+      }
+    }
+
+    await saveNow();
+    await openFolderEntryInTabs(path);
+  });
+
+  el.projectList.addEventListener("contextmenu", (event) => {
+    const button = event.target.closest(".project-item");
+    if (button) {
+      event.preventDefault();
+      window.getSelection()?.removeAllRanges();
+      const path = button.dataset.path;
+      if (!path) {
+        return;
+      }
+      invoke("show_sidebar_context_menu", { path });
+      return;
+    }
+
+    const folder = event.target.closest(".folder-toggle");
+    if (folder) {
+      event.preventDefault();
+      window.getSelection()?.removeAllRanges();
+      const { folderPath } = folder.dataset;
+      if (!folderPath || !state.rootPath) {
+        return;
+      }
+      invoke("show_sidebar_context_menu", {
+        path: `${state.rootPath}/${folderPath}`,
+      });
+    }
+  });
+
+  if (crossWindowDrag) {
+    bindSidebarDragEvents({
+      projectList: el.projectList,
+      state,
+      el,
+      invoke,
+      crossWindowDrag,
+      openFolderEntryInTabs,
+      render,
+      updateMenuState,
+    });
+  }
 }

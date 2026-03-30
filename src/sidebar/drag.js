@@ -106,8 +106,13 @@ export function bindSidebarDragEvents({
   render,
   updateMenuState,
 }) {
-  projectList.querySelectorAll(".project-item").forEach((button) => {
-    button.addEventListener("mousedown", (event) => {
+  projectList.addEventListener("mousedown", (event) => {
+    const button = event.target.closest(".project-item");
+    if (!button) {
+      return;
+    }
+
+    {
       if (event.button !== 0) {
         return;
       }
@@ -287,6 +292,6 @@ export function bindSidebarDragEvents({
 
       document.addEventListener("mousemove", onMouseMove);
       document.addEventListener("mouseup", onMouseUp);
-    });
+    }
   });
 }

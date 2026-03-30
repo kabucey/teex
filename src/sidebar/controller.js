@@ -31,6 +31,8 @@ export function createSidebarController({
   invoke,
   crossWindowDrag,
 }) {
+  let eventsBound = false;
+
   function markTreeDirty() {
     sidebarRenderState.treeDirty = true;
     sidebarRenderState.activePath = null;
@@ -157,25 +159,28 @@ export function createSidebarController({
           augmentedGitMap,
           state.folderIconUrl,
         );
-        bindSidebarItemEvents({
-          el,
-          state,
-          sidebarClickState,
-          normalizeTransferTab,
-          snapshotActiveFileAsTransferTab,
-          hasTabSession,
-          syncActiveTabToState,
-          saveNow,
-          replaceActiveTab,
-          openEntry,
-          openFolderEntryInTabs,
-          render,
-          updateMenuState,
-          invoke,
-          crossWindowDrag,
-          markTreeDirty,
-          renderSidebar,
-        });
+        if (!eventsBound) {
+          bindSidebarItemEvents({
+            el,
+            state,
+            sidebarClickState,
+            normalizeTransferTab,
+            snapshotActiveFileAsTransferTab,
+            hasTabSession,
+            syncActiveTabToState,
+            saveNow,
+            replaceActiveTab,
+            openEntry,
+            openFolderEntryInTabs,
+            render,
+            updateMenuState,
+            invoke,
+            crossWindowDrag,
+            markTreeDirty,
+            renderSidebar,
+          });
+          eventsBound = true;
+        }
       }
       sidebarRenderState.treeDirty = false;
     }
