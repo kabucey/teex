@@ -112,10 +112,9 @@ export function bindSidebarDragEvents({
       return;
     }
 
-    {
-      if (event.button !== 0) {
-        return;
-      }
+    if (event.button !== 0) {
+      return;
+    }
 
       const path = button.dataset.path;
       if (!path) {
@@ -290,8 +289,7 @@ export function bindSidebarDragEvents({
         }
       }
 
-      document.addEventListener("mousemove", onMouseMove);
-      document.addEventListener("mouseup", onMouseUp);
-    }
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
   });
 }

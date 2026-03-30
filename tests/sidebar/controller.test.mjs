@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 
 import { createSidebarController } from "../../src/sidebar/controller.js";
 
-function createHarness({ stateOverrides = {} } = {}) {
+function createHarness({ stateOverrides = {}, addEventListener = () => {} } = {}) {
   const state = {
     mode: "folder",
     rootPath: "/project",
@@ -24,7 +24,7 @@ function createHarness({ stateOverrides = {} } = {}) {
       innerHTML: "",
       querySelector: () => null,
       querySelectorAll: () => [],
-      addEventListener: () => {},
+      addEventListener,
     },
     projectRootLabel: { textContent: "", removeAttribute() {}, title: "" },
     modifiedToggleBtn: {
@@ -109,5 +109,32 @@ describe("sidebar empty state for modified filter", () => {
 
     assert.doesNotMatch(el.projectList.innerHTML, /sidebar-empty-state/);
     assert.match(el.projectList.innerHTML, /project-item/);
+  });
+
+  it("binds delegated sidebar events only once across rerenders", () => {
+    const registrations = [];
+    const { controller } = createHarness({
+      stateOverrides: {
+        entries: [
+          { path: "/project/folder/a.md", relPath: "folder/a.md" },
+          { path: "/project/folder/b.md", relPath: "folder/b.md" },
+        ],
+      },
+      addEventListener: (...args) => {
+        registrations.push(args[0]);
+      },
+    });
+
+    controller.renderSidebar();
+    controller.markTreeDirty();
+    controller.renderSidebar();
+
+    assert.deepEqual(registrations.sort(), [
+      "click",
+      "contextmenu",
+      "dblclick",
+      "mousedown",
+      "mouseenter",
+    ]);
   });
 });
