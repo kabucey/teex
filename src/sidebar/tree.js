@@ -143,17 +143,15 @@ export function renderTreeHtml(
       ? `<img class="folder-icon" src="${escapeAttr(folderIconUrl)}" aria-hidden="true" draggable="false">`
       : `<span class="folder-icon" aria-hidden="true"></span>`;
     html += `<button class="folder-toggle${folderGitClass}" type="button" aria-expanded="${expanded}" style="--indent:${depth};" data-folder-path="${escapeAttr(folder.path)}"><span class="disclosure" aria-hidden="true"></span>${iconEl}<span class="folder-label">${escapeHtml(folder.name)}</span></button>`;
-    if (!isCollapsed) {
-      html += `<div class="folder-children" style="--indent:${depth};">`;
-      html += renderTreeHtml(
-        folder,
-        depth + 1,
-        collapsedFolders,
-        gitStatusMap,
-        folderIconUrl,
-      );
-      html += `</div>`;
-    }
+    html += `<div class="folder-children" style="--indent:${depth};"${isCollapsed ? " hidden" : ""}>`;
+    html += renderTreeHtml(
+      folder,
+      depth + 1,
+      collapsedFolders,
+      gitStatusMap,
+      folderIconUrl,
+    );
+    html += `</div>`;
   }
 
   for (const file of node.files) {

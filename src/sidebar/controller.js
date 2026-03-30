@@ -38,6 +38,54 @@ export function createSidebarController({
     sidebarRenderState.activePath = null;
   }
 
+  function getEntriesToRender() {
+    return state.filterModifiedOnly
+      ? filterEntriesByGitStatus(state.entries, state.gitStatusMap)
+      : state.entries;
+  }
+
+  function getCachedTree(entriesToRender) {
+    if (sidebarRenderState.cachedTreeEntries !== entriesToRender) {
+      sidebarRenderState.cachedTreeEntries = entriesToRender;
+      sidebarRenderState.cachedTree = buildEntryTree(entriesToRender);
+    }
+    return sidebarRenderState.cachedTree;
+  }
+
+  function getCachedGitStatusMap() {
+    if (sidebarRenderState.cachedGitStatusSource !== state.gitStatusMap) {
+      sidebarRenderState.cachedGitStatusSource = state.gitStatusMap;
+      sidebarRenderState.cachedAugmentedGitMap = propagateFolderStatus(
+        state.gitStatusMap,
+      );
+    }
+    return sidebarRenderState.cachedAugmentedGitMap;
+  }
+
+  function applyCollapsedStateToDom() {
+    if (!el.projectList?.querySelectorAll) {
+      return;
+    }
+
+    el.projectList.querySelectorAll(".folder-toggle").forEach((folder) => {
+      const { folderPath } = folder.dataset;
+      if (!folderPath) {
+        return;
+      }
+      const expanded = !state.collapsedFolders.has(folderPath);
+      folder.setAttribute("aria-expanded", String(expanded));
+    });
+
+    el.projectList.querySelectorAll(".folder-children").forEach((children) => {
+      const previous = children.previousElementSibling;
+      const folderPath = previous?.dataset?.folderPath;
+      if (!folderPath) {
+        return;
+      }
+      children.hidden = state.collapsedFolders.has(folderPath);
+    });
+  }
+
   function syncSidebarActiveItem() {
     const selectedPath = getSidebarSelectedPath({
       mode: state.mode,
@@ -78,8 +126,16 @@ export function createSidebarController({
     } else {
       state.collapsedFolders = collectFolderPaths(state.entries);
     }
-    markTreeDirty();
-    renderSidebar();
+
+    if (sidebarRenderState.treeDirty) {
+      renderSidebar();
+      return;
+    }
+
+    applyCollapsedStateToDom();
+    syncSidebarActiveItem();
+    updateModifiedToggleButton();
+    updateCollapseToggleButton();
   }
 
   function updateCollapseToggleButton() {
@@ -142,16 +198,14 @@ export function createSidebarController({
     }
 
     if (sidebarRenderState.treeDirty) {
-      const entriesToRender = state.filterModifiedOnly
-        ? filterEntriesByGitStatus(state.entries, state.gitStatusMap)
-        : state.entries;
+      const entriesToRender = getEntriesToRender();
 
       if (state.filterModifiedOnly && entriesToRender.length === 0) {
         el.projectList.innerHTML =
           '<p class="sidebar-empty-state">No modified files.</p>';
       } else {
-        const tree = buildEntryTree(entriesToRender);
-        const augmentedGitMap = propagateFolderStatus(state.gitStatusMap);
+        const tree = getCachedTree(entriesToRender);
+        const augmentedGitMap = getCachedGitStatusMap();
         el.projectList.innerHTML = renderTreeHtml(
           tree,
           0,

@@ -137,4 +137,39 @@ describe("sidebar empty state for modified filter", () => {
       "mouseenter",
     ]);
   });
+
+  it("updates folder collapse state in place when toggling all folders", () => {
+    const folderButton = {
+      dataset: { folderPath: "folder" },
+      setAttribute(name, value) {
+        this[name] = value;
+      },
+    };
+    const children = {
+      hidden: false,
+      previousElementSibling: folderButton,
+    };
+
+    const { controller, state, el } = createHarness({
+      stateOverrides: {
+        entries: [{ path: "/project/folder/a.md", relPath: "folder/a.md" }],
+      },
+    });
+
+    el.projectList.querySelectorAll = (selector) => {
+      if (selector === ".folder-toggle") return [folderButton];
+      if (selector === ".folder-children") return [children];
+      return [];
+    };
+
+    controller.renderSidebar();
+    state.collapsedFolders = new Set(["folder"]);
+    controller.toggleCollapseAllFolders();
+    assert.equal(folderButton["aria-expanded"], "true");
+    assert.equal(children.hidden, false);
+
+    controller.toggleCollapseAllFolders();
+    assert.equal(folderButton["aria-expanded"], "false");
+    assert.equal(children.hidden, true);
+  });
 });
