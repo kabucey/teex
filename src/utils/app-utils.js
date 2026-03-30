@@ -22,14 +22,21 @@ export function fileExtension(path) {
   return fileName.slice(dotIndex + 1).toLowerCase();
 }
 
-const NAMED_FILE_LANGUAGES = new Map([["Dockerfile", "dockerfile"]]);
+function isDockerfileLike(name) {
+  return (
+    name === "Dockerfile" ||
+    name.startsWith("Dockerfile.") ||
+    name.endsWith(".Dockerfile")
+  );
+}
 
 export function fileLanguageKey(path) {
   if (!path) return null;
+  const name = baseName(path);
+  if (isDockerfileLike(name)) return "dockerfile";
   const ext = fileExtension(path);
   if (ext) return ext;
-  const name = baseName(path);
-  return NAMED_FILE_LANGUAGES.get(name) ?? null;
+  return null;
 }
 
 export function selectAllContents(element) {

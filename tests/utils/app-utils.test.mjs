@@ -41,6 +41,8 @@ test("fileLanguageKey returns extension for regular files", () => {
 test("fileLanguageKey returns 'dockerfile' for Dockerfile", () => {
   assert.equal(fileLanguageKey("/path/to/Dockerfile"), "dockerfile");
   assert.equal(fileLanguageKey("Dockerfile"), "dockerfile");
+  assert.equal(fileLanguageKey("/path/to/Dockerfile.dev"), "dockerfile");
+  assert.equal(fileLanguageKey("docker/api.Dockerfile"), "dockerfile");
 });
 
 test("fileLanguageKey returns null for unknown extensionless files", () => {

@@ -43,10 +43,10 @@ fn is_named_code_file(path: &Path) -> bool {
     let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
         return false;
     };
-    matches!(
-        name,
-        ".gitignore" | ".dockerignore" | ".gitattributes" | "Dockerfile" | "Makefile"
-    )
+    matches!(name, ".gitignore" | ".dockerignore" | ".gitattributes" | "Makefile")
+        || name == "Dockerfile"
+        || name.starts_with("Dockerfile.")
+        || name.ends_with(".Dockerfile")
 }
 
 pub(super) fn is_code(path: &Path) -> bool {
