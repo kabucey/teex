@@ -3,7 +3,10 @@ import { describe, it } from "node:test";
 
 import { createSidebarController } from "../../src/sidebar/controller.js";
 
-function createHarness({ stateOverrides = {}, addEventListener = () => {} } = {}) {
+function createHarness({
+  stateOverrides = {},
+  addEventListener = () => {},
+} = {}) {
   const state = {
     mode: "folder",
     rootPath: "/project",

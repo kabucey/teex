@@ -74,27 +74,31 @@ export function bindSidebarItemEvents({
 
   // --- Event delegation: single listeners on the container ---
 
-  el.projectList.addEventListener("mouseenter", (event) => {
-    const button = event.target.closest(".project-item");
-    if (button) {
-      if (button.scrollWidth > button.clientWidth) {
-        button.title = button.textContent;
-      } else {
-        button.removeAttribute("title");
+  el.projectList.addEventListener(
+    "mouseenter",
+    (event) => {
+      const button = event.target.closest(".project-item");
+      if (button) {
+        if (button.scrollWidth > button.clientWidth) {
+          button.title = button.textContent;
+        } else {
+          button.removeAttribute("title");
+        }
+        return;
       }
-      return;
-    }
 
-    const folder = event.target.closest(".folder-toggle");
-    if (folder) {
-      const label = folder.querySelector(".folder-label");
-      if (label && label.scrollWidth > label.clientWidth) {
-        folder.title = label.textContent;
-      } else {
-        folder.removeAttribute("title");
+      const folder = event.target.closest(".folder-toggle");
+      if (folder) {
+        const label = folder.querySelector(".folder-label");
+        if (label && label.scrollWidth > label.clientWidth) {
+          folder.title = label.textContent;
+        } else {
+          folder.removeAttribute("title");
+        }
       }
-    }
-  }, true);
+    },
+    true,
+  );
 
   el.projectList.addEventListener("click", (event) => {
     const button = event.target.closest(".project-item");
