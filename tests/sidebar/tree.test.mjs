@@ -48,7 +48,11 @@ test("renderTreeHtml renders folders/files and respects collapsed set", () => {
 
   const collapsedHtml = renderTreeHtml(tree, 0, new Set(["docs"]));
   assert.match(collapsedHtml, /aria-expanded="false"/);
-  assert.doesNotMatch(collapsedHtml, /guide\.md/);
+  assert.match(
+    collapsedHtml,
+    /<div class="folder-children" style="--indent:0;" hidden>/,
+  );
+  assert.match(collapsedHtml, /guide\.md/);
 });
 
 test("collectSubfolderPaths returns the folder itself and all nested subfolders", () => {
@@ -150,8 +154,16 @@ test("collapse-all: renderTreeHtml with all folders collapsed hides nested files
   const html = renderTreeHtml(tree, 0, allFolders);
 
   assert.match(html, /a\.md/);
-  assert.doesNotMatch(html, /guide\.md/);
-  assert.doesNotMatch(html, /ref\.md/);
+  assert.match(html, /guide\.md/);
+  assert.match(html, /ref\.md/);
+  assert.match(
+    html,
+    /<div class="folder-children" style="--indent:0;" hidden>/,
+  );
+  assert.match(
+    html,
+    /<div class="folder-children" style="--indent:1;" hidden>/,
+  );
 });
 
 test("expand-all: renderTreeHtml with empty collapsedFolders shows all nested files", () => {
@@ -250,13 +262,16 @@ test("renderTreeHtml wraps expanded folder children in folder-children div", () 
   assert.match(html, /<\/div>/);
 });
 
-test("renderTreeHtml does not render folder-children div for collapsed folders", () => {
+test("renderTreeHtml renders hidden folder-children div for collapsed folders", () => {
   const tree = buildEntryTree([
     { path: "/root/docs/guide.md", relPath: "docs/guide.md" },
     { path: "/root/a.md", relPath: "a.md" },
   ]);
   const html = renderTreeHtml(tree, 0, new Set(["docs"]));
-  assert.doesNotMatch(html, /folder-children/);
+  assert.match(
+    html,
+    /<div class="folder-children" style="--indent:0;" hidden>/,
+  );
 });
 
 test("renderTreeHtml nests folder-children divs for deep hierarchy", () => {
