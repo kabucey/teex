@@ -43,7 +43,12 @@ fn is_named_code_file(path: &Path) -> bool {
     let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
         return false;
     };
-    matches!(name, ".gitignore" | ".dockerignore" | ".gitattributes")
+    matches!(
+        name,
+        ".gitignore" | ".dockerignore" | ".gitattributes" | "Makefile"
+    ) || name == "Dockerfile"
+        || name.starts_with("Dockerfile.")
+        || name.ends_with(".Dockerfile")
 }
 
 pub(super) fn is_code(path: &Path) -> bool {
@@ -129,7 +134,7 @@ pub(super) fn is_markdown(path: &Path) -> bool {
 }
 
 pub(super) fn is_text_like(path: &Path) -> bool {
-    if is_markdown(path) || is_code(path) {
+    if is_markdown(path) || is_code(path) || is_named_code_file(path) {
         return true;
     }
 

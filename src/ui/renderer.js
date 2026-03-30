@@ -3,7 +3,7 @@ import {
   buildTabBarHtml,
   updateNavButtons,
 } from "../tabs/tab-bar.js";
-import { baseName, dirName, fileExtension } from "../utils/app-utils.js";
+import { baseName, dirName, fileLanguageKey } from "../utils/app-utils.js";
 import { hasActiveContent, isUntitledTab } from "./behavior.js";
 import { rewritePreviewImages } from "./image-paths.js";
 import { renderMarkdown, renderMermaidDiagrams } from "./markdown-renderer.js";
@@ -105,7 +105,7 @@ export function createUiRenderer({
     ) {
       el.editor.classList.add("hidden");
       el.preview.classList.add("hidden");
-      const ext = fileExtension(state.activePath) || null;
+      const ext = fileLanguageKey(state.activePath);
       codeJarController.attach(ext);
       codeJarController.syncContent(state.content);
       if (shouldFocusEditor) {

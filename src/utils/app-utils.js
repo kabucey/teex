@@ -22,6 +22,23 @@ export function fileExtension(path) {
   return fileName.slice(dotIndex + 1).toLowerCase();
 }
 
+function isDockerfileLike(name) {
+  return (
+    name === "Dockerfile" ||
+    name.startsWith("Dockerfile.") ||
+    name.endsWith(".Dockerfile")
+  );
+}
+
+export function fileLanguageKey(path) {
+  if (!path) return null;
+  const name = baseName(path);
+  if (isDockerfileLike(name)) return "dockerfile";
+  const ext = fileExtension(path);
+  if (ext) return ext;
+  return null;
+}
+
 export function selectAllContents(element) {
   const selection = window.getSelection();
   const range = document.createRange();

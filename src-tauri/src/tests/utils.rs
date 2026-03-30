@@ -22,6 +22,13 @@ fn file_type_helpers_are_case_insensitive_for_supported_extensions() {
     assert_eq!(file_kind(Path::new("style.CSS")), "code");
     assert_eq!(file_kind(Path::new(".gitignore")), "code");
     assert_eq!(file_kind(Path::new(".dockerignore")), "code");
+    assert_eq!(file_kind(Path::new("Dockerfile")), "code");
+    assert_eq!(file_kind(Path::new("Dockerfile.dev")), "code");
+    assert_eq!(file_kind(Path::new("api.Dockerfile")), "code");
+
+    assert!(is_text_like(Path::new("Dockerfile")));
+    assert!(is_text_like(Path::new("Dockerfile.dev")));
+    assert!(is_text_like(Path::new("api.Dockerfile")));
 
     assert!(is_code(Path::new("lib.rs")));
     assert!(is_code(Path::new("index.JS")));

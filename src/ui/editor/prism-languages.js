@@ -39,6 +39,7 @@ const EXT_TO_LANGUAGE = new Map([
   ["sh", "bash"],
   ["bash", "bash"],
   ["zsh", "bash"],
+  ["dockerfile", "docker"],
 ]);
 
 export function prismLanguageForExtension(ext) {
