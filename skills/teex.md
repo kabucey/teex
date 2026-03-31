@@ -1,12 +1,12 @@
 # teex
 
-teex is a companion review tool for AI workflows. It supports Markdown review, code/config file review with syntax highlighting, and Git-aware inspection, giving humans a clean focused interface for reviewing and editing work produced by agents.
+teex is a companion review tool for AI workflows. It supports Markdown review (with Mermaid diagrams and task lists), code/config file review with syntax highlighting for 70+ languages, and Git-aware inspection, giving humans a clean focused interface for reviewing and editing work produced by agents.
 
 ## When to use teex
 
 Use teex when you want the user to:
 - Read files you've created or modified
-- Edit files in a focused environment
+- Edit files in a focused environment with syntax highlighting and find/replace
 - Review multiple related files in one session (with tabs)
 - Review a generated plan/proposal before implementation
 - Preview Markdown content you want the user to see/edit
@@ -61,13 +61,19 @@ For plan/spec review:
 
 ## Key behaviors
 
-- **Tabs**: When 2+ file paths are given, teex opens a single window with tabs. Click a tab to switch, × to close.
+- **Tabs**: When 2+ file paths are given, teex opens a single window with tabs. Click a tab to switch, × to close. Tabs can be dragged between windows.
 - **Auto-save**: Changes save automatically after a short delay and on Cmd+S (or Ctrl+S on Windows/Linux).
-- **Markdown preview**: `.md` files open in preview mode. Press Cmd+E to toggle between edit and preview.
-- **Syntax highlighting**: Code and config files render with language-aware highlighting for easier review.
-- **Git review**: teex can surface Git status and diffs, which is useful when reviewing agent-generated changes.
-- **Folder mode**: Opening a folder path shows a sidebar with project files for navigation.
+- **Markdown preview**: `.md` files open in preview mode. Press Cmd+E to toggle between edit and preview. Supports Mermaid diagrams and interactive task list checkboxes.
+- **Syntax highlighting**: Code and config files render with language-aware highlighting (70+ languages) via CodeMirror, with bracket matching and line numbers.
+- **Git review**: teex surfaces Git status indicators in the sidebar and supports inline per-file diffs as well as a unified diff view of all changes (Cmd+Shift+G).
+- **Folder mode**: Opening a folder path shows a sidebar with project files, Git status indicators, and options to filter to modified files only (Cmd+Shift+M) or show/hide hidden files (Cmd+Shift+.).
 - **Dirty indicator**: A `●` dot appears on the tab label when a file has unsaved changes.
+- **Find in file**: Cmd+F opens search with regex support and match highlighting across both editor and preview modes.
+- **Smart paste**: Automatically detects and formats JSON, YAML, TOML, XML, and CSV content pasted into matching file types.
+- **Session restore**: Cmd+Shift+R reopens all tabs from the previous window session.
+- **Multi-window**: Multiple windows supported. "Merge All Windows" consolidates all tabs into one window.
+- **File watching**: Detects external changes to open files and prompts to reload.
+- **macOS integration**: Services menu items ("New Teex Tab Here", "New Teex Window Here"), default Markdown handler option, and CLI install from the app menu.
 
 ## Example usage
 
