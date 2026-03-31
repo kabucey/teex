@@ -1044,16 +1044,24 @@ input[type="text"] {
   font-family: var(--mono);
 }
 
-.preview pre {
+.preview .code-block {
+  position: relative;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 12px;
-  overflow-x: auto;
-  position: relative;
 }
 
-.copy-btn {
+.preview .code-scroll {
+  overflow-x: auto;
+}
+
+.preview pre {
+  margin: 0;
+  padding: 12px;
+  padding-right: 44px;
+}
+
+.preview .copy-btn {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -1070,13 +1078,14 @@ input[type="text"] {
   cursor: pointer;
   opacity: 0;
   transition: opacity 0.1s;
+  z-index: 1;
 }
 
-.preview pre:hover .copy-btn {
+.preview .code-block:hover .copy-btn {
   opacity: 1;
 }
 
-.copy-btn:hover {
+.preview .copy-btn:hover {
   color: var(--ink);
   border-color: var(--ink-dim);
 }

@@ -81,48 +81,47 @@ function getMarkdownParser() {
 
     const startLine = token.map[0] + 1;
     const endLine = Math.max(startLine, token.map[1]);
-    return html.replace(
+    html = html.replace(
       /^<pre/,
       `<pre data-src-line-start="${startLine}" data-src-line-end="${endLine}"`,
     );
+
+    return `<div class="code-block"><button class="copy-btn" type="button" aria-label="Copy code"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 9h9v11H9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6 15H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><div class="code-scroll">${html}</div></div>`;
   };
 
   getMarkdownParser.instance = md;
   return md;
 }
 
-const COPY_ICON = `<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
-const CHECK_ICON = `<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>`;
-
-export function addCopyButtons(previewEl) {
-  if (!previewEl) return;
-  const blocks = previewEl.querySelectorAll("pre");
-  for (const pre of blocks) {
-    const btn = document.createElement("button");
-    btn.className = "copy-btn";
-    btn.setAttribute("aria-label", "Copy code");
-    btn.innerHTML = COPY_ICON;
-    btn.addEventListener("click", async () => {
-      const code = pre.querySelector("code");
-      const text = code ? code.textContent : pre.textContent;
-      try {
-        await navigator.clipboard.writeText(text);
-        btn.innerHTML = CHECK_ICON;
-        setTimeout(() => {
-          btn.innerHTML = COPY_ICON;
-        }, 1500);
-      } catch {
-        // clipboard write not available
-      }
-    });
-    pre.appendChild(btn);
-  }
-}
-
 export async function renderMarkdown(markdown) {
   await ensureMarkdownLibsLoaded();
   const source = String(markdown || "").replace(/\r\n/g, "\n");
   return getMarkdownParser().render(source);
+}
+
+function createCopyButton() {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "copy-btn";
+  button.setAttribute("aria-label", "Copy code");
+  button.innerHTML =
+    '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 9h9v11H9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M6 15H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  return button;
+}
+
+export function addCopyButtons(previewEl) {
+  if (!previewEl?.querySelectorAll) {
+    return;
+  }
+
+  const containers = previewEl.querySelectorAll(".code-block, pre");
+  containers.forEach((container) => {
+    if (container.querySelector?.(".copy-btn")) {
+      return;
+    }
+
+    container.appendChild(createCopyButton());
+  });
 }
 
 let mermaidInitialized = false;

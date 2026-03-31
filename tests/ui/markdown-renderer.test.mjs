@@ -32,7 +32,11 @@ test("renders fenced code blocks and task lists", async () => {
   const html = await renderMarkdown(
     "```js\nconst x = 1;\n```\n\n- [x] done\n- [ ] todo",
   );
-  assert.match(html, /<pre[^>]*><code class="language-js">const x = 1;/);
+  assert.match(html, /<div class="code-block"><button class="copy-btn"/);
+  assert.match(
+    html,
+    /<div class="code-scroll"><pre[^>]*><code class="language-js">const x = 1;/,
+  );
   assert.match(html, /<pre data-src-line-start="1" data-src-line-end="3">/);
   assert.match(html, /<li[^>]*data-src-line="5"[^>]*>/);
   assert.match(html, /<li[^>]*data-src-line="6"[^>]*>/);
@@ -86,7 +90,7 @@ test("preserves single newlines as line breaks in paragraphs", async () => {
   assert.match(html, /<strong>Context:<\/strong>/);
 });
 
-test("addCopyButtons adds a copy button to each pre element", () => {
+test("addCopyButtons adds a copy button to each pre element when missing", () => {
   const appended = [];
   function makeEl(tag, text = "") {
     return {
@@ -106,7 +110,6 @@ test("addCopyButtons adds a copy button to each pre element", () => {
   const previewEl = { querySelectorAll: () => [pre1, pre2] };
 
   const createdButtons = [];
-  const listeners = [];
   globalThis.document = {
     createElement(tag) {
       const attrs = {};
@@ -121,8 +124,6 @@ test("addCopyButtons adds a copy button to each pre element", () => {
           return attrs[k] ?? null;
         },
       };
-      el.addEventListener = (event, handler) =>
-        listeners.push({ el, event, handler });
       createdButtons.push(el);
       return el;
     },
@@ -132,11 +133,11 @@ test("addCopyButtons adds a copy button to each pre element", () => {
 
   assert.equal(createdButtons.length, 2);
   assert.ok(createdButtons.every((b) => b.className === "copy-btn"));
-  assert.ok(createdButtons.every((b) => b.getAttribute("aria-label") === "Copy code"));
+  assert.ok(
+    createdButtons.every((b) => b.getAttribute("aria-label") === "Copy code"),
+  );
   assert.ok(createdButtons.every((b) => b.innerHTML.includes("<svg")));
   assert.equal(appended.length, 2);
   assert.strictEqual(appended[0].parent, pre1);
   assert.strictEqual(appended[1].parent, pre2);
-  assert.equal(listeners.length, 2);
-  assert.ok(listeners.every((l) => l.event === "click"));
 });
