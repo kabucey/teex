@@ -6,7 +6,9 @@ import markdownitTaskLists from "markdown-it-task-lists";
 globalThis.markdownit = markdownit;
 globalThis.markdownitTaskLists = markdownitTaskLists;
 
-const { renderMarkdown } = await import("../../src/ui/markdown-renderer.js");
+const { renderMarkdown, addCopyButtons } = await import(
+  "../../src/ui/markdown-renderer.js"
+);
 
 test("renders headings, emphasis, and links", async () => {
   const html = await renderMarkdown(
@@ -82,4 +84,59 @@ test("preserves single newlines as line breaks in paragraphs", async () => {
   assert.match(html, /<strong>Period:<\/strong>[\s\S]*<br/);
   assert.match(html, /<strong>Theme:<\/strong>[\s\S]*<br/);
   assert.match(html, /<strong>Context:<\/strong>/);
+});
+
+test("addCopyButtons adds a copy button to each pre element", () => {
+  const appended = [];
+  function makeEl(tag, text = "") {
+    return {
+      tag,
+      textContent: text,
+      children: [],
+      querySelector: () => null,
+      appendChild(child) {
+        appended.push({ parent: this, child });
+        this.children.push(child);
+      },
+    };
+  }
+
+  const pre1 = makeEl("pre", "code block 1");
+  const pre2 = makeEl("pre", "code block 2");
+  const previewEl = { querySelectorAll: () => [pre1, pre2] };
+
+  const createdButtons = [];
+  const listeners = [];
+  globalThis.document = {
+    createElement(tag) {
+      const attrs = {};
+      const el = {
+        tag,
+        innerHTML: "",
+        className: "",
+        setAttribute(k, v) {
+          attrs[k] = v;
+        },
+        getAttribute(k) {
+          return attrs[k] ?? null;
+        },
+      };
+      el.addEventListener = (event, handler) =>
+        listeners.push({ el, event, handler });
+      createdButtons.push(el);
+      return el;
+    },
+  };
+
+  addCopyButtons(previewEl);
+
+  assert.equal(createdButtons.length, 2);
+  assert.ok(createdButtons.every((b) => b.className === "copy-btn"));
+  assert.ok(createdButtons.every((b) => b.getAttribute("aria-label") === "Copy code"));
+  assert.ok(createdButtons.every((b) => b.innerHTML.includes("<svg")));
+  assert.equal(appended.length, 2);
+  assert.strictEqual(appended[0].parent, pre1);
+  assert.strictEqual(appended[1].parent, pre2);
+  assert.equal(listeners.length, 2);
+  assert.ok(listeners.every((l) => l.event === "click"));
 });

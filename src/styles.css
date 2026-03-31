@@ -1050,6 +1050,35 @@ input[type="text"] {
   border-radius: 8px;
   padding: 12px;
   overflow-x: auto;
+  position: relative;
+}
+
+.copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink-dim);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.preview pre:hover .copy-btn {
+  opacity: 1;
+}
+
+.copy-btn:hover {
+  color: var(--ink);
+  border-color: var(--ink-dim);
 }
 
 .preview :not(pre) > code {

@@ -6,7 +6,11 @@ import {
 import { baseName, dirName, fileLanguageKey } from "../utils/app-utils.js";
 import { hasActiveContent, isUntitledTab } from "./behavior.js";
 import { rewritePreviewImages } from "./image-paths.js";
-import { renderMarkdown, renderMermaidDiagrams } from "./markdown-renderer.js";
+import {
+  addCopyButtons,
+  renderMarkdown,
+  renderMermaidDiagrams,
+} from "./markdown-renderer.js";
 
 export function createUiRenderer({
   state,
@@ -90,6 +94,7 @@ export function createUiRenderer({
       el.preview.classList.remove("hidden");
       codeJarController.detach();
       el.preview.innerHTML = await renderMarkdown(state.content);
+      addCopyButtons(el.preview);
       if (state.activePath) {
         rewritePreviewImages(el.preview, dirName(state.activePath));
       }
