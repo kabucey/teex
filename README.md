@@ -4,12 +4,16 @@ Teex is a desktop review workspace for agentic workflows, built for reviewing Ma
 
 ## What it does
 
-- **Markdown review** — renders `.md` files with a toggle between preview and raw edit mode (`Cmd+E`)
-- **Code review with syntax highlighting** — open code and config files with language-aware highlighting for fast inspection and editing
-- **Git status + diff review** — inspect changed files and diffs without leaving the app
-- **Tabbed review sessions** — open multiple files in one window, switch between tabs, close individually
-- **Folder mode** — open a directory to browse and navigate project files via a sidebar
+- **Markdown review** — renders `.md` files with preview and raw edit mode (`Cmd+E`), Mermaid diagrams, and interactive task lists
+- **Code review with syntax highlighting** — language-aware highlighting for 70+ file types via CodeMirror, with bracket matching and line numbers
+- **Git status + diff review** — inspect changed files and diffs inline, or view all changes in a unified diff (`Cmd+Shift+G`)
+- **Tabbed review sessions** — open multiple files in one window, switch between tabs, drag tabs between windows
+- **Folder mode** — open a directory to browse and navigate project files via a sidebar with Git status indicators
 - **Auto-save** — changes save automatically after a short delay and on `Cmd+S`
+- **Find in file** — search with regex support and match highlighting across editor and preview (`Cmd+F`)
+- **Smart paste** — detects and auto-formats JSON, YAML, TOML, XML, and CSV pasted into matching file types
+- **Session restore** — reopen all tabs from your last session (`Cmd+Shift+R`)
+- **Multi-window** — open multiple windows, merge all into one with "Merge All Windows"
 - **CLI-first** — designed to be launched by agents or scripts, not just humans
 
 ## Usage
@@ -27,6 +31,29 @@ teex /path/to/folder
 # Install the agent skill files
 teex install-skill
 ```
+
+## Keyboard shortcuts
+
+| Shortcut | Action |
+|---|---|
+| `Cmd+E` | Toggle Markdown edit/preview |
+| `Cmd+S` | Save now |
+| `Cmd+F` | Find in file |
+| `Cmd+1`–`Cmd+9` | Jump to tab by number |
+| `Cmd+\` | Toggle sidebar |
+| `Cmd+/` | Toggle status bar |
+| `Cmd+[` / `Cmd+]` | Navigate back / forward |
+| `Cmd+Shift+G` | Unified diff of all changes |
+| `Cmd+Shift+M` | Filter to modified files only |
+| `Cmd+Shift+E` | Expand/collapse all folders |
+| `Cmd+Shift+.` | Show/hide hidden files |
+| `Cmd+Shift+R` | Restore last session |
+
+## macOS integration
+
+- **Services menu** — "New Teex Tab Here" and "New Teex Window Here" from Finder right-click
+- **Default Markdown handler** — set via the app menu
+- **CLI install** — "Install Command Line Tool" adds `teex` to `/usr/local/bin`
 
 ## Agent integration
 
