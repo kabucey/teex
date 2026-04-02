@@ -4,7 +4,7 @@ import {
   buildKeyboardShortcuts,
   handleKeyboardShortcut,
 } from "./keyboard-shortcuts.js";
-import { renderMarkdown } from "./markdown-renderer.js";
+import { addCopyButtons, renderMarkdown } from "./markdown-renderer.js";
 import {
   detectStructuredPasteKind,
   formatStructuredPasteText,
@@ -174,6 +174,18 @@ export function bindUiEvents({
   });
 
   el.preview.addEventListener("click", async (event) => {
+    const copyButton = event.target.closest(".copy-btn");
+    if (copyButton) {
+      const codeBlock = copyButton.closest(".code-block, pre");
+      const code = codeBlock?.querySelector("code");
+      const text = code?.textContent ?? codeBlock?.textContent ?? "";
+      if (text) {
+        await globalThis.navigator?.clipboard?.writeText?.(text);
+        showToast("Copied code");
+      }
+      return;
+    }
+
     const checkbox = event.target.closest(
       'input[type="checkbox"], .task-list-item-checkbox',
     );
@@ -198,6 +210,7 @@ export function bindUiEvents({
           saveNow();
         }
         el.preview.innerHTML = await renderMarkdown(state.content);
+        addCopyButtons(el.preview);
       }
       return;
     }
