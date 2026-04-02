@@ -132,7 +132,9 @@ test("addCopyButtons adds a copy button to each pre element", () => {
 
   assert.equal(createdButtons.length, 2);
   assert.ok(createdButtons.every((b) => b.className === "copy-btn"));
-  assert.ok(createdButtons.every((b) => b.getAttribute("aria-label") === "Copy code"));
+  assert.ok(
+    createdButtons.every((b) => b.getAttribute("aria-label") === "Copy code"),
+  );
   assert.ok(createdButtons.every((b) => b.innerHTML.includes("<svg")));
   assert.equal(appended.length, 2);
   assert.strictEqual(appended[0].parent, pre1);

@@ -4,6 +4,13 @@ import { canGoBack, canGoForward } from "./navigation.js";
 import { buildTabDisambiguations } from "./tab-disambiguation.js";
 import { bindTabDragEvents } from "./tab-drag-handler.js";
 
+export function getTabPath(state, index) {
+  if (state.openFiles.length === 0) {
+    return state.activePath || null;
+  }
+  return state.openFiles[index]?.path || null;
+}
+
 export function buildTabBarHtml(state) {
   const disambiguations = buildTabDisambiguations(state.openFiles);
   let html = "";
@@ -99,7 +106,8 @@ export function bindTabBarEvents({
     tabEl.addEventListener("contextmenu", (event) => {
       event.preventDefault();
       const index = parseInt(tabEl.dataset.index, 10);
-      invoke("show_tab_context_menu", { index });
+      const path = getTabPath(state, index);
+      invoke("show_tab_context_menu", { index, path });
     });
   });
 }
