@@ -33,6 +33,7 @@ const diffField = StateField.define({
     for (const effect of tr.effects) {
       if (effect.is(setDiffEffect)) return effect.value;
     }
+    if (tr.docChanged) decos = decos.map(tr.changes);
     return decos;
   },
   provide: (f) => EditorView.decorations.from(f),
