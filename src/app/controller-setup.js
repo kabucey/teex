@@ -188,6 +188,7 @@ export function setupControllers({
     toggleStatusBar: callbacks.toggleStatusBar,
     toggleCollapseAllFolders: callbacks.toggleCollapseAllFolders,
     openFind: callbacks.openFind,
+    formatActiveFile: callbacks.formatActiveFile,
     navigateBack: callbacks.navigateBack,
     navigateForward: callbacks.navigateForward,
     bindWindowDragDropEvents: () =>

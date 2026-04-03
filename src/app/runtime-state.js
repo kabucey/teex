@@ -25,6 +25,7 @@ export const EVENTS = {
   toggleCollapseAllFolders: "teex://toggle-collapse-all-folders",
   toggleUnifiedDiff: "teex://toggle-unified-diff",
   find: "teex://find",
+  formatFile: "teex://format-file",
   mouseNavBack: "teex://mouse-nav-back",
   mouseNavForward: "teex://mouse-nav-forward",
 };

@@ -26,6 +26,7 @@ export function createAppEventsController({
   toggleStatusBar,
   toggleCollapseAllFolders,
   openFind,
+  formatActiveFile,
   navigateBack,
   navigateForward,
 }) {
@@ -101,6 +102,9 @@ export function createAppEventsController({
       }),
       listen(`${events.find}/${label}`, () => {
         openFind();
+      }),
+      listen(`${events.formatFile}/${label}`, () => {
+        formatActiveFile();
       }),
       listen(`${events.mouseNavBack}/${label}`, () => {
         navigateBack();

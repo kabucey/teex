@@ -158,6 +158,7 @@ const codeJarController = createCodeMirrorController({
     onAfterToggleMarkdownMode,
     onSavedStateChanged: renderChrome,
     openFind,
+    formatActiveFile,
     navigateBack,
     navigateForward,
   },
