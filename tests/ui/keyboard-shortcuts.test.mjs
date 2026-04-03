@@ -152,4 +152,17 @@ describe("buildKeyboardShortcuts", () => {
     entry.handler();
     assert.ok(called);
   });
+
+  it("cmd+shift+f calls formatActiveFile", () => {
+    let called = false;
+    const shortcuts = buildKeyboardShortcuts({
+      formatActiveFile: () => {
+        called = true;
+      },
+    });
+    const entry = shortcuts.find((s) => s.key === "f" && s.meta && s.shift);
+    assert.ok(entry, "cmd+shift+f shortcut should exist");
+    entry.handler();
+    assert.ok(called);
+  });
 });

@@ -62,6 +62,7 @@ export function bindUiEvents({
   onPreviewScroll,
   onDirtyStateChanged,
   openFind,
+  formatActiveFile,
 }) {
   window.addEventListener("dragover", (event) => {
     if (hasFileDragData(event)) {
@@ -145,6 +146,7 @@ export function bindUiEvents({
 
   const shortcuts = buildKeyboardShortcuts({
     openFind,
+    formatActiveFile,
     toggleMarkdownMode,
     toggleStatusBar,
     toggleModifiedOnly,

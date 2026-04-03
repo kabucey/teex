@@ -3,6 +3,7 @@ import { isTextInputActive } from "./behavior.js";
 
 export function buildKeyboardShortcuts({
   openFind,
+  formatActiveFile,
   toggleMarkdownMode,
   toggleStatusBar,
   toggleModifiedOnly,
@@ -18,6 +19,12 @@ export function buildKeyboardShortcuts({
       key: "f",
       meta: true,
       handler: () => openFind?.(),
+    },
+    {
+      key: "f",
+      meta: true,
+      shift: true,
+      handler: () => formatActiveFile?.(),
     },
     {
       key: "e",

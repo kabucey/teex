@@ -21,6 +21,7 @@ import {
 } from "./app/session-persistence.js";
 import { createSessionRestoreController } from "./app/session-restore.js";
 import { createFindController } from "./search/find-controller.js";
+import { createFormatController } from "./ui/format-controller.js";
 import { buildCollapsedFoldersFromExpanded } from "./sidebar/tree.js";
 import { recordNavigation } from "./tabs/navigation.js";
 import {
@@ -70,6 +71,7 @@ let scrollSyncController;
 let externalFileWatchController;
 let sessionRestoreController;
 let findController;
+let formatController;
 let diffController;
 let diffMapController;
 let unifiedDiffController;
@@ -207,6 +209,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     el,
     codeEditorController: codeJarController,
   });
+  formatController = createFormatController({
+    state,
+    invoke,
+    codeEditorController: codeJarController,
+    onDirtyStateChanged: () => renderChrome(),
+  });
   diffMapController = createDiffMapController({
     el,
     codeEditorController: codeJarController,
@@ -257,11 +265,16 @@ function bindUiEvents() {
     onPreviewScroll: () => scrollSyncController?.onPreviewScroll(),
     onDirtyStateChanged: () => renderChrome(),
     openFind,
+    formatActiveFile,
   });
 }
 
 function openFind() {
   findController?.open();
+}
+
+function formatActiveFile() {
+  formatController?.formatActiveFile();
 }
 
 function markSidebarTreeDirty() {
