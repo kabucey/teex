@@ -22,8 +22,7 @@ export function buildKeyboardShortcuts({
     },
     {
       key: "f",
-      meta: true,
-      shift: true,
+      ctrl: true,
       handler: () => formatActiveFile?.(),
     },
     {
@@ -83,7 +82,8 @@ export function handleKeyboardShortcut(
   { el, state, hasTabSession, switchTab },
 ) {
   for (const shortcut of shortcuts) {
-    if (!event.metaKey) continue;
+    const useCtrl = shortcut.ctrl === true;
+    if (useCtrl ? !event.ctrlKey : !event.metaKey) continue;
 
     const shiftRequired = shortcut.shift === true;
     if (shiftRequired !== event.shiftKey) continue;
