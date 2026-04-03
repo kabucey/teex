@@ -94,7 +94,11 @@ describe("formatActiveFileContent", () => {
       content: '{"a":1}',
       invoke: (cmd, args) => {
         invokedArgs = { cmd, args };
-        return { formatted: '{\n  "a": 1\n}', detectedKind: "json", changed: true };
+        return {
+          formatted: '{\n  "a": 1\n}',
+          detectedKind: "json",
+          changed: true,
+        };
       },
     });
     assert.equal(invokedArgs.cmd, "format_structured_text");
@@ -109,7 +113,11 @@ describe("formatActiveFileContent", () => {
     const result = await formatActiveFileContent({
       activePath: "/foo/bar.json",
       content: '{\n  "a": 1\n}',
-      invoke: () => ({ formatted: '{\n  "a": 1\n}', detectedKind: "json", changed: false }),
+      invoke: () => ({
+        formatted: '{\n  "a": 1\n}',
+        detectedKind: "json",
+        changed: false,
+      }),
     });
     assert.equal(result, null);
   });

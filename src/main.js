@@ -21,7 +21,6 @@ import {
 } from "./app/session-persistence.js";
 import { createSessionRestoreController } from "./app/session-restore.js";
 import { createFindController } from "./search/find-controller.js";
-import { createFormatController } from "./ui/format-controller.js";
 import { buildCollapsedFoldersFromExpanded } from "./sidebar/tree.js";
 import { recordNavigation } from "./tabs/navigation.js";
 import {
@@ -43,6 +42,7 @@ import { createDiffController } from "./ui/diff/controller.js";
 import { createDiffMapController } from "./ui/diff/map-controller.js";
 import { createUnifiedDiffController } from "./ui/diff/unified-controller.js";
 import { createCodeMirrorController } from "./ui/editor/codemirror-controller.js";
+import { createFormatController } from "./ui/format-controller.js";
 import { confirmReloadExternalChange } from "./ui/native-dialog.js";
 import { createScrollSyncController } from "./ui/scroll/sync.js";
 import { baseName } from "./utils/app-utils.js";
