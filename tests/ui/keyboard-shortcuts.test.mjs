@@ -152,4 +152,17 @@ describe("buildKeyboardShortcuts", () => {
     entry.handler();
     assert.ok(called);
   });
+
+  it("ctrl+f calls formatActiveFile", () => {
+    let called = false;
+    const shortcuts = buildKeyboardShortcuts({
+      formatActiveFile: () => {
+        called = true;
+      },
+    });
+    const entry = shortcuts.find((s) => s.key === "f" && s.ctrl && !s.meta);
+    assert.ok(entry, "ctrl+f shortcut should exist");
+    entry.handler();
+    assert.ok(called);
+  });
 });

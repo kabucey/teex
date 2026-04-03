@@ -271,6 +271,11 @@ pub(super) fn handle_app_menu_event(app: &tauri::AppHandle, event: tauri::menu::
                 emit_to_window(app, window.label(), EVENT_FIND, ());
             }
         }
+        MENU_FORMAT_FILE => {
+            if let Some(window) = target_window(app) {
+                emit_to_window(app, window.label(), EVENT_FORMAT_FILE, ());
+            }
+        }
         MENU_UNIFIED_DIFF => {
             let _ = app.emit(EVENT_TOGGLE_UNIFIED_DIFF, ());
         }

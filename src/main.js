@@ -42,6 +42,7 @@ import { createDiffController } from "./ui/diff/controller.js";
 import { createDiffMapController } from "./ui/diff/map-controller.js";
 import { createUnifiedDiffController } from "./ui/diff/unified-controller.js";
 import { createCodeMirrorController } from "./ui/editor/codemirror-controller.js";
+import { createFormatController } from "./ui/format-controller.js";
 import { confirmReloadExternalChange } from "./ui/native-dialog.js";
 import { createScrollSyncController } from "./ui/scroll/sync.js";
 import { baseName } from "./utils/app-utils.js";
@@ -70,6 +71,7 @@ let scrollSyncController;
 let externalFileWatchController;
 let sessionRestoreController;
 let findController;
+let formatController;
 let diffController;
 let diffMapController;
 let unifiedDiffController;
@@ -156,6 +158,7 @@ const codeJarController = createCodeMirrorController({
     onAfterToggleMarkdownMode,
     onSavedStateChanged: renderChrome,
     openFind,
+    formatActiveFile,
     navigateBack,
     navigateForward,
   },
@@ -207,6 +210,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     el,
     codeEditorController: codeJarController,
   });
+  formatController = createFormatController({
+    state,
+    invoke,
+    codeEditorController: codeJarController,
+    onDirtyStateChanged: () => renderChrome(),
+  });
   diffMapController = createDiffMapController({
     el,
     codeEditorController: codeJarController,
@@ -257,11 +266,16 @@ function bindUiEvents() {
     onPreviewScroll: () => scrollSyncController?.onPreviewScroll(),
     onDirtyStateChanged: () => renderChrome(),
     openFind,
+    formatActiveFile,
   });
 }
 
 function openFind() {
   findController?.open();
+}
+
+function formatActiveFile() {
+  formatController?.formatActiveFile();
 }
 
 function markSidebarTreeDirty() {

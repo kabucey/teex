@@ -3,6 +3,7 @@ import { isTextInputActive } from "./behavior.js";
 
 export function buildKeyboardShortcuts({
   openFind,
+  formatActiveFile,
   toggleMarkdownMode,
   toggleStatusBar,
   toggleModifiedOnly,
@@ -18,6 +19,11 @@ export function buildKeyboardShortcuts({
       key: "f",
       meta: true,
       handler: () => openFind?.(),
+    },
+    {
+      key: "f",
+      ctrl: true,
+      handler: () => formatActiveFile?.(),
     },
     {
       key: "e",
@@ -76,7 +82,8 @@ export function handleKeyboardShortcut(
   { el, state, hasTabSession, switchTab },
 ) {
   for (const shortcut of shortcuts) {
-    if (!event.metaKey) continue;
+    const useCtrl = shortcut.ctrl === true;
+    if (useCtrl ? !event.ctrlKey : !event.metaKey) continue;
 
     const shiftRequired = shortcut.shift === true;
     if (shiftRequired !== event.shiftKey) continue;
