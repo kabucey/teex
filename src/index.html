@@ -5,20 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>teex</title>
     <script>
-      // Apply saved theme before first paint to prevent flash
-      (function() {
+      // Apply saved theme before first paint to prevent flash.
+      (function () {
         var t = localStorage.getItem("teex-theme");
-        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+        if (t === "light" || t === "dark") {
+          document.documentElement.setAttribute("data-theme", t);
+        }
       })();
     </script>
     <style>
-      /* Critical: set background before stylesheet loads to prevent white flash */
-      html { background: #282c34; color-scheme: dark; }
-      @media (prefers-color-scheme: light) {
-        html:not([data-theme="dark"]) { background: #ffffff; color-scheme: light; }
+      /* Critical: set background before stylesheet loads to prevent white flash. */
+      html,
+      body {
+        background: #282c34;
+        color-scheme: dark;
       }
-      html[data-theme="light"] { background: #ffffff; color-scheme: light; }
-      html[data-theme="dark"] { background: #282c34; color-scheme: dark; }
+      @media (prefers-color-scheme: light) {
+        html:not([data-theme="dark"]),
+        html:not([data-theme="dark"]) body {
+          background: #ffffff;
+          color-scheme: light;
+        }
+      }
+      html[data-theme="light"],
+      html[data-theme="light"] body {
+        background: #ffffff;
+        color-scheme: light;
+      }
+      html[data-theme="dark"],
+      html[data-theme="dark"] body {
+        background: #282c34;
+        color-scheme: dark;
+      }
     </style>
     <link rel="stylesheet" href="styles.css" />
     <script type="module" src="/main.js" defer></script>

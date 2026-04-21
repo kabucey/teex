@@ -200,6 +200,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   applySavedShowHiddenFiles(state);
   applySavedModifiedOnly(state);
   bindElementsImported(el);
+  bindUiEvents();
+  createNewTab();
+
+  syncSavedPreferencesToBackend(state, invoke);
+  listenForThemeEvents(listen);
+
   invoke("get_folder_icon")
     .then((url) => {
       if (url) state.folderIconUrl = url;
@@ -228,16 +234,10 @@ window.addEventListener("DOMContentLoaded", async () => {
   });
   unifiedDiffController = createUnifiedDiffController({ state, el, invoke });
   scrollSyncController = createScrollSyncController({ state, el });
-  bindUiEvents();
-  await Promise.all([
-    appEventsController.bindAppEvents(),
-    openPathsController.bootstrap(),
-  ]);
+  await openPathsController.bootstrap();
+  await appEventsController.bindAppEvents();
   sessionSaveEnabled = true;
   openPathsController.startPendingOpenPathPoller();
-
-  syncSavedPreferencesToBackend(state, invoke);
-  listenForThemeEvents(listen);
 
   listen("teex://toggle-hidden-files", () => toggleHiddenFiles());
   listen("teex://toggle-modified-only", () => toggleModifiedOnly());

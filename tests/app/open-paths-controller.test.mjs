@@ -100,3 +100,42 @@ test("bootstrap creates a new tab when no paths are pending and launch context i
     "createNewTab should be called on empty launch",
   );
 });
+
+test("bootstrap does not create a duplicate startup tab when one already exists", async () => {
+  let newTabCalls = 0;
+
+  const invoke = async (command) => {
+    if (command === "take_pending_open_paths") {
+      return [];
+    }
+    if (command === "get_launch_context") {
+      return { mode: "empty" };
+    }
+    return null;
+  };
+
+  const controller = createOpenPathsController({
+    state: {
+      mode: "files",
+      activePath: null,
+      openFiles: [{ path: null, kind: "markdown" }],
+    },
+    invoke,
+    setStatus: () => {},
+    render: () => {},
+    updateMenuState: () => {},
+    openFile: async () => {},
+    openFileInTabs: async () => {},
+    openSingleFileFromUi: async () => {},
+    openMultipleFiles: async () => {},
+    openFolder: async () => {},
+    createNewTab: () => {
+      newTabCalls += 1;
+    },
+    deduper: { signature: "", timestamp: 0 },
+  });
+
+  await controller.bootstrap();
+
+  assert.equal(newTabCalls, 0);
+});
