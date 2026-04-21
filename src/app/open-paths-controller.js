@@ -27,6 +27,13 @@ export function createOpenPathsController({
   createNewTab,
   deduper,
 }) {
+  function hasStartupTabReady() {
+    return (
+      Boolean(state.activePath) ||
+      (Array.isArray(state.openFiles) && state.openFiles.length > 0)
+    );
+  }
+
   function shouldSkipDuplicateOsOpen(paths) {
     return shouldSkipDuplicateOsOpenForDeduper(deduper, paths);
   }
@@ -155,7 +162,9 @@ export function createOpenPathsController({
       setStatus(String(error), true);
     }
 
-    createNewTab();
+    if (!hasStartupTabReady()) {
+      createNewTab();
+    }
   }
 
   return {
