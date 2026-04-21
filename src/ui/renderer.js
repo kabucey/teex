@@ -4,7 +4,11 @@ import {
   updateNavButtons,
 } from "../tabs/tab-bar.js";
 import { baseName, dirName, fileLanguageKey } from "../utils/app-utils.js";
-import { hasActiveContent, isUntitledTab } from "./behavior.js";
+import {
+  hasActiveContent,
+  isUntitledMarkdownEditState,
+  isUntitledTab,
+} from "./behavior.js";
 import { rewritePreviewImages } from "./image-paths.js";
 import {
   addCopyButtons,
@@ -106,7 +110,9 @@ export function createUiRenderer({
 
     if (
       state.activeKind === "code" ||
-      (state.activeKind === "markdown" && state.markdownViewMode === "edit")
+      (state.activeKind === "markdown" &&
+        state.markdownViewMode === "edit" &&
+        !shouldUsePlainTextareaEditor(state))
     ) {
       el.editor.classList.add("hidden");
       el.preview.classList.add("hidden");
@@ -178,6 +184,10 @@ export function createUiRenderer({
     render,
     renderChrome,
   };
+}
+
+export function shouldUsePlainTextareaEditor(state) {
+  return state.activeKind === "text" || isUntitledMarkdownEditState(state);
 }
 
 export function buildWindowTitleState(state) {

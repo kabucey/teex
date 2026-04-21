@@ -9,6 +9,14 @@ export function isUntitledTab({ activePath, openFiles, activeTabIndex }) {
   );
 }
 
+export function isUntitledMarkdownEditState(state) {
+  return (
+    state?.activeKind === "markdown" &&
+    state?.markdownViewMode === "edit" &&
+    isUntitledTab(state)
+  );
+}
+
 export function hasActiveContent(state) {
   return Boolean(state.activePath) || isUntitledTab(state);
 }

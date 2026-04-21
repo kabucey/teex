@@ -1,7 +1,36 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildWindowTitleState } from "../../src/ui/renderer.js";
+import {
+  buildWindowTitleState,
+  shouldUsePlainTextareaEditor,
+} from "../../src/ui/renderer.js";
+
+test("shouldUsePlainTextareaEditor keeps untitled markdown edit tabs on the fast textarea path", () => {
+  assert.equal(
+    shouldUsePlainTextareaEditor({
+      activeKind: "markdown",
+      markdownViewMode: "edit",
+      activePath: null,
+      openFiles: [{ path: null }],
+      activeTabIndex: 0,
+    }),
+    true,
+  );
+});
+
+test("shouldUsePlainTextareaEditor still uses CodeMirror for saved markdown files", () => {
+  assert.equal(
+    shouldUsePlainTextareaEditor({
+      activeKind: "markdown",
+      markdownViewMode: "edit",
+      activePath: "/notes/today.md",
+      openFiles: [{ path: "/notes/today.md" }],
+      activeTabIndex: 0,
+    }),
+    false,
+  );
+});
 
 test("buildWindowTitleState postfixes dirty saved file titles", () => {
   assert.deepEqual(
